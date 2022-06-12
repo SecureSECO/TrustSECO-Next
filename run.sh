@@ -11,5 +11,5 @@ fi
 
 echo 'Starting up TrustSECO'
 
-docker login ghcr.io -u TrustSECO-Machine-User -p REDACTED_HISTORICAL_TOKEN
+echo "REDACTED_HISTORICAL_TOKEN" | docker login ghcr.io -u "TrustSECO-Machine-User" --password-stdin
 docker-compose up
