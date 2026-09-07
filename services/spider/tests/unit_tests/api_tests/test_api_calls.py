@@ -47,6 +47,7 @@ class TestMakeAPICall_gh:
 
     @pytest.mark.parametrize('api_url', ['https://api.github.com/repos/numpy/numpasfdy', 'https://api.github.com/repos/numpy/numpy'])
     @mock.patch.dict('os.environ', {constants.GITHUB_TOKEN: 'asdfs'})
+    @responses.activate
     def test_invalid_key(self, api_url: str) -> None:
         """
         Test the function making an API call with an invalid API key
@@ -55,6 +56,9 @@ class TestMakeAPICall_gh:
             api_url: The url to make the API call to
             return_value: The return value of the API call
         """
+
+        # Unit tests must simulate authentication failure, not contact live services.
+        responses.add(responses.GET, api_url, json={'message': 'Invalid API key'}, status=401)
 
         # Make the API call
         actual_result = make_api_call(api_url, constants.API_GITHUB)
@@ -99,6 +103,7 @@ class TestMakeAPICall_lib:
 
     @pytest.mark.parametrize('api_url', ['https://libraries.io/api/platfs', 'https://libraries.io/api/platforms'])
     @mock.patch.dict('os.environ', {constants.LIBRARIES_TOKEN: '!$#@#$sdafjkh'})
+    @responses.activate
     def test_invalid_key(self, api_url: str) -> None:
         """
         Test the function making an API call with an invalid API key
@@ -107,6 +112,9 @@ class TestMakeAPICall_lib:
             api_url: The url to make the API call to
             return_value: The return value of the API call
         """
+
+        # Unit tests must simulate authentication failure, not contact live services.
+        responses.add(responses.GET, api_url, json={'message': 'Invalid API key'}, status=401)
 
         # Make the API call
         actual_result = make_api_call(api_url, constants.API_LIBRARIES)

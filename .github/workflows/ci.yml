@@ -1,0 +1,61 @@
+name: TrustSECO checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  coordinator:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/coordinator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npx tsc
+      - run: node --test test/measurements.cjs test/score-inputs.cjs
+  portal:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_HOST: localhost:3002
+          VITE_PROTOCOL: http
+  ledger:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ledger
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test -- --runInBand
+      - run: node test/gpg-registration.cjs
+      - run: node test/score-subsets.cjs
+  spider:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/spider
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r dev_requirements.txt
+      - run: python -m pytest tests/unit_tests -q
