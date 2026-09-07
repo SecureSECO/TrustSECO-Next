@@ -52,13 +52,6 @@
         </ul>
         <p v-if="!recentFacts.length" class="empty-state">{{ loaded ? 'Collected measurements will appear here.' : 'Loading measurements…' }}</p>
       </section>
-      <aside class="panel collection-panel">
-        <p class="eyebrow">YOUR NODE</p><h2>Data collection</h2>
-        <div v-if="privateServer"><SpiderToggleButton /><p class="collection-copy">Your node collects outstanding measurement jobs and submits signed results.</p></div>
-        <p v-else class="collection-copy">Browse measurements collected by this node. Collection controls are available to its operator.</p>
-        <router-link to="/metrics/">View node details →</router-link>
-        <div class="collection-footer"><router-link to="/about/">How TrustSECO works</router-link><p>A blue check means ledger finality, not independent proof of accuracy.</p></div>
-      </aside>
     </div>
   </main>
 </template>
@@ -67,7 +60,6 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import { dltApi, api, ServerType } from '@/api';
-import SpiderToggleButton from '@/components/button/SpiderToggle.vue';
 const base = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api/dlt`;
 const query = ref('');
 const rows = ref<any[]>([]);
@@ -126,7 +118,6 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
 <style scoped>
 .overview { max-width:1180px; margin:0 auto; padding:36px 24px 56px; color:#172b4d; }
 .hero { padding:12px 0 28px; }
-.collection-panel .eyebrow { font-size:11px; font-weight:700; letter-spacing:1.8px; color:#1769bb; margin-bottom:12px; }
 h1 { font-size:clamp(30px,4vw,46px); font-weight:700; line-height:1.15; letter-spacing:-1.3px; margin:0 0 16px; }
 .intro { max-width:780px; color:#64748b; font-size:16px; line-height:1.6; }
 .package-search { display:flex; align-items:center; gap:12px; margin-top:26px; }
@@ -150,15 +141,12 @@ td { padding:18px 24px; border-top:1px solid #eef2f6; } td small { display:block
 .package-name { color:#172b4d; font-weight:600; }.version-tag { font-size:12px; background:#f1f5f9; padding:5px 7px; border-radius:5px; }
 .time-cell { font-size:12px; color:#64748b; }.pending-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#d99012; margin-left:4px; }.confirmed-mark { color:#1769bb; }
 .table-note { padding:12px 24px; border-top:1px solid #eef2f6; font-size:11px; color:#7a899c; }
-.lower-grid { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:24px; margin-top:24px; }
+.lower-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:24px; margin-top:24px; }
 .lower-grid > * { min-width:0; }
-.collection-panel { overflow-wrap:anywhere; }
 .activity-list li > div { min-width:0; overflow-wrap:anywhere; }
 .activity-list time { flex-shrink:0; }
-@media(max-width:960px) { .lower-grid { grid-template-columns:minmax(0,1fr); } }
 .activity-list { padding:0 24px 12px; list-style:none; }.activity-list li { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-top:1px solid #eef2f6; }.activity-list a { font-size:13px; font-weight:600; color:#172b4d; }.activity-list a span { font-weight:400; color:#64748b; }.activity-list p { font-size:12px; color:#64748b; margin-top:6px; }.activity-list time { font-size:11px; color:#7a899c; margin-left:auto; max-width:100px; text-align:right; }
 .activity-indicator { color:#d99012; }.activity-indicator.confirmed { color:#1769bb; }.activity-indicator.failed { color:#64748b; }
-.collection-panel { padding:24px; }.collection-panel h2 { margin-bottom:22px; }.collection-copy { font-size:13px; line-height:1.7; color:#64748b; margin:18px 0; }.collection-panel > a { font-size:13px; }.collection-footer { border-top:1px solid #eef2f6; padding-top:20px; margin-top:24px; font-size:12px; }.collection-footer p { color:#7a899c; line-height:1.6; margin-top:10px; }
 .empty-state { padding:28px; color:#64748b; font-size:14px; }.load-error { padding:12px; background:#fff8eb; margin-bottom:18px; font-size:13px; }.load-error button { cursor:pointer; background:none; border:0; color:#1769bb; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
 input:focus-visible,button:focus-visible,a:focus-visible { outline:3px solid #87b8ed; outline-offset:3px; }
