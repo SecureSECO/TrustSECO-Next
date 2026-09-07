@@ -48,6 +48,7 @@ jobs:
       - run: node test/gpg-registration.cjs
       - run: node test/score-subsets.cjs
       - run: node test/seed-peers.cjs
+      - run: node test/community.cjs
   spider:
     runs-on: ubuntu-latest
     defaults:

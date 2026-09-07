@@ -2,6 +2,7 @@
   <header class="trust-header">
     <router-link class="trust-brand" to="/" aria-label="TrustSECO home"><span class="brand-mark">T</span>TrustSECO</router-link>
     <nav aria-label="Main navigation">
+      <router-link v-if="communityDemo" to="/community/" active-class="selected">Community prototype</router-link>
       <router-link to="/" exact-active-class="selected">Overview</router-link>
       <router-link to="/packages/" active-class="selected">Packages</router-link>
       <router-link to="/jobs" active-class="selected">Activity</router-link>
@@ -27,6 +28,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 const base = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api`;
+const communityDemo = import.meta.env.VITE_COMMUNITY_DEMO === 'true';
 const privateServer = ref(false);
 const username = ref('');
 const credits = ref('—');

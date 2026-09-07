@@ -1,3 +1,4 @@
+import communityRouter from './community';
 import Router from 'koa-router';
 import dltRouter from './dlt';
 import spiderRouter from './spider';
@@ -15,6 +16,7 @@ const verification_router: Router = new Router({});
 
 verification_router.use(linkBlockMiddleware);
 
+router.use(communityRouter.routes());
 router.use(dltRouter.routes());
 router.use(spiderRouter.routes());
 router.use(searchRouter.routes());

@@ -1,0 +1,61 @@
+name: trustseco-community
+services:
+  community-ledger:
+    image: trustseco-community-ledger
+    platform: linux/amd64
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('@klayr/api-client').createWSClient('ws://127.0.0.1:7887/rpc-ws').then(async c=>{await c.node.getNodeInfo();await c.disconnect();process.exit(0)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    environment:
+      TRUSTSECO_COMMUNITY_PROTOTYPE: "true"
+      COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
+    command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/config.json --overwrite-config"]
+    volumes:
+      - ledger:/root/.klayr
+      - ./community-runtime/config.json:/prototype/config.json:ro
+      - ./community-runtime/genesis_block.blob:/prototype/genesis_block.blob:ro
+      - ./community-runtime/validators.json:/prototype/validators.json:ro
+      - ./community-runtime/governor.pem:/prototype/governor.pem:ro
+  community-replica:
+    image: trustseco-community-ledger
+    platform: linux/amd64
+    environment:
+      TRUSTSECO_COMMUNITY_PROTOTYPE: "true"
+      COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
+    command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/replica-config.json --overwrite-config"]
+    volumes:
+      - replica:/root/.klayr
+      - ./community-runtime/replica-config.json:/prototype/replica-config.json:ro
+      - ./community-runtime/genesis_block.blob:/prototype/genesis_block.blob:ro
+      - ./community-runtime/empty.json:/prototype/empty.json:ro
+      - ./community-runtime/governor.pem:/prototype/governor.pem:ro
+  web:
+    platform: linux/amd64
+    depends_on:
+      community-ledger:
+        condition: service_healthy
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+      args:
+        PORTAL_HOST: localhost:3004
+        COMMUNITY_DEMO: "true"
+    ports: ["127.0.0.1:3004:3000"]
+    environment:
+      SERVER_TYPE: PUBLIC
+      ENABLE_SPIDER: "false"
+      ENABLE_AUTO_CRAWLER: "false"
+      DLT_ENDPOINT: ws://community-ledger:7887/rpc-ws
+      COMMUNITY_DEMO: "true"
+    volumes:
+      - webkeys:/root/.gnupg
+      - measurements:/usr/app/data
+      - ./community-runtime/actors.json:/community/actors.json:ro
+      - ./community-runtime/transport.json:/community/transport.json:ro
+volumes:
+  ledger:
+  replica:
+  webkeys:
+  measurements:

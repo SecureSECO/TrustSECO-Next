@@ -4,6 +4,8 @@ COPY apps/portal/package*.json ./
 RUN npm ci
 COPY apps/portal/ ./
 ARG PORTAL_HOST=localhost:3002
+ARG COMMUNITY_DEMO=false
+ENV VITE_COMMUNITY_DEMO=$COMMUNITY_DEMO
 ENV VITE_HOST=$PORTAL_HOST VITE_PROTOCOL=http
 RUN npm run build
 FROM node:24

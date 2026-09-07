@@ -1,11 +1,18 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+import { readFileSync } from 'fs';
 import { Application } from 'klayr-sdk';
+import { CommunityModule } from './modules/community/module';
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { AccountsModule } from "./modules/accounts/module";
 import { CodaModule } from "./modules/coda/module";
 import { PackageDataModule } from "./modules/package_data/module";
 import { TrustfactsModule } from "./modules/trustfacts/module";
 
 export const registerModules = (app: Application): void => {
+    if (process.env.TRUSTSECO_COMMUNITY_PROTOTYPE === 'true') {
+        const key = process.env.COMMUNITY_GOVERNOR_FILE ? readFileSync(process.env.COMMUNITY_GOVERNOR_FILE, 'utf8') : process.env.COMMUNITY_GOVERNOR_KEY;
+        if (!key) throw new Error('Community prototype requires its genesis governor public key');
+        app.registerModule(new CommunityModule(key));
+    }
     const accountsModule = new AccountsModule()
     app.registerModule(accountsModule);
 
