@@ -1,0 +1,37 @@
+services:
+  spider:
+    container_name: TrustSECO-Spider
+    build: .
+    networks:
+      - internal
+    ports:
+      - "5000:5000"
+    volumes:
+      - type: volume
+        source: TrustSECO
+        target: /app/clamav/sockets
+    stop_signal: SIGINT
+
+  scanner:
+    container_name: ClamAV-daemon
+    image: 'clamav/clamav:1.3'
+    environment:
+      - CLAMAV_NO_MILTERD=true
+    depends_on:
+      - spider
+    networks:
+      - internal
+    volumes:
+      - type: volume
+        source: TrustSECO
+        target: /run/clamav
+      - type: bind
+        source: ./clamav/configs
+        target: /etc/clamav
+
+volumes:
+  TrustSECO:
+
+
+networks:
+  internal:

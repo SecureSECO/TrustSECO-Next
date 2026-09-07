@@ -1,0 +1,11 @@
+requests==2.*
+beautifulsoup4==4.*
+python-dotenv==1.*
+Flask==3.*
+flask-cors==5.*
+packaging==25.*
+responses==0.25.*
+
+# For building documentation
+pdoc==15.*
+markdown==3.*
