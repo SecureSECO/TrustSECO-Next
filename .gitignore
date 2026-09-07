@@ -9,3 +9,6 @@
 **/*.tsbuildinfo
 **/.coverage
 **/coverage/
+
+/deploy/replica-runtime/
+/deploy/validation-runtime/

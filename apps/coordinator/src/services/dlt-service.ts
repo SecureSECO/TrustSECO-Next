@@ -12,7 +12,7 @@ import { addToHeap } from './queue-service';
 import { DecodedTransactionJSON } from '@klayr/api-client/dist-node/types';
 import { performance } from 'perf_hooks';
 
-const DLT_ENDPOINT = 'ws://dlt:7887/rpc-ws';
+const DLT_ENDPOINT = process.env.DLT_ENDPOINT || 'ws://dlt:7887/rpc-ws';
 export const getPrivateKey = () => '51f54d4709f8cecbaa6787d0b38a295ff881de36a80c3dc1cc8b59fc15ef286f190a4c5974aa559b83bf00d4a6c4b2d1c9fe49696e1fbaefabb9b37e8ce5053a';
 
 let clientCache: APIClient;

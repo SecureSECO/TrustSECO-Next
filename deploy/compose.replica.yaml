@@ -1,0 +1,35 @@
+name: trustseco-replica
+services:
+  dlt-replica:
+    image: trustseco-next-dlt
+    platform: linux/amd64
+    command: ["sh", "-c", "npm run build && if [ -f /root/.klayr/validator-config.json ]; then ./bin/run start --config /root/.klayr/validator-config.json; else ./bin/run start --config /replica/config.json --overwrite-config; fi"]
+    volumes:
+      - ledger:/root/.klayr
+      - ./replica-runtime:/replica:ro
+    networks: [existing]
+  web-replica:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+      args:
+        PORTAL_HOST: localhost:3003
+    ports: ["127.0.0.1:3003:3000"]
+    environment:
+      SERVER_TYPE: PUBLIC
+      ENABLE_SPIDER: "false"
+      ENABLE_AUTO_CRAWLER: "false"
+      DLT_ENDPOINT: ws://dlt-replica:7887/rpc-ws
+    volumes:
+      - measurements:/usr/app/data
+      - keys:/root/.gnupg
+    networks: [existing]
+networks:
+  existing:
+    external: true
+    name: trustseco-next_default
+volumes:
+  ledger:
+  measurements:
+  keys:
