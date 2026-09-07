@@ -1,9 +1,13 @@
 # Migration record
 
-The monorepo retains the full reachable history of each selected source branch
-through a merge commit and a prefixed tree import. The original commit IDs remain
-ancestors. Historical paths before the import use the original repository layout;
-use the import commit's second parent to inspect that history.
+The monorepo preserves the source commit graph, authorship and messages through
+merge commits and prefixed tree imports. GitHub push protection detected old
+personal access tokens in upstream history. The imported history was sanitized
+before publication; token text is replaced with REDACTED_HISTORICAL_TOKEN.
+Consequently, affected commit IDs differ. Original repositories were not rewritten.
+Historical paths before import use the original repository layout.
+
+The following are the original source heads, for traceability:
 
 | Component | Source | Imported commit |
 | --- | --- | --- |
@@ -37,3 +41,12 @@ Next milestones: establish a two-node coordination experiment; remove unrelated
 SearchSECO UI/services deliberately; replace conservative first-observed finality
 anchors with proven inclusion blocks; improve transaction throughput and job
 queue durability. None of these is silently bundled into the repository move.
+
+## Sanitized history mapping
+
+| Original source head | Monorepo equivalent |
+| --- | --- |
+| d217279df0505304018c36872fdbcbf68ededbf3 | f48c740cb0aba9a29eb2531ccefa5dcd46b0fae9 |
+| 8c6f10b578fa6696867a961027a2dda5ac30aa97 | cda097ba2dfb54459598753a95c4195128dd5236 |
+| 2c98174ac4eacbb35df5c9485d917e993c4be6fc | 54998b94eac74afb26336c37bc1bef44e20aab4c |
+| 60051529c4734c7d8f11368cdb7f9fb97a71d8b6 | fb3fba3d29419b9dd9c031c046ba4debf42dea31 |
