@@ -126,6 +126,7 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
 <style scoped>
 .overview { max-width:1180px; margin:0 auto; padding:36px 24px 56px; color:#172b4d; }
 .hero { padding:12px 0 28px; }
+.collection-panel .eyebrow { font-size:11px; font-weight:700; letter-spacing:1.8px; color:#1769bb; margin-bottom:12px; }
 h1 { font-size:clamp(30px,4vw,46px); font-weight:700; line-height:1.15; letter-spacing:-1.3px; margin:0 0 16px; }
 .intro { max-width:780px; color:#64748b; font-size:16px; line-height:1.6; }
 .package-search { display:flex; align-items:center; gap:12px; margin-top:26px; }
@@ -150,6 +151,11 @@ td { padding:18px 24px; border-top:1px solid #eef2f6; } td small { display:block
 .time-cell { font-size:12px; color:#64748b; }.pending-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#d99012; margin-left:4px; }.confirmed-mark { color:#1769bb; }
 .table-note { padding:12px 24px; border-top:1px solid #eef2f6; font-size:11px; color:#7a899c; }
 .lower-grid { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:24px; margin-top:24px; }
+.lower-grid > * { min-width:0; }
+.collection-panel { overflow-wrap:anywhere; }
+.activity-list li > div { min-width:0; overflow-wrap:anywhere; }
+.activity-list time { flex-shrink:0; }
+@media(max-width:960px) { .lower-grid { grid-template-columns:minmax(0,1fr); } }
 .activity-list { padding:0 24px 12px; list-style:none; }.activity-list li { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-top:1px solid #eef2f6; }.activity-list a { font-size:13px; font-weight:600; color:#172b4d; }.activity-list a span { font-weight:400; color:#64748b; }.activity-list p { font-size:12px; color:#64748b; margin-top:6px; }.activity-list time { font-size:11px; color:#7a899c; margin-left:auto; max-width:100px; text-align:right; }
 .activity-indicator { color:#d99012; }.activity-indicator.confirmed { color:#1769bb; }.activity-indicator.failed { color:#64748b; }
 .collection-panel { padding:24px; }.collection-panel h2 { margin-bottom:22px; }.collection-copy { font-size:13px; line-height:1.7; color:#64748b; margin:18px 0; }.collection-panel > a { font-size:13px; }.collection-footer { border-top:1px solid #eef2f6; padding-top:20px; margin-top:24px; font-size:12px; }.collection-footer p { color:#7a899c; line-height:1.6; margin-top:10px; }
