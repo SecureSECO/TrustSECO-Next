@@ -1,0 +1,353 @@
+<script setup lang="ts">
+import { defineProps, PropType, ref } from 'vue';
+import { TrustFact } from '../../api';
+import CveVulnerabilities from './CveVulnerabilities.vue';
+
+defineProps({
+  measurement: { type: Object as PropType<TrustFact>, required: false },
+  fact_code: { type: String, required: true },
+  fact_content: { type: String, required: true },
+  loading: { type: Boolean, required: true },
+});
+
+const statusHovered = ref(false);
+const statusFocused = ref(false);
+const statusPinned = ref(false);
+
+const rightAlignedFacts = new Set([
+  'cve_count',
+  'gh_average_resolution_time',
+  'gh_contributor_count',
+  'gh_gitstar_ranking',
+  'gh_issue_ratio',
+  'gh_open_issues_count',
+  'gh_owner_stargazer_count',
+  'gh_release_download_count',
+  'gh_release_issues_count',
+  'gh_total_download_count',
+  'gh_user_count',
+  'gh_yearly_commit_count',
+  'gh_zero_response_issues_count',
+  'lib_contributor_count',
+  'lib_dependency_count',
+  'lib_dependent_count',
+  'lib_first_release_date',
+  'lib_latest_release_date',
+  'lib_release_count',
+  'lib_release_frequency',
+  'lib_sourcerank',
+  'so_popularity',
+  'vs_virus_ratio',
+]);
+
+const codeToName: Record<string, string> = {
+  cve_count: 'Cve count',
+  cve_vulnerabilities: 'Cve vulnerabilities',
+  gh_average_resolution_time: 'Average issue resolution time',
+  gh_contributor_count: 'GitHub contributor count',
+  gh_gitstar_ranking: 'GitHub star ranking',
+  gh_issue_ratio: 'Open/Closed issue ratio',
+  gh_open_issues_count: 'Open issues',
+  gh_owner_stargazer_count: 'Star count of owner',
+  gh_release_download_count: 'Release download count',
+  gh_release_issues_count: 'Issue count for specific release',
+  gh_repository_language: 'Programming language',
+  gh_total_download_count: 'Number of downloads',
+  gh_user_count: 'Used count',
+  gh_yearly_commit_count: 'Yearly commit count',
+  gh_zero_response_issues_count: 'Issues without responses',
+  lib_contributor_count: 'libraries.io Contributor count',
+  lib_dependency_count: 'Dependecy count',
+  lib_dependent_count: 'Dependant packages count',
+  lib_first_release_date: 'First release date',
+  lib_latest_release_date: 'Most recent release',
+  lib_release_count: 'Number of releases',
+  lib_release_frequency: 'Average time per release',
+  lib_sourcerank: 'Sourcerank metric',
+  so_popularity: 'StackOverflow popularity',
+  vs_virus_ratio: 'Virus ratio',
+};
+
+const codeToExplanation: Record<string, string> = {
+  cve_count: 'Number of CVE vulnerabilities found for this package.',
+  cve_vulnerabilities: '',
+  gh_average_resolution_time:
+    'Average time it takes for a GitHub issue to be resolved.',
+  gh_gitstar_ranking:
+    'How high the repository ranks based on star count among repos with the same programming language.',
+  gh_issue_ratio: 'Ratio of open to closed GitHub issues.',
+  gh_open_issues_count: 'Number of open issues.',
+  gh_owner_stargazer_count:
+    'Total number of Stargazers the owner of the repository has.',
+  gh_release_download_count:
+    'Number of downloads for the github release assets for this specific release.',
+  gh_release_issues_count:
+    'Number of issues created during the time this version was the most recent release.',
+  gh_repository_language: 'Main programming language the library was written in.',
+  gh_total_download_count:
+    'Total number of downloads for all github release assets.',
+  gh_user_count: 'Number of repositories dependant on this package.',
+  gh_yearly_commit_count: 'Number of commits in the previous 365 days.',
+  gh_zero_response_issues_count:
+    'Number of issues on GitHub without a response.',
+  // TODO: these are different but I am not sure how/why, libraries.io points
+  // back to github but some how comes up with a different number, strange
+  gh_contributor_count: 'Contributor count sourced from GitHub.',
+  lib_contributor_count: 'Contributor count sourced from libraries.io.',
+  lib_dependency_count: 'Number of packages the package is dependent on.',
+  lib_dependent_count: 'Number of packages that depend on this package.',
+  lib_first_release_date: 'Date of the initial release of this package.',
+  lib_latest_release_date: 'Date of the most recent release.',
+  lib_release_count: 'Number of releases/versions this packages has.',
+  lib_release_frequency: 'Average time elapsed per release.',
+  lib_sourcerank:
+    'A metric created by libraries.io that combines several factors such as number of stars and if it is still in beta. For more details visit the website: https://libraries.io/pypi/numpy/sourcerank . ',
+  so_popularity: 'Monthly stackoverflow popularity.', // TODO
+  vs_virus_ratio:
+    'Ratio of virus found to number of links scanned. Virus are scanned for using ClamAV.',
+};
+
+// Time intervals to be usid in displaying time durations
+const timeIntervals = [
+  { name: 'year', duration: 365 * 24 * 60 * 60 },
+  { name: 'month', duration: 30.4 * 24 * 60 * 60 },
+  { name: 'week', duration: 7 * 24 * 60 * 60 },
+  { name: 'day', duration: 24 * 60 * 60 },
+  { name: 'hour', duration: 60 * 60 },
+  { name: 'minute', duration: 60 },
+  { name: 'second', duration: 1 },
+];
+
+// the amount of terms that the formatting should print
+// for example termAmount -> 1 year, 2 weeks, 3 minutes
+const termAmount = 2;
+
+/** Converts a duration in seconds to a pretty format.
+* There is already a built in javascript function for this, but it is not
+* supported on every browser yet. */
+function convertDuration(secs: number): string {
+  let seconds = Math.floor(secs);
+  if (seconds === 0) return '0 seconds';
+  let formatted = '';
+  for (let i = 0; i < termAmount && seconds > 0; i += 1) {
+    // Find biggest duration that fits in the amount of seconds
+    const seconds2 = seconds; // to fix no-loop-func eslint error
+    const maxDuration = timeIntervals.find(({ duration }) => duration <= seconds2);
+    if (maxDuration === undefined) break;
+    const { name, duration } = maxDuration;
+
+    const amount = Math.floor(seconds / duration);
+    seconds %= duration;
+    // Add seperator if string isn't empty
+    if (formatted.length > 0) formatted += ', ';
+
+    let string = `${amount} ${name}`;
+    // Make plural if amount is bigger than 1
+    if (amount > 1) string += 's';
+    formatted += string;
+  }
+  return formatted;
+}
+
+const intSuffixes = [
+  { value: 1e9, suffix: 'B' },
+  { value: 1e6, suffix: 'M' },
+  { value: 1e3, suffix: 'k' },
+  { value: 1, suffix: '' },
+];
+
+function convertInt(num: number): string {
+  for (const { value, suffix } of intSuffixes) {
+    if (num >= value) {
+      let formatted = (num / value).toFixed(1);
+      // Remove trailing .0 for cleaner output
+      if (formatted.endsWith('.0')) {
+        formatted = formatted.slice(0, -2);
+      }
+      return `${formatted}${suffix}`;
+    }
+  }
+  return num.toString();
+}
+
+function convertFactValue(factValue: string, factCode: string): string {
+  let res;
+  switch (factCode) {
+    case 'gh_repository_language':
+      res = factValue.replaceAll('"', '');
+      break;
+    case 'lib_first_release_date':
+    case 'lib_latest_release_date':
+      {
+        const date = Date.parse(factValue.replaceAll('"', ''));
+        res = new Intl.DateTimeFormat('en-GB', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }).format(date);
+        break;
+      }
+    case 'so_popularity':
+    case 'vs_virus_ration':
+    case 'gh_issue_ratio':
+      {
+        const num = parseFloat(factValue);
+        res = num.toFixed(3);
+        break;
+      }
+    case 'gh_average_resolution_time':
+    case 'lib_release_frequency':
+      {
+        const num2 = parseFloat(factValue);
+        res = convertDuration(num2);
+        break;
+      }
+    case 'cve_vulnerabilities':
+      res = '';
+      break;
+    case 'cve_count':
+    case 'gh_contributor_count':
+    case 'gh_open_issues_count':
+    case 'gh_owner_stargazer_count':
+    case 'gh_release_download_count':
+    case 'gh_release_issues_count':
+    case 'gh_total_download_count':
+    case 'gh_user_count':
+    case 'gh_yearly_commit_count':
+    case 'gh_zero_response_issues_count':
+    case 'lib_contributor_count':
+    case 'lib_dependency_count':
+    case 'lib_dependent_count':
+    case 'lib_release_count':
+      {
+        const num3 = Number(factValue);
+        res = convertInt(num3);
+        break;
+      }
+    default:
+      res = factValue;
+      break;
+  }
+  return res;
+}
+</script>
+
+<template>
+  <div class="card" v-if="!loading">
+    <div class="measurement-heading">
+      <h2 class="fact-name card-child">{{ codeToName[fact_code] }}</h2>
+      <div v-if="measurement" class="measurement-status" @mouseenter="statusHovered = true" @mouseleave="statusHovered = false" @focusin="statusFocused = true" @focusout="statusFocused = false" @keydown.esc="statusPinned = false; statusHovered = false; statusFocused = false">
+        <button type="button" @click="statusPinned = !statusPinned" :aria-expanded="statusHovered || statusFocused || statusPinned" :class="['status-dot', measurement.status === 'confirmed' ? 'confirmed' : measurement.status === 'failed' ? 'failed' : 'pending']"
+          :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
+          <span aria-hidden="true">{{ measurement.status === 'confirmed' ? '✓' : measurement.status === 'failed' ? 'i' : '' }}</span>
+        </button>
+        <div v-show="statusHovered || statusFocused || statusPinned" class="status-popover">
+          <strong>{{ ({collected: 'Measurement collected', submitted: 'Submitted to the ledger', recorded: 'Recorded on the ledger', confirmed: 'Ledger-confirmed', failed: 'Could not submit to ledger'})[measurement.status || 'collected'] }}</strong>
+          <p>{{ measurement.status === 'confirmed' ? 'Finalized on the ledger. This does not independently verify source accuracy.' : measurement.status === 'failed' ? 'The measurement remains available, but submission failed.' : 'Waiting for final confirmation.' }}</p>
+          <p>Source: {{ measurement.source || 'Unknown' }}</p>
+          <p>Collected: {{ measurement.collectedAt ? new Date(measurement.collectedAt).toLocaleString() : 'Time not recorded' }}</p>
+          <p>Submitted by: {{ measurement.uid }}</p>
+          <p v-if="measurement.transactionID">Transaction: {{ measurement.transactionID }}</p>
+          <p v-if="measurement.observedHeight">First observed in ledger state at block {{ measurement.observedHeight }}.</p>
+          <p v-if="measurement.error">{{ measurement.error }}</p>
+        </div>
+      </div>
+    </div>
+    <p v-if="measurement" class="measurement-source">{{ measurement.source || 'Unknown source' }}<span v-if="measurement.collectedAt"> · {{ new Date(measurement.collectedAt).toLocaleString() }}</span></p>
+    <p class="card-child fact-value" v-if="fact_code !== 'cve_vulnerabilities'" :style="rightAlignedFacts.has(fact_code) ? 'text-align: right;' : ''">
+      {{ convertFactValue(fact_content, fact_code) }}
+    </p>
+    <div class="seperator" />
+    <p class="card-child explanation" v-if="fact_code !== 'cve_vulnerabilities'">
+      {{ codeToExplanation[fact_code] }}
+    </p>
+    <CveVulnerabilities v-if="fact_code === 'cve_vulnerabilities'" :cve_data="JSON.parse(fact_content)" />
+  </div>
+  <div class="card card-loading" v-if="loading">
+    <div class="card-content-loading"></div>
+  </div>
+</template>
+
+<style scoped>
+.measurement-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-right: 14px; }
+.measurement-heading h2 { flex: 1; }
+.measurement-source { color: #64748b; font-size: 12px; margin: 0 12px 12px; }
+.measurement-status { position: relative; flex: 0 0 auto; margin-top: 12px; }
+.status-dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; border: 0; padding: 0; list-style: none; font-size: 14px; font-weight: 700; }
+.status-dot::-webkit-details-marker { display: none; }
+.status-dot.pending { background: #f0a629; border: 5px solid #fff3d9; }
+.status-dot.confirmed { background: #1769bb; color: white; }
+.status-dot.failed { background: #e2e8f0; color: #475569; }
+.status-dot:focus-visible { outline: 3px solid #1769bb; outline-offset: 3px; }
+.status-popover { display: block; position: absolute; right: 0; top: 30px; width: min(280px, 75vw); z-index: 20; background: white; color: #334155; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 8px 24px #0f172a24; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.status-popover p { margin-top: 8px; }
+.measurement-status[open] .status-popover, .measurement-status:focus-within .status-popover { display: block; }
+@media (hover: hover) { .measurement-status:hover .status-popover { display: block; } }
+
+.card {
+  border-top: 3px solid rgb(44, 130, 224);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  background-color: white;
+}
+
+.card-loading {
+  height: 167px;
+}
+
+.card-content-loading {
+  background: var(--va-background);
+  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+  background-size: 200% 100%;
+  animation: 3s shine linear infinite;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  margin: 6px;
+  border-radius: 5px;
+  background-position-x: 200%;
+}
+
+@keyframes shine {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+.card-child {
+  margin: 6px 8px;
+}
+
+.fact-name {
+  font-size: 16px;
+  margin-bottom: 0px;
+}
+
+.fact-code {
+  color: var(--va-gray);
+  font-family: var(--va-font-family);
+  font-size: 15px;
+  margin-top: 3px;
+}
+
+.explanation {
+  font-style: italic;
+  font-size: 0.9em;
+  height: 87px;
+  overflow: auto;
+}
+
+.seperator {
+  display: block;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: var(--va-gray);
+  height: 1px;
+}
+
+.fact-value {
+  height: 1em;
+  white-space: nowrap;
+}
+</style>

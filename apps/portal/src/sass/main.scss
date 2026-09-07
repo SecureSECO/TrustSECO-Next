@@ -1,0 +1,46 @@
+#app {
+  font-family: 'Source Sans Pro', Avenir, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--va-background);
+}
+
+// Standardize filter layout for va-data-table
+.va-input.filter {
+  margin-bottom: var(--va-card-padding);
+  width: 100%;
+}
+
+.va-card__title {
+  font-size: 0.9em;
+}
+// Card spacing without using .row
+.va-card {
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// More readable badges
+.va-badge {
+  margin: 2px;
+
+  .va-badge__text {
+    font-size: 0.8rem;
+    text-transform: none;
+  }
+}
+
+a {
+  color: var(--va-primary)
+}
+
+.loading-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-around;
+}
