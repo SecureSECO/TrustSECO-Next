@@ -23,6 +23,10 @@ services:
         condition: service_started
   dlt:
     platform: linux/amd64
+    environment:
+      TRUSTSECO_NETWORK: ${TRUSTSECO_NETWORK:-local}
+      TRUSTSECO_NODE_ADDRESS: ${TRUSTSECO_NODE_ADDRESS:-}
+      TRUSTSECO_SEED_PEERS: ${TRUSTSECO_SEED_PEERS:-}
     build: ../services/ledger
     command: ["sh", "-c", "if [ -f /root/.klayr/validator-config.json ]; then npm run build && ./bin/run start --config /root/.klayr/validator-config.json; else npm run start; fi"]
     volumes:

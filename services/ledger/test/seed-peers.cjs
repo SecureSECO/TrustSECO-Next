@@ -1,0 +1,10 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');
+const {seedPeers}=require('../dist/app/common/seed-peers');
+const one={ip:'trustseco1.science.uu.nl',port:8000},two={ip:'trustseco2.science.uu.nl',port:8000};
+test('local startup preserves the configured network',()=>assert.deepEqual(seedPeers([{ip:'ledger3',port:8000}],{}),[{ip:'ledger3',port:8000}]));
+test('shared newcomer receives both seeds',()=>assert.deepEqual(seedPeers([],{profile:'shared'}),[one,two]));
+test('first seed still discovers second seed',()=>assert.deepEqual(seedPeers([],{profile:'shared',nodeAddress:'TRUSTSECO1.SCIENCE.UU.NL:8000'}),[two]));
+test('second seed still discovers first seed',()=>assert.deepEqual(seedPeers([],{profile:'shared',nodeAddress:'trustseco2.science.uu.nl:8000'}),[one]));
+test('custom list overrides defaults and removes self and duplicates',()=>assert.deepEqual(seedPeers([],{profile:'shared',nodeAddress:'a:8000',seedPeers:'a:8000,b:9000,B:9000'}),[{ip:'b',port:9000}]));
+test('IPv6 endpoints supported',()=>assert.deepEqual(seedPeers([],{seedPeers:'[::1]:8000'}),[{ip:'::1',port:8000}]));
+test('invalid profiles and addresses fail explicitly',()=>{for(const opts of [{profile:'shraed'},{seedPeers:'https://example.org'},{seedPeers:'a:0'},{seedPeers:'a:65536'}])assert.throws(()=>seedPeers([],opts))});
