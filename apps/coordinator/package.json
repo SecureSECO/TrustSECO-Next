@@ -1,0 +1,50 @@
+{
+  "name": "trustseco-cosy",
+  "version": "1.0.0",
+  "description": "The coordination system for the TrustSECO project.",
+  "main": "dist/app.js",
+  "scripts": {
+    "start": "tsc && node dist/app.js",
+    "dev": "tsc-watch --noClear -p tsconfig.json --onSuccess \"node ./dist/app.js\"",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Fides-UU/TrustSECO-CoSy.git"
+  },
+  "author": "Fides",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/Fides-UU/TrustSECO-CoSy/issues"
+  },
+  "homepage": "https://github.com/Fides-UU/TrustSECO-CoSy#readme",
+  "devDependencies": {
+    "@types/koa-router": "^7.4.4",
+    "@types/semver": "^7.5.6",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "eslint-config-typescript": "^3.0.0",
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^3.1.10",
+    "tsc-watch": "^6.3.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "@klayr/api-client": "^6.0.2",
+    "@klayr/client": "^6.0.2",
+    "axios": "^1.9.0",
+    "dotenv": "^16.0.0",
+    "heap-js": "^2.2.0",
+    "koa": "^3.0.0",
+    "koa-body": "^6.0.1",
+    "koa-router": "^13.0.1",
+    "koa-send": "^5.0.1",
+    "koa-static": "^5.0.0",
+    "koa-websocket": "^7.0.0",
+    "semver": "^7.6.3",
+    "ws": "^8.5.0"
+  }
+}
