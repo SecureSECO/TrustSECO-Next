@@ -1,9 +1,8 @@
 <template>
   <main class="overview">
     <section class="hero">
-      <p class="eyebrow">YOUR SOFTWARE, IN VIEW</p>
-      <h1>Understand the software<br class="desktop-break"> you depend on.</h1>
-      <p class="intro">Explore the evidence. Follow what changes. Know what’s confirmed.</p>
+      <h1>Trust in software, built together.</h1>
+      <p class="intro">TrustSECO brings together a community of miners to collect evidence about open-source software and confirm its record in a shared ledger. Explore new measurements as they arrive, compare trust scores, and look for the blue check to see which records have reached confirmation.</p>
       <form class="package-search" @submit.prevent="refresh">
         <label class="sr-only" for="package-search">Search packages</label>
         <span aria-hidden="true">⌕</span>
@@ -127,9 +126,8 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
 <style scoped>
 .overview { max-width:1180px; margin:0 auto; padding:36px 24px 56px; color:#172b4d; }
 .hero { padding:12px 0 28px; }
-.eyebrow { font-size:11px; font-weight:700; letter-spacing:1.8px; color:#1769bb; margin-bottom:12px; }
 h1 { font-size:clamp(30px,4vw,46px); font-weight:700; line-height:1.15; letter-spacing:-1.3px; margin:0 0 16px; }
-.intro { color:#64748b; font-size:16px; line-height:1.6; }
+.intro { max-width:780px; color:#64748b; font-size:16px; line-height:1.6; }
 .package-search { display:flex; align-items:center; gap:12px; margin-top:26px; }
 .package-search > span { font-size:28px; color:#64748b; }
 .package-search input { flex:1; min-width:100px; border:1px solid #d9e2ed; background:white; border-radius:9px; padding:14px 16px; font:inherit; font-size:15px; }
