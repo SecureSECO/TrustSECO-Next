@@ -119,6 +119,23 @@ router.get('/metrics', async (ctx, next) => {
     ctx.response.body = await getMetrics();
 });
 
+router.get('/network', async ctx => {
+    try {
+        const client = await getClient();
+        const [node, peers] = await Promise.all([
+            client.node.getNodeInfo(), client.node.getConnectedPeers(),
+        ]);
+        ctx.body = {
+            observedAt: new Date().toISOString(),
+            local: { height: node.height, finalizedHeight: node.finalizedHeight, syncing: node.syncing },
+            peers: peers.map(peer => ({ address: peer.ipAddress, port: peer.port })),
+        };
+    } catch {
+        ctx.status = 503;
+        ctx.body = { error: 'Node information is currently unavailable.' };
+    }
+});
+
 router.get('/package/:id/trust-score/:version', async (ctx, next) => {
     const { id, version } = ctx.params;
     ctx.response.body = await getTrustScore(id, version);
