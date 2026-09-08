@@ -6,7 +6,7 @@
       <router-link to="/packages/" active-class="selected">Packages</router-link>
       <router-link to="/jobs" active-class="selected">Activity</router-link>
       <router-link to="/metrics/" active-class="selected">Node</router-link>
-      <router-link v-if="communityDemo" to="/community/" active-class="selected">Community prototype</router-link>
+      <router-link v-if="communityDemo" to="/community/" active-class="selected">Community</router-link>
     </nav>
     <div class="account-area">
       <router-link class="help-link" to="/about/">About</router-link>

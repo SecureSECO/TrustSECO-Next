@@ -10,7 +10,7 @@ router.use(async (ctx, next) => {
     if (ctx.method !== 'GET') {
         const origin = ctx.get('Origin');
         if ((origin && origin !== 'http://localhost:3004') || ctx.get('Sec-Fetch-Site') === 'cross-site' || ctx.get('X-Community-Demo') !== '1') {
-            ctx.status = 403; ctx.body = { error: 'Use the local prototype review screen.' }; return;
+            ctx.status = 403; ctx.body = { error: 'Use the local community review screen.' }; return;
         }
     }
     try { await next(); } catch (e) { ctx.status = 400; ctx.body = { error: e instanceof Error ? e.message : 'Community request failed' }; }
@@ -18,7 +18,7 @@ router.use(async (ctx, next) => {
 router.get('/snapshot', async ctx => {
     const c = await getClient(); const node = await c.node.getNodeInfo();
     const snapshot: any = await c.invoke('community_snapshot');
-    if (snapshot.error) { ctx.status = 503; ctx.body = {error:'Prototype ledger unavailable'}; return; }
+    if (snapshot.error) { ctx.status = 503; ctx.body = {error:'Ledger unavailable'}; return; }
     ctx.body = {...snapshot, ledger: {height:node.height, finalizedHeight:node.finalizedHeight, chainID:node.chainID}, simulated:true};
 });
 let busy = false;

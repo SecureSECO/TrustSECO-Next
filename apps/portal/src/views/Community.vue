@@ -1,22 +1,22 @@
 <template>
  <main class="community">
-  <p class="eyebrow">COMMUNITY VERIFICATION · PROTOTYPE</p>
+  <p class="eyebrow">COMMUNITY VERIFICATION</p>
   <h1>Evidence, disagreement and accountability.</h1>
   <p class="intro">Explore signed observations and auditable review decisions on a separate test ledger. All contributors below are simulated; no real users are penalised.</p>
   <p v-if="error" role="alert" class="error">{{ error }}</p>
   <p v-if="notice" role="status">{{ notice }}</p>
   <template v-if="data">
    <div class="policy"><span>3 compatible contributors</span><span>±5 stars or 2%</span><span>3 incidents → review</span><span>5 incidents → suspension</span><span>30-day incident window</span></div>
-   <p class="muted">Ledger block {{ data.ledger.height }} · Finalized {{ data.ledger.finalizedHeight }} · Policy {{ data.policy.version }}. Community agreement and ledger finality are separate checks.</p>
+   <p class="muted">Ledger block {{ data.ledger.height }} · Finalized {{ data.ledger.finalizedHeight }} · Policy {{ versionLabel(data.policy.version) }}. Community agreement and ledger finality are separate checks.</p>
    <section><h2>Contributors</h2><p class="muted">Only reviewed, substantiated incidents count. A disagreement never creates a strike automatically. Repeated reports of the same root cause or round count once.</p>
-    <div class="members"><article v-for="m in data.members" :key="m.id"><h3>{{ m.id }}</h3><span :class="['badge',m.standing]">{{ m.standing === 'review' ? 'Needs review' : m.standing }}</span><p>{{ m.incidents }} incidents · {{ m.observations }} observations</p><p>{{ m.rewardEligibleObservations }} eligible contribution credits</p><small>Prototype credits only; no DAO payment.</small></article></div>
+    <div class="members"><article v-for="m in data.members" :key="m.id"><h3>{{ m.id }}</h3><span :class="['badge',m.standing]">{{ m.standing === 'review' ? 'Needs review' : m.standing }}</span><p>{{ m.incidents }} incidents · {{ m.observations }} observations</p><p>{{ m.rewardEligibleObservations }} eligible contribution credits</p><small>Test credits only; no DAO payment.</small></article></div>
     <div class="actions"><button v-for="m in ['alice','bob','carol','dana'].filter(x=>!data.members.some(m=>m.id===x))" :key="m" :disabled="busy" @click="send({kind:'enrol',actor:'governor',member:m})">Enrol simulated {{ m }}</button></div>
    </section>
    <section><h2>Verification rounds</h2>
     <form @submit.prevent="open"><label>Package or fixture<input v-model="packageName" required></label><label>Window (seconds)<input v-model.number="duration" type="number" min="10" max="3600" required></label><button :disabled="busy">Open stars round</button></form>
     <article v-for="r in [...data.rounds].reverse()" :key="r.id" class="round">
      <div class="row"><h3>{{ r.package }}</h3><span :class="['badge',r.result.status]">{{ r.result.status }}{{ !r.closed ? ' · provisional' : '' }}</span></div>
-     <p class="muted">{{ r.id }} · {{ r.source }} · {{ r.method }} · Closes {{ date(r.closesAt) }}</p>
+     <p class="muted">{{ r.id }} · {{ r.source }} · {{ versionLabel(r.method) }} · Closes {{ date(r.closesAt) }}</p>
      <p v-if="r.result.value !== null"><strong>{{ r.result.value }} stars</strong> · Representative value of compatible observations</p>
      <p>{{ r.result.supporters.length }} supporting · {{ r.observations.length - r.result.supporters.length }} other observations (including excluded submissions)</p>
      <div class="observations"><span v-for="o in r.observations" :key="o.id" :title="o.id">{{ o.member }}: {{ o.value }} <small>{{ !o.eligible ? '(excluded at submission)' : '' }}</small></span></div>
@@ -38,9 +38,11 @@ const base=`${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api/
 const data=ref<any>(null),error=ref(''),notice=ref(''),busy=ref(false);
 const packageName=ref('demo/star-count'),duration=ref(180),actor=ref('alice'),value=ref(900),observation=ref(''),cause=ref(''),evidence=ref(''),reason=ref(''),appealReason=ref('');
 let timer:ReturnType<typeof setInterval>;let disposed=false;
+// Keep signed historical identifiers intact; use concise labels in the interface.
+const versionLabel=(value:string)=>value === 'prototype-v1' ? 'v1' : value;
 const date=(t:number)=>new Date(t*1000).toLocaleString();
-async function refresh(){try{const r=await axios.get(`${base}/snapshot`,{timeout:10000});if(!disposed)data.value=r.data}catch(e){if(!disposed)error.value='Prototype ledger unavailable.'}}
-async function send(event:any){if(busy.value)return;busy.value=true;error.value='';notice.value='Signing and submitting…';try{const r=await axios.post(`${base}/event`,event,{headers:{'X-Community-Demo':'1'},timeout:15000});notice.value=`Submitted ${r.data.eventId}. Waiting for inclusion…`;for(let i=0;i<60&&!disposed;i++){await new Promise(r=>setTimeout(r,1000));await refresh();if(data.value?.audit.some(a=>a.id===r.data.eventId)){notice.value='Recorded on the prototype ledger.';return}}notice.value='Submitted; not yet observed in the ledger. Refresh to check.'}catch(e:any){error.value=e.response?.data?.error||e.message;notice.value=''}finally{busy.value=false}}
+async function refresh(){try{const r=await axios.get(`${base}/snapshot`,{timeout:10000});if(!disposed)data.value=r.data}catch(e){if(!disposed)error.value='Ledger unavailable.'}}
+async function send(event:any){if(busy.value)return;busy.value=true;error.value='';notice.value='Signing and submitting…';try{const r=await axios.post(`${base}/event`,event,{headers:{'X-Community-Demo':'1'},timeout:15000});notice.value=`Submitted ${r.data.eventId}. Waiting for inclusion…`;for(let i=0;i<60&&!disposed;i++){await new Promise(r=>setTimeout(r,1000));await refresh();if(data.value?.audit.some(a=>a.id===r.data.eventId)){notice.value='Recorded on the ledger.';return}}notice.value='Submitted; not yet observed in the ledger. Refresh to check.'}catch(e:any){error.value=e.response?.data?.error||e.message;notice.value=''}finally{busy.value=false}}
 const open=()=>send({kind:'open',actor:'governor',round:crypto.randomUUID(),package:packageName.value,metric:'github_stars',source:'GitHub fixture',method:'prototype-v1',duration:duration.value});
 const observe=(r:any)=>send({kind:'observe',actor:actor.value,round:r.id,value:value.value,source:r.source,method:r.method});
 const review=(r:any)=>send({kind:'substantiate',actor:'governor',round:r.id,observation:observation.value,cause:cause.value,evidence:evidence.value,reason:reason.value});

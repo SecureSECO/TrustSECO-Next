@@ -55,7 +55,7 @@ export function evaluate(round: Round, state: CommunityState): Result {
 /** Signed events use exact UTF-8 payload bytes, domain separated from other protocols. */
 export function applyEvent(original: CommunityState, payload: string, signature: string, at: number, height = 0): CommunityState {
     fail(Buffer.byteLength(payload) <= 12000, 'Event too large');
-    fail(original.audit.length < 10000, 'Prototype event capacity reached');
+    fail(original.audit.length < 10000, 'Community event capacity reached');
     const e = JSON.parse(payload) as { id: string; kind: string; actor: string; member: string; key: string; operator: string; githubId: string; accountCreatedAt: number; evidence: string; round: string; package: string; metric: string; source: string; method: string; duration: number; value: number; observedAt: number; observation: string; cause: string; reason: string; incident: string };
     fail(e && typeof e === 'object' && !Array.isArray(e), 'Event object required');
     fail(text(e.id) && text(e.kind) && text(e.actor), 'Missing event identity');
