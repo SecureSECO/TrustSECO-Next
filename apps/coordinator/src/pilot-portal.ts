@@ -31,6 +31,7 @@ export function measurements(state: any, repository: string, finalizedHeight: nu
         return { packageName: repository, version: r.escrow.version, jobID: index + 1, fact: r.metric, factData: String(o.value), account: { uid: o.member },
             status: confirmed ? 'confirmed' : unverified ? 'unverified' : 'recorded', source: r.source,
             collectedAt: new Date(o.observedAt * 1000).toISOString(),
+            scope: r.method === 'libraries-project-v1' ? `${r.escrow.packagePlatform}/${r.escrow.packageName} · ${r.metric === 'lib_dependency_count' ? 'Dependencies for version ' + r.escrow.version : 'Current package metadata, not a historical snapshot'}` : undefined,
             error: unverified ? 'This observation is recorded, but is not supported by the closed round’s community agreement.' : undefined,
         };
     }));

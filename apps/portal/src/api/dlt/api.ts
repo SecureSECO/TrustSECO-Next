@@ -14,6 +14,7 @@ interface ApiPackage {
 }
 
 interface ApiTrustFact {
+  scope?: string;
   status?: string; source?: string; collectedAt?: string; transactionID?: string; observedHeight?: number; observedBlockID?: string; error?: string;
   jobID: number,
   version: string,
@@ -65,6 +66,7 @@ const parsePackage = (data: ApiPackage): Package => ({
 // Convert package data as received from the Dlt Api into the local Package interface
 const parseTrustFact = (data: ApiTrustFact): TrustFact => ({
   ...defaultPackage,
+  scope: data.scope,
   type: data.fact,
   value: data.factData,
   status: data.status, source: data.source, collectedAt: data.collectedAt,

@@ -13,11 +13,20 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 	gh_owner_stargazer_count: { absolute: 5, relativeBps: 200 },
 	gh_contributor_count: { absolute: 1, relativeBps: 100 },
 	lib_contributor_count: { absolute: 1, relativeBps: 100 },
+	lib_dependency_count: { absolute: 0, relativeBps: 0 },
+	lib_dependent_count: { absolute: 1, relativeBps: 100 },
+	lib_first_release_date: { absolute: 0, relativeBps: 0 },
+	lib_latest_release_date: { absolute: 0, relativeBps: 0 },
+	lib_release_count: { absolute: 1, relativeBps: 0 },
+	lib_release_frequency: { absolute: 0, relativeBps: 0 },
+	lib_sourcerank: { absolute: 0, relativeBps: 0 },
 	gh_open_issues_count: { absolute: 1, relativeBps: 100 },
 	gh_yearly_commit_count: { absolute: 2, relativeBps: 200 },
 };
 export const DELAY = 86400;
 export interface Escrow {
+	packagePlatform?: string;
+	packageName?: string;
 	sponsor: string;
 	bounty: string;
 	repository: string;
@@ -129,6 +138,8 @@ export function applyPilot(
 		member: string;
 		key: string;
 		githubId: string;
+		packagePlatform: string;
+		packageName: string;
 		joinPayload: string;
 		joinSignature: string;
 		repository: string;
@@ -173,9 +184,16 @@ export function applyPilot(
 		);
 		requireThat(
 			own(METRICS, e.metric) &&
-				(e.metric === 'lib_contributor_count'
-					? e.source === 'Libraries.io REST' && e.method === 'libraries-repository-v1'
-					: e.source === 'GitHub REST' && e.method === 'github-rest-v1'),
+				((e.metric === 'lib_contributor_count' &&
+					e.source === 'Libraries.io REST' &&
+					e.method === 'libraries-repository-v1') ||
+					(e.metric.startsWith('lib_') &&
+						e.metric !== 'lib_contributor_count' &&
+						e.source === 'Libraries.io REST' &&
+						e.method === 'libraries-project-v1') ||
+					(!e.metric.startsWith('lib_') &&
+						e.source === 'GitHub REST' &&
+						e.method === 'github-rest-v1')),
 			'Unsupported live collector',
 		);
 		requireThat(
@@ -188,6 +206,29 @@ export function applyPilot(
 			),
 			'Matching round already open',
 		);
+		if (e.metric.startsWith('lib_') && e.metric !== 'lib_contributor_count') {
+			requireThat(
+				typeof e.packagePlatform === 'string' &&
+					/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(e.packagePlatform) &&
+					typeof e.packageName === 'string' &&
+					e.packageName.length > 0 &&
+					e.packageName.length <= 200 &&
+					!/[\s?#\\]/.test(e.packageName) &&
+					e.packageName.split('/').every(p => p && p !== '.' && p !== '..') &&
+					e.version !== 'latest',
+				'Explicit registry package and exact version required',
+			);
+			requireThat(
+				!Object.values(s.escrows).some(
+					x =>
+						x.repository === e.repository.toLowerCase() &&
+						x.version === e.version &&
+						x.packagePlatform &&
+						(x.packagePlatform !== e.packagePlatform || x.packageName !== e.packageName),
+				),
+				'Conflicting registry mapping for repository/version',
+			);
+		}
 		const bounty = money(e.bounty);
 		requireThat(bounty >= BigInt(3), 'Bounty must fund at least three contributors');
 		requireThat(BigInt(s.balances[e.actor] ?? '0') >= bounty, 'Insufficient TrustCOIN balance');
@@ -257,6 +298,9 @@ export function applyPilot(
 				bounty: e.bounty,
 				repository: e.repository.toLowerCase(),
 				version: e.version,
+				...(e.method === 'libraries-project-v1'
+					? { packagePlatform: e.packagePlatform, packageName: e.packageName }
+					: {}),
 				closedAt: null,
 				closedHeight: null,
 				settled: false,
@@ -303,7 +347,10 @@ export function settlePilot(previous: PilotState, at: number, height: number): P
 				? round.observations
 						.filter(o => result.supporters.includes(o.id))
 						.map(o => o.member)
-						.sort((a, b) => { if (a === b) return 0; return a < b ? -1 : 1; })
+						.sort((a, b) => {
+							if (a === b) return 0;
+							return a < b ? -1 : 1;
+						})
 				: [];
 		const bounty = BigInt(escrow.bounty);
 		const share = recipients.length ? bounty / BigInt(recipients.length) : BigInt(0);
@@ -371,8 +418,7 @@ export function verifiedInputs(
 		)
 			continue;
 		const previous = latest.get(r.metric);
-		if (!previous || r.openedAt > previous.openedAt)
-			latest.set(r.metric, r);
+		if (!previous || r.openedAt > previous.openedAt) latest.set(r.metric, r);
 	}
 	return [...latest.values()].flatMap(r => {
 		const v = roundResult(s, r);

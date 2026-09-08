@@ -88,3 +88,14 @@ test('Libraries.io rounds require their own source and feed finalized scores and
  s=settlePilot(s,now+11,2);assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2)[0].fact,'lib_contributor_count');
  s=settlePilot(s,now+11+DELAY,3);assert.equal(s.balances.a,'33');assert.ok(conserved(s));
 });
+test('registry targets survive storage, prevent collisions and use exact dependency/date agreement',async()=>{
+ const body={metric:'lib_dependency_count',source:'Libraries.io REST',method:'libraries-project-v1',packagePlatform:'PyPI',packageName:'Flask'};
+ assert.throws(()=>open(setup(),{...body,packageName:undefined}),/registry/);
+ let s=open(setup(),body);assert.equal(s.escrows.r.packageName,'Flask');
+ assert.throws(()=>open(s,{...body,round:'different',metric:'lib_release_count',packageName:'Another'}),/mapping/);
+ for(const actor of ['a','b','c'])s=event(s,actor,{kind:'observe',round:'r',value:5,source:body.source,method:body.method,observedAt:now});
+ s=settlePilot(s,now+11,2);assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2)[0].factData,'5');
+ const data=new Map(),store={has:async(c,k)=>data.has(k.toString('hex')),get:async(c,k)=>data.get(k.toString('hex')),set:async(c,k,v)=>data.set(k.toString('hex'),v),del:async(c,k)=>data.delete(k.toString('hex'))};
+ const initial=freshPilot(pub('governor'),'test-network');await initPilot(store,{},initial);await savePilot(store,{},initial,s);assert.deepEqual((await loadPilot(store,{})).escrows,s.escrows);
+ const {METRICS}=require('../dist/app/modules/pilot/policy');assert.deepEqual(METRICS.lib_first_release_date,{absolute:0,relativeBps:0});assert.deepEqual(METRICS.lib_dependency_count,{absolute:0,relativeBps:0});
+});

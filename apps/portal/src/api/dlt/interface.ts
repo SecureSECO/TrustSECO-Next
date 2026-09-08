@@ -9,6 +9,7 @@ export interface Package {
 }
 
 export interface TrustFact {
+  scope?: string;
   status?: string,
   source?: string,
   collectedAt?: string,

@@ -8,12 +8,43 @@ This is a separate network and application entry point. It preserves the existin
 
 Four GitHub collector types are supported: repository contributors (including anonymous contributors), open issues excluding pull requests, GitHub's last 52 weeks of commit activity, and the sum of stars across the owner's public repositories. The latter deliberately matches the existing score's owner-star metric; it is not the star count of just one repository. Failed/incomplete sources do not become zero-valued facts. A failing collector backs off without blocking the other collectors.
 
-The Libraries.io repository collector also supports `lib_contributor_count`, reading
-`contributions_count` from `/api/github/{owner}/{repository}`. This counts contributor
-records in Libraries.io's repository index, which may lag GitHub. It uses a separate
-source/method (`Libraries.io REST`, `libraries-repository-v1`), with tolerance 1 or 1%,
-and never substitutes a missing field or failed request with zero. Other historical
-Libraries.io collectors have not yet been ported to the signed miner.
+All eight original Libraries.io numeric measurements are supported by the signed miner:
+
+| Fact | Measurement | Agreement tolerance | Existing score input? |
+| --- | --- | --- | --- |
+| `lib_contributor_count` | Indexed repository contributor records (`contributions_count`) | 1 or 1% | Yes |
+| `lib_dependency_count` | Distinct non-development direct dependencies of the exact version | Exact | No |
+| `lib_dependent_count` | Current dependent-package count | 1 or 1% | Yes |
+| `lib_first_release_date` | Earliest date in the available complete dated release history | Exact, UTC seconds | No |
+| `lib_latest_release_date` | Latest date in that history, including prereleases | Exact, UTC seconds | No |
+| `lib_release_count` | Number of distinct versions reported | 1 | Yes |
+| `lib_release_frequency` | Mean interval in seconds: `(last-first)/(number of releases-1)` | Exact, rounded seconds | No |
+| `lib_sourcerank` | Current SourceRank | Exact | Yes |
+
+The existing formula is preserved; not every displayed fact has a scoring weight.
+The contributor collector retains its existing `libraries-repository-v1` semantics.
+The other seven use `libraries-project-v1`, with explicit `packagePlatform` and
+`packageName` fields in their signed funded round and stored escrow. The collector
+checks registry name, repository URL and exact version. Conflicting registry mappings
+for one repository/version are rejected to prevent mixing package scores. Multiple
+registry packages sharing the same repository/version need separate identity support
+before they can coexist in this network model.
+
+Dependencies are taken from the exact version endpoint, excluding Development rows
+and deduplicating by platform/name. Null or empty dependency lists are unavailable,
+not proof of zero: Libraries.io deployments can return an empty list before indexing.
+A nonempty list containing only development dependencies can establish zero runtime
+dependencies. Missing fields and partial dates fail collection rather than fabricate
+zeros. Intervals require at least two dated releases. Release history and counts are
+what Libraries.io currently reports, not a guarantee of exhaustive upstream history.
+The API does not provide the full dependent-package list (its endpoint is disabled);
+we collect its reported count instead.
+
+The registry target and current-versus-version-specific scope are shown on fact cards.
+Dates travel as integer UTC seconds for agreement and render as dates. Each observation
+has a credential-free evidence URL and response hash. API credentials remain private.
+This completes the original numeric collector set; arbitrary metadata, full dependency
+graphs and license documents are not added to the consensus/scoring model.
 
 These are current repository measurements associated with a package version. They do not reconstruct historical repository statistics for that version. The signed observation includes its source URL, timestamp and response hash; full GitHub responses are not archived by this client, so the hash alone does not guarantee later source availability.
 
@@ -85,6 +116,20 @@ Example funded Libraries.io work (submitted with the existing governor CLI):
 ```json
 {"kind":"open","round":"flask-libraries-contributors-1","package":"pallets/flask","repository":"pallets/flask","version":"3.1.2","metric":"lib_contributor_count","source":"Libraries.io REST","method":"libraries-repository-v1","duration":300,"bounty":"300"}
 ```
+
+Generate all eight reviewable funded rounds (300 TrustCOIN each; 2,400 total reserved):
+
+```sh
+node tools/pilot/libraries-plan.cjs pallets/flask PyPI Flask 3.1.2 flask-libraries-20260908 > rounds.json
+```
+
+The helper emits an array without submitting anything or reading credentials. Submit
+each reviewed object using the existing governor `client.cjs event` flow. Project
+rounds include the registry platform and name; contributor rounds retain the existing
+repository method. Do not fund work until miners have Libraries.io access. Live authenticated collection was also checked against PyPI/Flask 3.1.2 on 2026-09-08:
+all eight measurements succeeded (651 indexed contributors, 9 non-development
+dependencies, 12,105 dependent packages, 64 releases, SourceRank 28). These are provider
+observations at collection time, not permanent package properties.
 
 All validators must run the collector-aware image before publishing this new round
 type. The additive upgrade preserves existing GitHub rounds, genesis and balances.

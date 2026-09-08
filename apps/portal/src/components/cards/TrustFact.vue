@@ -180,7 +180,7 @@ function convertFactValue(factValue: string, factCode: string): string {
     case 'lib_first_release_date':
     case 'lib_latest_release_date':
       {
-        const date = Date.parse(factValue.replaceAll('"', ''));
+        const date = /^\d+$/.test(factValue) ? Number(factValue) * 1000 : Date.parse(factValue.replaceAll('"', ''));
         res = new Intl.DateTimeFormat('en-GB', {
           year: 'numeric',
           month: 'long',
@@ -237,6 +237,7 @@ function convertFactValue(factValue: string, factCode: string): string {
   <div class="card" v-if="!loading">
     <div class="measurement-heading">
       <h2 class="fact-name card-child">{{ codeToName[fact_code] }}</h2>
+      <p v-if="measurement?.scope" class="measurement-scope">{{ measurement.scope }}</p>
       <div v-if="measurement" class="measurement-status" @mouseenter="statusHovered = true" @mouseleave="statusHovered = false" @focusin="statusFocused = true" @focusout="statusFocused = false" @keydown.esc="statusPinned = false; statusHovered = false; statusFocused = false">
         <button type="button" @click="statusPinned = !statusPinned" :aria-expanded="statusHovered || statusFocused || statusPinned" :class="['status-dot', measurement.status === 'confirmed' ? 'confirmed' : measurement.status === 'failed' ? 'failed' : 'pending']"
           :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'unverified' ? 'Not community-verified. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
@@ -351,4 +352,5 @@ function convertFactValue(factValue: string, factCode: string): string {
   height: 1em;
   white-space: nowrap;
 }
+.measurement-scope{font-size:12px;color:#64748b;line-height:1.5;overflow-wrap:anywhere}
 </style>

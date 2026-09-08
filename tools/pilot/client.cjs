@@ -164,7 +164,8 @@ async function durableEvent(url, keyfile, body) {
   fs.unlinkSync(file);
   return id;
 }
-async function collect(repository, metric) {
+async function collect(repository, metric, target) {
+  if (require("./libraries.cjs").metrics.includes(metric)) return require("./libraries.cjs").collectProject(repository, metric, target, credentials().libraries, json);
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw Error("Invalid repository");
   const [owner] = repository.split("/");
   let raw, value, source;
@@ -240,7 +241,8 @@ async function mineOnceInner(url, keyfile) {
     try {
       measurement = await collect(
         candidate.escrow.repository,
-        candidate.metric
+        candidate.metric,
+        candidate.escrow
       );
       r = candidate;
       break;
@@ -390,7 +392,7 @@ async function main() {
 }
 module.exports = {
   sshKey,
-  collect: (repository, metric, saved) => credentialContext.run(saved || credentials(), () => collect(repository, metric)),
+  collect: (repository, metric, saved, target) => credentialContext.run(saved || credentials(), () => collect(repository, metric, target)),
   admission,
   sign,
   submit,
