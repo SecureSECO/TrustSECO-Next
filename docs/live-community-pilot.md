@@ -13,12 +13,12 @@ All eight original Libraries.io numeric measurements are supported by the signed
 | Fact | Measurement | Agreement tolerance | Existing score input? |
 | --- | --- | --- | --- |
 | `lib_contributor_count` | Indexed repository contributor records (`contributions_count`) | 1 or 1% | Yes |
-| `lib_dependency_count` | Distinct non-development direct dependencies of the exact version | Exact | No |
+| `lib_dependency_count` | Distinct non-development direct dependencies of the exact version | Exact | Yes |
 | `lib_dependent_count` | Current dependent-package count | 1 or 1% | Yes |
 | `lib_first_release_date` | Earliest date in the available complete dated release history | Exact, UTC seconds | No |
 | `lib_latest_release_date` | Latest date in that history, including prereleases | Exact, UTC seconds | No |
 | `lib_release_count` | Number of distinct versions reported | 1 | Yes |
-| `lib_release_frequency` | Mean interval in seconds: `(last-first)/(number of releases-1)` | Exact, rounded seconds | No |
+| `lib_release_frequency` | Mean interval in seconds: `(last-first)/(number of releases-1)` | Exact, rounded seconds | Yes |
 | `lib_sourcerank` | Current SourceRank | Exact | Yes |
 
 The existing formula is preserved; not every displayed fact has a scoring weight.
@@ -133,6 +133,9 @@ observations at collection time, not permanent package properties.
 
 The local ledger integration test then recorded 24 signed observations across all eight
 Libraries.io rounds (three local test identities per metric), with matching values.
+All eight rounds closed and finalized; the local and confirmed scores both reached
+62.742135752174484 with ten scoring inputs (four GitHub plus six Libraries.io).
+At height 752/finalized height 747 the validator state hashes matched.
 The test exposed and fixed the inherited one-billion star-count limit for release
 Unix timestamps; future dates remain rejected. Build/lint and all 15 pilot policy
 tests pass, alongside the 23 client/setup/provider tests. The four validators were
