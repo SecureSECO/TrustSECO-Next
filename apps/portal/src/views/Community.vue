@@ -36,11 +36,11 @@
 import {ref,onMounted,onUnmounted} from 'vue';import axios from 'axios';
 const base=`${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api/community`;
 const data=ref<any>(null),error=ref(''),notice=ref(''),busy=ref(false);
-const packageName=ref('demo/star-count'),duration=ref(60),actor=ref('alice'),value=ref(900),observation=ref(''),cause=ref(''),evidence=ref(''),reason=ref(''),appealReason=ref('');
+const packageName=ref('demo/star-count'),duration=ref(180),actor=ref('alice'),value=ref(900),observation=ref(''),cause=ref(''),evidence=ref(''),reason=ref(''),appealReason=ref('');
 let timer:ReturnType<typeof setInterval>;let disposed=false;
 const date=(t:number)=>new Date(t*1000).toLocaleString();
 async function refresh(){try{const r=await axios.get(`${base}/snapshot`,{timeout:10000});if(!disposed)data.value=r.data}catch(e){if(!disposed)error.value='Prototype ledger unavailable.'}}
-async function send(event:any){if(busy.value)return;busy.value=true;error.value='';notice.value='Signing and submitting…';try{const r=await axios.post(`${base}/event`,event,{headers:{'X-Community-Demo':'1'},timeout:15000});notice.value=`Submitted ${r.data.eventId}. Waiting for inclusion…`;for(let i=0;i<20&&!disposed;i++){await new Promise(r=>setTimeout(r,1000));await refresh();if(data.value?.audit.some(a=>a.id===r.data.eventId)){notice.value='Recorded on the prototype ledger.';return}}notice.value='Submitted; not yet observed in the ledger. Refresh to check.'}catch(e:any){error.value=e.response?.data?.error||e.message;notice.value=''}finally{busy.value=false}}
+async function send(event:any){if(busy.value)return;busy.value=true;error.value='';notice.value='Signing and submitting…';try{const r=await axios.post(`${base}/event`,event,{headers:{'X-Community-Demo':'1'},timeout:15000});notice.value=`Submitted ${r.data.eventId}. Waiting for inclusion…`;for(let i=0;i<60&&!disposed;i++){await new Promise(r=>setTimeout(r,1000));await refresh();if(data.value?.audit.some(a=>a.id===r.data.eventId)){notice.value='Recorded on the prototype ledger.';return}}notice.value='Submitted; not yet observed in the ledger. Refresh to check.'}catch(e:any){error.value=e.response?.data?.error||e.message;notice.value=''}finally{busy.value=false}}
 const open=()=>send({kind:'open',actor:'governor',round:crypto.randomUUID(),package:packageName.value,metric:'github_stars',source:'GitHub fixture',method:'prototype-v1',duration:duration.value});
 const observe=(r:any)=>send({kind:'observe',actor:actor.value,round:r.id,value:value.value,source:r.source,method:r.method});
 const review=(r:any)=>send({kind:'substantiate',actor:'governor',round:r.id,observation:observation.value,cause:cause.value,evidence:evidence.value,reason:reason.value});

@@ -1,6 +1,6 @@
 # Community verification prototype
 
-Open http://localhost:3004/community/. This is an isolated, populated experiment on chain `73657031`, with fresh keys and its own Docker volumes. Existing nodes on ports 3002/3003 remain on their original chain. The feature is opt-in (`TRUSTSECO_COMMUNITY_PROTOTYPE` in the ledger and `COMMUNITY_DEMO` in the coordinator); ordinary deployments do not register the module or expose its API.
+Open http://localhost:3004/community/. This is an isolated, populated experiment on chain `73657032` (15-second blocks), with fresh keys and its own Docker volumes. Existing nodes on ports 3002/3003 remain on their original chain. The feature is opt-in (`TRUSTSECO_COMMUNITY_PROTOTYPE` in the ledger and `COMMUNITY_DEMO` in the coordinator); ordinary deployments do not register the module or expose its API.
 
 ## What it demonstrates
 
@@ -24,20 +24,20 @@ Only expose the demo on localhost. The API's origin/header checks prevent ordina
 
 ## Reproduce on a fresh checkout
 
-Run from the repository root with Docker available. The preparation command refuses to replace an existing validator identity. Keep `deploy/community-runtime/` private and ignored by Git.
+Run from the repository root with Docker available. The preparation command refuses to replace an existing validator identity. Keep `deploy/community-runtime-15s/` private and ignored by Git.
 
 ```sh
 docker build --platform linux/amd64 -t trustseco-community-ledger services/ledger
-mkdir -p deploy/community-runtime
-chmod 700 deploy/community-runtime
+mkdir -p deploy/community-runtime-15s
+chmod 700 deploy/community-runtime-15s
 docker run --rm --platform linux/amd64 \
   -v "$PWD/deploy/prepare-community.cjs:/usr/src/app/prepare.cjs:ro" \
-  -v "$PWD/deploy/community-runtime:/prototype" \
+  -v "$PWD/deploy/community-runtime-15s:/prototype" \
   trustseco-community-ledger node prepare.cjs
 docker run --rm --platform linux/amd64 \
   -e TRUSTSECO_COMMUNITY_PROTOTYPE=true \
   -e COMMUNITY_GOVERNOR_FILE=/prototype/governor.pem \
-  -v "$PWD/deploy/community-runtime:/prototype" \
+  -v "$PWD/deploy/community-runtime-15s:/prototype" \
   trustseco-community-ledger sh -c 'npm run build && ./bin/run genesis-block:create --config /prototype/config.json --assets-file /prototype/genesis_assets.json --output /prototype'
 docker compose -f deploy/compose.community.yaml up -d --build
 python3 tests/community-demo.py
@@ -55,3 +55,11 @@ The population test requires an empty audit and refuses to overwrite an existing
 - Simulated Dana reached review after incident three, suspension after five and zero eligible credits. Alice, Bob and Carol each had five eligible contributions.
 
 These tests demonstrate implemented behaviour, not that the chosen trust policy is empirically justified. See [paper notes](paper-notes.md) for the research questions.
+
+## 15-second experiment
+
+The original three-second chain (`73657031`) is retained in Docker volumes `trustseco-community_ledger` and `trustseco-community_replica`, with identities in `deploy/community-runtime/`. The current Compose deployment uses separate `ledger15` and `replica15` volumes and `deploy/community-runtime-15s/`. This avoids changing consensus timing midway through an existing history. The 43-event results above describe the original experiment.
+
+The form now defaults to a 180-second observation window. The full population script uses 120-second rounds and longer inclusion waits; it takes longer with 15-second blocks. Three contributors are still required. Two compatible observations remain pending until closure, then expire without verification. Do not lower the quorum automatically for a small network: fewer nodes or identities must not silently weaken the claim. Additional nodes under the same contributor identity do not add votes.
+
+The fresh-chain smoke test is `python3 tests/community-small-network.py` (choose this or the full population script on an empty chain). It checks the transition from two pending observations to three compatible observations and a closed verified round. Measured consecutive block intervals on the new chain were 15 and 15 seconds.

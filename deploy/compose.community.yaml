@@ -13,11 +13,11 @@ services:
       COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
     command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/config.json --overwrite-config"]
     volumes:
-      - ledger:/root/.klayr
-      - ./community-runtime/config.json:/prototype/config.json:ro
-      - ./community-runtime/genesis_block.blob:/prototype/genesis_block.blob:ro
-      - ./community-runtime/validators.json:/prototype/validators.json:ro
-      - ./community-runtime/governor.pem:/prototype/governor.pem:ro
+      - ledger15:/root/.klayr
+      - ./community-runtime-15s/config.json:/prototype/config.json:ro
+      - ./community-runtime-15s/genesis_block.blob:/prototype/genesis_block.blob:ro
+      - ./community-runtime-15s/validators.json:/prototype/validators.json:ro
+      - ./community-runtime-15s/governor.pem:/prototype/governor.pem:ro
   community-replica:
     image: trustseco-community-ledger
     platform: linux/amd64
@@ -26,11 +26,11 @@ services:
       COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
     command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/replica-config.json --overwrite-config"]
     volumes:
-      - replica:/root/.klayr
-      - ./community-runtime/replica-config.json:/prototype/replica-config.json:ro
-      - ./community-runtime/genesis_block.blob:/prototype/genesis_block.blob:ro
-      - ./community-runtime/empty.json:/prototype/empty.json:ro
-      - ./community-runtime/governor.pem:/prototype/governor.pem:ro
+      - replica15:/root/.klayr
+      - ./community-runtime-15s/replica-config.json:/prototype/replica-config.json:ro
+      - ./community-runtime-15s/genesis_block.blob:/prototype/genesis_block.blob:ro
+      - ./community-runtime-15s/empty.json:/prototype/empty.json:ro
+      - ./community-runtime-15s/governor.pem:/prototype/governor.pem:ro
   web:
     platform: linux/amd64
     depends_on:
@@ -52,10 +52,10 @@ services:
     volumes:
       - webkeys:/root/.gnupg
       - measurements:/usr/app/data
-      - ./community-runtime/actors.json:/community/actors.json:ro
-      - ./community-runtime/transport.json:/community/transport.json:ro
+      - ./community-runtime-15s/actors.json:/community/actors.json:ro
+      - ./community-runtime-15s/transport.json:/community/transport.json:ro
 volumes:
-  ledger:
-  replica:
+  ledger15:
+  replica15:
   webkeys:
   measurements:

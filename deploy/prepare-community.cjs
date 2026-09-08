@@ -14,10 +14,10 @@ for(let i=0;i<4;i++){
 }
 validators.sort((a,b)=>Buffer.compare(c.address.getAddressFromKlayr32Address(a.address),c.address.getAddressFromKlayr32Address(b.address)));
 pos.validators=validators;pos.stakers=[];pos.genesisData.initValidators=validators.map(v=>v.address);
-const token=assets.assets.find(a=>a.module==='token').data;token.userSubstore=validators.map(v=>({address:v.address,tokenID:'7365703100000000',availableBalance:'100000000000000',lockedBalances:[]}));token.supplySubstore=[{tokenID:'7365703100000000',totalSupply:'400000000000000'}];
+const token=assets.assets.find(a=>a.module==='token').data;token.userSubstore=validators.map(v=>({address:v.address,tokenID:'7365703200000000',availableBalance:'100000000000000',lockedBalances:[]}));token.supplySubstore=[{tokenID:'7365703200000000',totalSupply:'400000000000000'}];
 fs.writeFileSync(out+'/genesis_assets.json',JSON.stringify(assets));fs.writeFileSync(out+'/validators.json',JSON.stringify({keys}),{mode:0o600});fs.writeFileSync(out+'/empty.json','{"keys":[]}');fs.writeFileSync(out+'/transport.json',JSON.stringify({privateKey:keys[0].plain.generatorPrivateKey}),{mode:0o600});
-const base=JSON.parse(fs.readFileSync('config/default/config.json'));base.genesis.chainID='73657031';base.genesis.blockTime=3;base.modules.pos={failSafeInactiveWindow:144000,numberActiveValidators:4,numberStandbyValidators:0};base.genesis.bftBatchSize=4;base.genesis.block.fromFile='/prototype/genesis_block.blob';base.generator.keys.fromFile='/prototype/validators.json';base.network.seedPeers=[];
+const base=JSON.parse(fs.readFileSync('config/default/config.json'));base.genesis.chainID='73657032';base.genesis.blockTime=15;base.modules.pos={failSafeInactiveWindow:144000,numberActiveValidators:4,numberStandbyValidators:0};base.genesis.bftBatchSize=4;base.genesis.block.fromFile='/prototype/genesis_block.blob';base.generator.keys.fromFile='/prototype/validators.json';base.network.seedPeers=[];
 fs.writeFileSync(out+'/config.json',JSON.stringify(base));base.generator.keys.fromFile='/prototype/empty.json';base.network.seedPeers=[{ip:'community-ledger',port:8000}];fs.writeFileSync(out+'/replica-config.json',JSON.stringify(base));
-console.log('Created fresh prototype identities, four validators and separate chain ID 73657031.');
+console.log('Created fresh prototype identities, four validators and separate chain ID 73657032.');
 
 })().catch(e=>{console.error(e.message);process.exit(1)});
