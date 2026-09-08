@@ -2,6 +2,7 @@
 const fs=require('fs');const crypto=require('crypto');const c=require('@klayr/cryptography');
 (async()=>{
 const out='/prototype';if(fs.existsSync(out+'/validators.json'))throw Error('Prototype identity already exists; refusing to overwrite');
+fs.writeFileSync(out+'/storage-layout.json',JSON.stringify({activationHeight:0}));
 const actors={};for(const id of ['governor','alice','bob','carol','dana']){const k=crypto.generateKeyPairSync('ed25519');actors[id]={publicKey:k.publicKey.export({type:'spki',format:'pem'}).toString(),privateKey:k.privateKey.export({type:'pkcs8',format:'pem'}).toString()}}
 fs.writeFileSync(out+'/actors.json',JSON.stringify(actors),{mode:0o600});fs.writeFileSync(out+'/governor.pem',actors.governor.publicKey);
 const assets=JSON.parse(fs.readFileSync('config/default/genesis_assets.json'));

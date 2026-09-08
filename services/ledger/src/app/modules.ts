@@ -11,7 +11,10 @@ export const registerModules = (app: Application): void => {
     if (process.env.TRUSTSECO_COMMUNITY_PROTOTYPE === 'true') {
         const key = process.env.COMMUNITY_GOVERNOR_FILE ? readFileSync(process.env.COMMUNITY_GOVERNOR_FILE, 'utf8') : process.env.COMMUNITY_GOVERNOR_KEY;
         if (!key) throw new Error('Community verification requires its genesis governor public key');
-        app.registerModule(new CommunityModule(key));
+        const storageConfig = process.env.COMMUNITY_STORAGE_CONFIG ? JSON.parse(readFileSync(process.env.COMMUNITY_STORAGE_CONFIG, 'utf8')) as { activationHeight: number } : undefined;
+        const storageHeight = Number(storageConfig?.activationHeight ?? process.env.COMMUNITY_STORAGE_HEIGHT ?? '0');
+        if (!Number.isSafeInteger(storageHeight) || storageHeight < 0) throw new Error('Invalid community storage activation height');
+        app.registerModule(new CommunityModule(key, storageHeight));
     }
     const accountsModule = new AccountsModule()
     app.registerModule(accountsModule);

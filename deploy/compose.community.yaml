@@ -11,6 +11,7 @@ services:
     environment:
       TRUSTSECO_COMMUNITY_PROTOTYPE: "true"
       COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
+      COMMUNITY_STORAGE_CONFIG: /prototype/storage-layout.json
     command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/config.json --overwrite-config"]
     volumes:
       - ledger15:/root/.klayr
@@ -18,12 +19,14 @@ services:
       - ./community-runtime-15s/genesis_block.blob:/prototype/genesis_block.blob:ro
       - ./community-runtime-15s/validators.json:/prototype/validators.json:ro
       - ./community-runtime-15s/governor.pem:/prototype/governor.pem:ro
+      - ./community-runtime-15s/storage-layout.json:/prototype/storage-layout.json:ro
   community-replica:
     image: trustseco-community-ledger
     platform: linux/amd64
     environment:
       TRUSTSECO_COMMUNITY_PROTOTYPE: "true"
       COMMUNITY_GOVERNOR_FILE: /prototype/governor.pem
+      COMMUNITY_STORAGE_CONFIG: /prototype/storage-layout.json
     command: ["sh", "-c", "npm run build && ./bin/run start --config /prototype/replica-config.json --overwrite-config"]
     volumes:
       - replica15:/root/.klayr
@@ -31,6 +34,7 @@ services:
       - ./community-runtime-15s/genesis_block.blob:/prototype/genesis_block.blob:ro
       - ./community-runtime-15s/empty.json:/prototype/empty.json:ro
       - ./community-runtime-15s/governor.pem:/prototype/governor.pem:ro
+      - ./community-runtime-15s/storage-layout.json:/prototype/storage-layout.json:ro
   web:
     platform: linux/amd64
     depends_on:

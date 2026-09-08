@@ -18,7 +18,7 @@ All four contributors and the reviewer are simulated. The local coordinator hold
 
 The reviewer is a single trusted governor. Requiring evidence text does not mechanically establish its truth. Distributed review authority, independent evidence checking, key rotation, abuse limits and governance rules remain future work. The two nodes replicate policy state, but the prototype producer controls all four fresh validator keys; this experiment does not demonstrate independent validator operators or host-failure resilience.
 
-This iteration supports star-count fixtures. It does not connect live spider jobs to rounds, replace the existing Trust Score inputs, or issue DAO rewards. Those integrations should follow agreement on the policy and adversarial tests. The entire prototype state is stored as one JSON value, capped at 10,000 events; production needs indexed stores, bounded processing and an explicit upgrade strategy.
+This iteration supports star-count fixtures. It does not connect live spider jobs to rounds, replace the existing Trust Score inputs, or issue DAO rewards. Those integrations should follow agreement on the policy and adversarial tests. The community state supports an [individual-record storage layout](community-storage.md), activated at an agreed block height. Validation still assembles the full state and the 10,000-event cap remains; production needs targeted reads and bounded processing.
 
 Only expose the demo on localhost. The API's origin/header checks prevent ordinary cross-site browser submissions; they are not production user authentication. Do not publish the simulated private keys or reuse them in a shared network.
 
