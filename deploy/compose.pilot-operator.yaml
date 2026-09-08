@@ -1,0 +1,44 @@
+# One independently operated validator. Assemble/distribute a common public genesis first.
+# Set LEDGER_IMAGE and WEB_IMAGE to reviewed immutable image digests, not mutable tags.
+name: trustseco-operator
+services:
+  ledger:
+    image: ${LEDGER_IMAGE:?Set the reviewed ledger image digest}
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      TRUSTSECO_PILOT: "true"
+      PILOT_NETWORK: ${PILOT_NETWORK:?Common network ID required}
+      PILOT_GOVERNOR_FILE: /pilot/governor.pem
+      TRUSTSECO_SEED_PEERS: ${SEED_PEERS:?Provide at least two peer addresses}
+      TRUSTSECO_NODE_ADDRESS: ${NODE_ADDRESS:?Public peer host and port required}
+    command: ["sh", "-c", "npm run build && ./bin/run start --config /pilot/config.json --overwrite-config"]
+    ports: ["8000:8000"]
+    volumes:
+      - ledger:/root/.klayr
+      - ${PUBLIC_NETWORK_DIR:?Common public network bundle required}:/pilot:ro
+      - ${VALIDATOR_KEY_DIR:?Locally held validator directory required}:/validator:ro
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  web:
+    image: ${WEB_IMAGE:?Set the reviewed web image digest}
+    platform: linux/amd64
+    restart: unless-stopped
+    command: ["node", "dist/pilot.js"]
+    environment:
+      DLT_ENDPOINT: ws://ledger:7887/rpc-ws
+      PILOT_RELAYER_FILE: /relayer/relayer.json
+    volumes: ["${RELAYER_KEY_FILE:?Locally held funded relayer key required}:/relayer/relayer.json:ro"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  https:
+    image: ${CADDY_IMAGE:?Set a reviewed Caddy image digest}
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?DNS hostname required}
+      ACME_EMAIL: ${ACME_EMAIL:?Certificate contact required}
+    ports: ["80:80", "443:443"]
+    volumes: ["./Caddyfile.pilot:/etc/caddy/Caddyfile:ro", "certificates:/data", "caddy-config:/config"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+volumes:
+  ledger:
+  certificates:
+  caddy-config:

@@ -24,8 +24,8 @@ export function standing(s: CommunityState, id: string, at: number): string {
     if (s.members.find(m => m.id === id)?.suspended) return 'suspended';
     return incidentCount(s, id, at) >= POLICY.flag ? 'review' : 'active';
 }
-const compatible = (a: number, b: number): boolean => Math.abs(a - b) <= Math.max(POLICY.absolute, Math.floor(Math.max(a, b) * POLICY.relativeBps / 10000));
-export function evaluate(round: Round, state: CommunityState): Result {
+const compatible = (a: number, b: number, tolerance: {absolute: number; relativeBps: number}): boolean => Math.abs(a - b) <= Math.max(tolerance.absolute, Math.floor(Math.max(a, b) * tolerance.relativeBps / 10000));
+export function evaluate(round: Round, state: CommunityState, tolerance = {absolute: POLICY.absolute, relativeBps: POLICY.relativeBps}): Result {
     const eligible = round.observations.filter(o => o.eligible && !state.members.find(m => m.id === o.member)?.suspended && !state.incidents.some(i => i.observation === o.id && !i.overturned));
     const sorted = [...eligible].sort((a, b) => {
         if (a.value !== b.value) return a.value - b.value;
@@ -36,7 +36,7 @@ export function evaluate(round: Round, state: CommunityState): Result {
     for (let i = 0; i < sorted.length; i += 1) {
         const group: Observation[] = [];
         for (let j = i; j < sorted.length; j += 1) {
-            if (!group.every(o => compatible(o.value, sorted[j].value))) break;
+            if (!group.every(o => compatible(o.value, sorted[j].value, tolerance))) break;
             group.push(sorted[j]);
         }
         if (group.length >= POLICY.contributors) groups.push(group);
@@ -53,7 +53,7 @@ export function evaluate(round: Round, state: CommunityState): Result {
 }
 
 /** Signed events use exact UTF-8 payload bytes, domain separated from other protocols. */
-export function applyEvent(original: CommunityState, payload: string, signature: string, at: number, height = 0): CommunityState {
+export function applyEvent(original: CommunityState, payload: string, signature: string, at: number, height = 0, allowedMetrics = ['github_stars']): CommunityState {
     fail(Buffer.byteLength(payload) <= 12000, 'Event too large');
     fail(original.audit.length < 10000, 'Community event capacity reached');
     const e = JSON.parse(payload) as { id: string; kind: string; actor: string; member: string; key: string; operator: string; githubId: string; accountCreatedAt: number; evidence: string; round: string; package: string; metric: string; source: string; method: string; duration: number; value: number; observedAt: number; observation: string; cause: string; reason: string; incident: string };
@@ -78,7 +78,7 @@ export function applyEvent(original: CommunityState, payload: string, signature:
         s.members.push({ id: e.member, key: canonicalKey, operator: e.operator, githubId: e.githubId, suspended: false, reinstatedAt: -1 });
     } else if (e.kind === 'open') {
         requireAdmin();
-        fail(text(e.round) && text(e.package) && e.metric === 'github_stars' && text(e.source) && text(e.method), 'Invalid stars round');
+        fail(text(e.round) && text(e.package) && allowedMetrics.includes(e.metric) && text(e.source) && text(e.method), 'Invalid stars round');
         fail(integer(e.duration) && e.duration >= 10 && e.duration <= 3600, 'Window must be 10–3600 seconds');
         fail(!s.rounds.some(r => r.id === e.round), 'Round already exists');
         s.rounds.push({ id: e.round, package: e.package, metric: e.metric, source: e.source, method: e.method, openedAt: at, closesAt: at + e.duration, closed: false, observations: [] });

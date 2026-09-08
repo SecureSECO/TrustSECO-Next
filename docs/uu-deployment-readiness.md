@@ -1,6 +1,8 @@
 # UU deployment readiness — 8 September 2026
 
-The portal and ledger run locally. The community workflow still uses simulated contributors whose keys are held by one coordinator. Publishing that deployment does not create an independently verifying community.
+The original community demonstration at port 3004 uses simulated contributors whose keys are held by one coordinator. The new, separate implementation and its current limits are documented in [Live community verification and TrustCOIN](live-community-pilot.md). It connects contributor-signed GitHub observations, verification, scores and escrow-backed ledger payments, with independent-key preparation and deployment/recovery tooling. Its local test identities are still not independent people. UU access and real operator assignment remain deferred.
+
+The checklist below records the release acceptance gates; the legacy implementation descriptions refer to the port-3004 network, not the new opt-in ledger module.
 
 ## Acceptance gates for a functional UU pilot
 

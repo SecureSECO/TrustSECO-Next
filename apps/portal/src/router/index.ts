@@ -91,7 +91,9 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(),
   // linkActiveClass: 'router-link-active',
-  routes,
+  routes: import.meta.env.VITE_PILOT === 'true'
+    ? [{ path: '/:pathMatch(.*)*', name: 'Live network', component: () => import('@/views/Pilot.vue') }]
+    : routes,
 });
 
 export default router;

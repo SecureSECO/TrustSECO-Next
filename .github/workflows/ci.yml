@@ -16,6 +16,7 @@ jobs:
       - run: npm ci
       - run: npx tsc
       - run: node --test test/measurements.cjs test/score-inputs.cjs
+      - run: node --test ../../tools/pilot/client.test.cjs
   portal:
     runs-on: ubuntu-latest
     defaults:
@@ -30,6 +31,11 @@ jobs:
       - run: npm run build
         env:
           VITE_HOST: localhost:3002
+          VITE_PROTOCOL: http
+      - run: npm run build
+        env:
+          VITE_PILOT: 'true'
+          VITE_HOST: localhost:3005
           VITE_PROTOCOL: http
   ledger:
     runs-on: ubuntu-latest
@@ -51,6 +57,7 @@ jobs:
       - run: node test/community.cjs
       - run: node test/community-storage.cjs
       - run: node test/payouts.cjs
+      - run: node --test test/pilot.cjs
   spider:
     runs-on: ubuntu-latest
     defaults:

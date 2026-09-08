@@ -1,0 +1,74 @@
+# Local process-failure test network. Four processes on one machine are NOT four independent operators.
+name: trustseco-pilot
+x-ledger: &ledger
+  image: trustseco-pilot-ledger
+  platform: linux/amd64
+  environment: &environment
+    TRUSTSECO_PILOT: "true"
+    PILOT_GOVERNOR_FILE: /pilot/governor.pem
+    PILOT_NETWORK: trustseco-73657033
+    TRUSTSECO_SEED_PEERS: validator1:8000,validator2:8000,validator3:8000,validator4:8000
+  command: ["sh", "-c", "npm run build && ./bin/run start --config /pilot/config.json --overwrite-config"]
+  healthcheck:
+    test: ["CMD", "node", "-e", "require('@klayr/api-client').createWSClient('ws://127.0.0.1:7887/rpc-ws').then(async c=>{await c.node.getNodeInfo();await c.disconnect();process.exit(0)}).catch(()=>process.exit(1))"]
+    interval: 10s
+    timeout: 10s
+    retries: 30
+services:
+  validator1:
+    <<: *ledger
+    environment: {<<: *environment, TRUSTSECO_NODE_ADDRESS: "validator1:8000"}
+    volumes: ["node1:/root/.klayr", "./pilot-runtime/shared:/pilot:ro", "./pilot-runtime/validator1:/validator:ro"]
+  validator2:
+    <<: *ledger
+    environment: {<<: *environment, TRUSTSECO_NODE_ADDRESS: "validator2:8000"}
+    volumes: ["node2:/root/.klayr", "./pilot-runtime/shared:/pilot:ro", "./pilot-runtime/validator2:/validator:ro"]
+  validator3:
+    <<: *ledger
+    environment: {<<: *environment, TRUSTSECO_NODE_ADDRESS: "validator3:8000"}
+    volumes: ["node3:/root/.klayr", "./pilot-runtime/shared:/pilot:ro", "./pilot-runtime/validator3:/validator:ro"]
+  validator4:
+    <<: *ledger
+    environment: {<<: *environment, TRUSTSECO_NODE_ADDRESS: "validator4:8000"}
+    volumes: ["node4:/root/.klayr", "./pilot-runtime/shared:/pilot:ro", "./pilot-runtime/validator4:/validator:ro"]
+  web:
+    image: trustseco-pilot-web
+    platform: linux/amd64
+    command: ["node", "dist/pilot.js"]
+    depends_on:
+      validator1: {condition: service_healthy}
+    environment:
+      DLT_ENDPOINT: ws://validator1:7887/rpc-ws
+      PILOT_RELAYER_FILE: /relayer/relayer.json
+      PILOT_TEST_NETWORK: "true"
+    ports: ["127.0.0.1:3005:3000"]
+    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro"]
+  worker-a:
+    image: trustseco-pilot-ledger
+    platform: linux/amd64
+    profiles: [mining-test]
+    network_mode: service:web
+    depends_on: [web]
+    command: [node, /tools/client.cjs, mine, "http://localhost:3000", /identity/identity.json]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-a:/identity"]
+  worker-b:
+    image: trustseco-pilot-ledger
+    platform: linux/amd64
+    profiles: [mining-test]
+    network_mode: service:web
+    depends_on: [web]
+    command: [node, /tools/client.cjs, mine, "http://localhost:3000", /identity/identity.json]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-b:/identity"]
+  worker-c:
+    image: trustseco-pilot-ledger
+    platform: linux/amd64
+    profiles: [mining-test]
+    network_mode: service:web
+    depends_on: [web]
+    command: [node, /tools/client.cjs, mine, "http://localhost:3000", /identity/identity.json]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-c:/identity"]
+volumes:
+  node1:
+  node2:
+  node3:
+  node4:
