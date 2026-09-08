@@ -31,7 +31,8 @@ The larger absolute/relative bound applies. These are explicit initial policy ch
 ## Portal layout and read APIs
 
 The signed network uses the established portal layout: Overview, Packages, Activity,
-Node, Most recent payouts, Community, Settings and About. The original homepage,
+Most recent payouts, Community, Settings and About. Activity includes ecosystem nodes,
+node metrics and jobs; old `/metrics/` links redirect to `/jobs#node-details`. The original homepage,
 package search, version pages, measurement cards and paired scores are retained.
 `pilot-portal.ts` exposes read-only projections of current community rounds for
 these views. It does not restore legacy unsigned writes or server-held demo actors.
@@ -49,7 +50,11 @@ from the current confirmed score.
 
 ## Guided local setup
 
-Open `/user/settings/` on the local port-3005 portal. Settings checks a GitHub username and account age, creates one local Ed25519 identity, displays the public SSH signing key, verifies its publication on GitHub, submits a signed admission request, and controls the local miner. This is key-based account linking, not GitHub OAuth login; no personal access token is needed for setup. Adding the public key on GitHub and governor approval remain deliberate user/operator actions.
+Open `/user/settings/` on the local port-3005 portal. GitHub identity is first; the
+automatic-mining switch remains visible during setup, disabled with a reason until
+an active signing identity has been admitted. GitHub API credentials are optional
+for public collection (with lower unauthenticated rate limits); Libraries.io jobs
+require their API key and retry without submitting an observation if it is missing. Settings checks a GitHub username and account age, creates one local Ed25519 identity, displays the public SSH signing key, verifies its publication on GitHub, submits a signed admission request, and controls the local miner. This is key-based account linking, not GitHub OAuth login; no personal access token is needed for setup. Adding the public key on GitHub and governor approval remain deliberate user/operator actions.
 
 The private working key stays in the local node’s private directory (0700, files 0600). Recovery downloads use password-derived scrypt keys and AES-256-GCM encryption. Restore refuses to overwrite an existing identity. Keep the recovery password separately and avoid running two miners with the same identity. The working key is not hardware-backed or encrypted at rest by this application: protect the host and its disk/backups.
 

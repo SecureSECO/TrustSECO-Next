@@ -13,6 +13,8 @@ test('local setup enforces origin, stores only public join requests, and gates m
  try {
   assert.equal((await request('identity',{login:'example'},'https://evil.example')).status,403);
   assert.equal((await request('status')).status,200);
+  assert.equal((await request('mining',{enabled:true})).status,403);
+  assert.equal((await(await request('status')).json()).mining,false);
   assert.equal((await request('credentials',{source:'github',token:'private-test-token'},'https://evil.example')).status,403);
   assert.equal((await request('credentials',{source:'github',token:'private-test-token'})).status,200);
   const savedStatus=await(await request('status')).json();assert.equal(savedStatus.credentials.github.configured,true);assert.ok(!JSON.stringify(savedStatus).includes('private-test-token'));

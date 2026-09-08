@@ -13,7 +13,7 @@
           <h3>This node <span class="node-badge">Local</span></h3>
           <p><span class="dot" :class="{uncertain:error || snapshot.local.syncing}" aria-hidden="true"></span>{{ error ? 'Status unavailable' : snapshot.local.syncing ? 'Syncing ledger' : 'Ledger reachable' }}</p>
           <dl><dt>Block height</dt><dd>{{ snapshot.local.height.toLocaleString() }}</dd><dt>Finalized height</dt><dd>{{ snapshot.local.finalizedHeight.toLocaleString() }}</dd></dl>
-          <router-link to="/metrics/">Node details →</router-link>
+          <router-link to="/jobs#node-details">Node details →</router-link>
         </article>
         <article v-for="peer in snapshot.peers" :key="`${peer.address}:${peer.port}`" class="node-card">
           <h3>{{ peer.address }}:{{ peer.port }}</h3>

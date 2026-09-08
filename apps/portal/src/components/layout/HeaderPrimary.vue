@@ -5,7 +5,6 @@
       <router-link to="/" exact-active-class="selected">Overview</router-link>
       <router-link to="/packages/" active-class="selected">Packages</router-link>
       <router-link to="/jobs" active-class="selected">Activity</router-link>
-      <router-link to="/metrics/" active-class="selected">Node</router-link>
       <router-link to="/payouts/" active-class="selected">Most recent payouts</router-link>
       <router-link v-if="communityDemo" to="/community/" active-class="selected">Community</router-link>
     </nav>

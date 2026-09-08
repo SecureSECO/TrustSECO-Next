@@ -52,7 +52,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'metrics/',
         name: 'Metrics',
-        component: () => import('@/views/Metrics.vue'),
+        redirect: '/jobs#node-details',
       },
       {
         path: 'user/settings/',
@@ -90,6 +90,7 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to) { return to.hash ? { el: to.hash } : { top: 0 }; },
   // linkActiveClass: 'router-link-active',
   routes,
 });
