@@ -225,7 +225,7 @@ async function mineOnce(url, keyfile) {
       !r.observations.some((o) => o.member === identity.id) &&
       (collectorRetry.get(r.id) || 0) <= Date.now()
   );
-  let r, measurement;
+  let r, measurement, failure;
   for (const candidate of candidates) {
     try {
       measurement = await collect(
@@ -235,6 +235,7 @@ async function mineOnce(url, keyfile) {
       r = candidate;
       break;
     } catch (error) {
+      failure = error.message;
       collectorRetry.set(candidate.id, Date.now() + 60000);
       console.error(
         "Collector " +
@@ -245,7 +246,11 @@ async function mineOnce(url, keyfile) {
       );
     }
   }
-  if (!r) return false;
+  if (!r) {
+    if (failure) throw Error('Collection needs attention: ' + failure + '; retrying in 60 seconds');
+    if (s.rounds.some(candidate => !candidate.closed && (collectorRetry.get(candidate.id) || 0) > Date.now())) throw Error('Waiting to retry a failed collector');
+    return false;
+  }
   const e = {
     id: crypto.randomUUID(),
     actor: identity.id,

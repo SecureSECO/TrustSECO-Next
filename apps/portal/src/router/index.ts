@@ -92,7 +92,7 @@ const router = createRouter({
   history: createWebHistory(),
   // linkActiveClass: 'router-link-active',
   routes: import.meta.env.VITE_PILOT === 'true'
-    ? [{ path: '/:pathMatch(.*)*', name: 'Live network', component: () => import('@/views/Pilot.vue') }]
+    ? [{ path: '/user/settings/', name: 'Identity & mining', component: () => import('@/views/PilotSettings.vue') }, { path: '/:pathMatch(.*)*', name: 'Live network', component: () => import('@/views/Pilot.vue') }]
     : routes,
 });
 

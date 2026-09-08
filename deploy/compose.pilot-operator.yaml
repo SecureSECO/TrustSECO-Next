@@ -27,7 +27,8 @@ services:
     environment:
       DLT_ENDPOINT: ws://ledger:7887/rpc-ws
       PILOT_RELAYER_FILE: /relayer/relayer.json
-    volumes: ["${RELAYER_KEY_FILE:?Locally held funded relayer key required}:/relayer/relayer.json:ro"]
+      PILOT_REQUEST_DIR: /admission-requests
+    volumes: ["${RELAYER_KEY_FILE:?Locally held funded relayer key required}:/relayer/relayer.json:ro", "admission-requests:/admission-requests"]
     logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
   https:
     image: ${CADDY_IMAGE:?Set a reviewed Caddy image digest}
@@ -42,3 +43,4 @@ volumes:
   ledger:
   certificates:
   caddy-config:
+  admission-requests:

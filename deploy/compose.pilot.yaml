@@ -41,8 +41,11 @@ services:
       DLT_ENDPOINT: ws://validator1:7887/rpc-ws
       PILOT_RELAYER_FILE: /relayer/relayer.json
       PILOT_TEST_NETWORK: "true"
+      PILOT_LOCAL_ORIGIN: http://localhost:3005
+      PILOT_IDENTITY_DIR: /local-identity
+      PILOT_REQUEST_DIR: /admission-requests
     ports: ["127.0.0.1:3005:3000"]
-    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro"]
+    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro", "./pilot-runtime/local-identity:/local-identity", "./pilot-runtime/admission-requests:/admission-requests"]
   worker-a:
     image: trustseco-pilot-ledger
     platform: linux/amd64

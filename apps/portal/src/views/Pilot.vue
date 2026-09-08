@@ -1,6 +1,6 @@
 <template>
   <main class="pilot">
-    <header><a href="/">TrustSECO</a><nav aria-label="Main navigation"><a href="#work">Observations</a><a href="#payouts">Most recent payouts</a><a href="#community">Community</a></nav></header>
+    <header><a href="/">TrustSECO</a><nav aria-label="Main navigation"><a href="#work">Observations</a><a href="#payouts">Most recent payouts</a><a href="/user/settings/">Settings / Join</a><a href="#community">Community</a></nav></header>
     <section class="intro"><p class="eyebrow">A shared record of software evidence</p><h1>Trust grows through independent observation.</h1><p>Contributors collect software measurements with their own signing keys. Three compatible observations establish community agreement; ledger finality preserves that decision in the shared history.</p></section>
     <p v-if="error" role="alert" class="error">{{ error }} <button @click="refresh">Retry</button></p>
     <template v-if="state">
@@ -20,7 +20,7 @@
       </section>
       <section id="payouts"><h2>Most recent payouts</h2><p>TrustCOIN moves from reserved bounties to contributors’ ledger balances after a 24-hour review period. Unresolved work and division remainders return to the sponsor.</p><p v-if="!payouts.length" class="empty">No payouts recorded yet.</p><div class="table-wrap" v-else><table><thead><tr><th>Contributor</th><th>TrustCOIN</th><th>Kind</th><th>Round</th><th>Ledger</th></tr></thead><tbody><tr v-for="p in payouts" :key="p.id"><td>{{ p.uid }}</td><td><TrustCoinAmount :amount="p.amount" /></td><td>{{ p.kind }}</td><td>{{ p.round }}</td><td>{{ p.height <= state.ledger.finalizedHeight ? '✓ Finalized' : 'Recorded' }}</td></tr></tbody></table></div></section>
       <section id="community"><h2>Community</h2><p>Admission checks a GitHub account’s age and published signing key. An operator also attests that the contributor is independent. Account age alone does not prevent one person from controlling several accounts.</p><div class="members"><article v-for="m in state.members" :key="m.id"><strong v-if="state.testNetwork">{{ m.id }}</strong><a v-else :href="'https://github.com/' + m.id">{{ m.id }}</a><p>{{ m.revoked ? 'Key revoked' : m.standing }} · <TrustCoinAmount :amount="m.balance" /></p><small>{{ state.testNetwork ? 'Test identity' : 'GitHub ID ' + m.githubId }} · Operator {{ m.operator }}</small></article></div><p v-if="!state.members.length" class="empty">No contributor identities have been admitted. This screen displays ledger data, with no example contributors.</p></section>
-      <footer>Network {{ state.network }} · refreshed {{ refreshed }} · <button @click="refresh">Refresh</button><p>Contributor setup and signed job submission are currently available through the mining client. Private signing keys stay with their operators.</p></footer>
+      <footer>Network {{ state.network }} · refreshed {{ refreshed }} · <button @click="refresh">Refresh</button><p>Set up your contributor identity and automatic mining in Settings. Private signing keys stay with their operators.</p></footer>
     </template>
     <p v-else-if="!error">Connecting to the ledger…</p>
   </main>

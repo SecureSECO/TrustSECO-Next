@@ -21,7 +21,17 @@ The governor publishes a funded round specifying repository, version, metric, co
 
 The larger absolute/relative bound applies. These are explicit initial policy choices, not empirically validated thresholds. Rounds last 10–3,600 seconds. Measurements two days apart belong to different rounds. Two contributors never lower the quorum. An outlier receives no automatic misconduct strike: the governor must substantiate a review with evidence. Existing appeals and reinstatement remain available.
 
-## Identity admission
+## Guided local setup
+
+Open `/user/settings/` on the local port-3005 portal. Settings checks a GitHub username and account age, creates one local Ed25519 identity, displays the public SSH signing key, verifies its publication on GitHub, submits a signed admission request, and controls the local miner. This is key-based account linking, not GitHub OAuth login; no personal access token is needed for setup. Adding the public key on GitHub and governor approval remain deliberate user/operator actions.
+
+The private working key stays in the local node’s private directory (0700, files 0600). Recovery downloads use password-derived scrypt keys and AES-256-GCM encryption. Restore refuses to overwrite an existing identity. Keep the recovery password separately and avoid running two miners with the same identity. The working key is not hardware-backed or encrypted at rest by this application: protect the host and its disk/backups.
+
+Local routes are opt-in through `PILOT_LOCAL_ORIGIN` and require the exact localhost Host/Origin plus a custom request header. They reject cross-site requests and are absent on the shared operator deployment. Never enable local setup on a publicly exposed relay. `PILOT_IDENTITY_DIR` holds the node identity and durable outbox. `PILOT_REQUEST_DIR` holds public, signed admission requests; it contains no contributor private keys.
+
+The operator checks the admission inbox (`deploy/pilot-runtime/admission-requests` locally), reviews independence, then uses the existing `client.cjs admit` command on the selected numeric-GitHub-ID JSON file. That command rechecks GitHub and expiry before signing admission with the governor key. Requests expire after 12 hours and can be renewed from Settings. The governor key is still not mounted into the web service. The contributor sees admission automatically and can then start mining. Mining preference survives a service restart, and stopping permits an in-flight submission to finish.
+
+## Identity admission (command line)
 
 Use Node 18 or newer on the contributor's machine:
 

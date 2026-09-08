@@ -7,6 +7,7 @@ import send from 'koa-send';
 import fs from 'fs';
 import crypto from 'crypto';
 import { createWSClient } from '@klayr/api-client';
+import { setupRouter, queueAdmission } from './pilot-setup';
 
 const endpoint = process.env.DLT_ENDPOINT;
 const keyFile = process.env.PILOT_RELAYER_FILE;
@@ -34,6 +35,13 @@ router.get('/snapshot', async ctx => {
         const snapshot = await c.invoke('pilot_snapshot');
         return { ...snapshot, testNetwork: process.env.PILOT_TEST_NETWORK === 'true', ledger: { height: node.height, finalizedHeight: node.finalizedHeight, chainID: node.chainID } };
     });
+});
+router.get('/capabilities', ctx => { ctx.body = { localSetup: !!process.env.PILOT_LOCAL_ORIGIN }; });
+let nextAdmissionAt = 0;
+router.post('/join', async ctx => {
+    if (Date.now() < nextAdmissionAt) ctx.throw(429, 'Please wait briefly before retrying admission');
+    nextAdmissionAt = Date.now() + 2000;
+    ctx.body = await queueAdmission(ctx.request.body, await withClient(c => c.invoke('pilot_snapshot')));
 });
 router.get('/payouts', async ctx => {
     ctx.body = await withClient(async c => {
@@ -92,6 +100,8 @@ router.post('/event', async ctx => {
     }
 });
 app.use(router.routes()).use(router.allowedMethods());
+const localSetup = setupRouter(() => withClient(c => c.invoke('pilot_snapshot')));
+app.use(localSetup.routes()).use(localSetup.allowedMethods());
 app.use(async (ctx, next) => { if (ctx.path.startsWith('/api/')) { ctx.status = 404; return; } await next(); });
 app.use(serve('public'));
 app.use(async ctx => { if (ctx.method === 'GET') await send(ctx, 'index.html', { root: 'public' }); });

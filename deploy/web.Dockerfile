@@ -18,6 +18,7 @@ RUN npm ci
 COPY apps/coordinator/src ./src
 COPY apps/coordinator/tsconfig.json ./
 COPY apps/coordinator/test ./test
+COPY tools/pilot ./tools/pilot
 COPY --from=portal /portal/dist ./public
 RUN npx tsc
 CMD ["node", "dist/app.js"]
