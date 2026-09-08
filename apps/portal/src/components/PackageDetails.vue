@@ -1,5 +1,7 @@
 <template>
-  <div class="row">
+  <p v-if="packageLoading">Loading package…</p>
+  <p v-else-if="packageError" role="alert">{{ packageError }}</p>
+  <div v-else class="row">
     <div class="flex xs6">
       <div class="row">
         <div class="flex xs4 propName">Platform:</div>
@@ -23,7 +25,7 @@
           <strong>{{ scorePair?.[kind]?.score != null ? scorePair[kind].score.toFixed(1) : 'Not available yet' }}</strong>
           <details class="score-explanation">
             <summary :aria-label="`About the ${kind} score`">ⓘ</summary>
-            <p>{{ kind === 'local' ? 'Uses the latest available measurements, including those awaiting ledger confirmation.' : 'Uses only finalized measurements. New pending data does not replace older confirmed inputs.' }} Both use the same scoring formula. Finality does not prove source accuracy.</p>
+            <p>{{ kind === 'local' ? pilot ? 'Uses the latest reported observation for each metric. These observations can come from any contributor and may not have community agreement.' : 'Uses the latest available measurements, including those awaiting ledger confirmation.' : pilot ? 'Uses the latest closed, community-verified round for each metric, after finality. Disputed evidence is excluded.' : 'Uses only finalized measurements. New pending data does not replace older confirmed inputs.' }} Both use the same scoring formula. Finality does not prove source accuracy.</p>
             <p v-if="scorePair">Calculated: {{ new Date(scorePair.updatedAt).toLocaleString() }}</p>
           </details>
         </div>
@@ -38,7 +40,7 @@
       </div>
       <div class="row">
         <div class="flex xs4 propName">Repo:</div>
-        <a :href="githubLink"><div class="flex xs16 propValue">{{package.owner}}/{{package.name}}</div></a>
+        <a :href="githubLink"><div class="flex xs16 propValue">{{ package.name.includes('/') ? package.name : package.owner + '/' + package.name }}</div></a>
       </div>
     </div>
     <div class="row">
@@ -86,7 +88,10 @@ export default defineComponent({
   },
   data() {
     return {
-      package: defaultPackage,
+      pilot: import.meta.env.VITE_PILOT === 'true',
+      package: { ...defaultPackage, name: '', owner: '', platform: '', versions: [] },
+      packageLoading: true,
+      packageError: '',
       scorePair: null as any,
       scoreError: '',
       timer: undefined as ReturnType<typeof setInterval> | undefined,
@@ -97,7 +102,7 @@ export default defineComponent({
   },
   computed: {
     githubLink(): string {
-      return `https://github.com/${this.package.owner}/${this.package.name}`;
+      return `https://github.com/${this.package.name.includes('/') ? this.package.name : this.package.owner + '/' + this.package.name}`;
     },
   },
   watch: {
@@ -112,7 +117,12 @@ export default defineComponent({
   },
   async mounted() {
     this.timer = setInterval(() => this.updateScore().catch(() => { this.scorePair = null; this.scoreError = 'Scores temporarily unavailable.'; }), 5000);
-    this.package = await this.$dltApi.getPackage(this.name);
+    try {
+      const pack = await this.$dltApi.getPackage(this.name);
+      if (!pack) throw Error('Package not found');
+      this.package = pack;
+    } catch { this.packageError = 'Package unavailable. Try refreshing the page.'; return; }
+    finally { this.packageLoading = false; }
     if (this.version === '') {
       await router.replace({
         name: 'Package with Version',

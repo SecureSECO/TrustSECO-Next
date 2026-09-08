@@ -21,6 +21,25 @@ The governor publishes a funded round specifying repository, version, metric, co
 
 The larger absolute/relative bound applies. These are explicit initial policy choices, not empirically validated thresholds. Rounds last 10–3,600 seconds. Measurements two days apart belong to different rounds. Two contributors never lower the quorum. An outlier receives no automatic misconduct strike: the governor must substantiate a review with evidence. Existing appeals and reinstatement remain available.
 
+## Portal layout and read APIs
+
+The signed network uses the established portal layout: Overview, Packages, Activity,
+Node, Most recent payouts, Community, Settings and About. The original homepage,
+package search, version pages, measurement cards and paired scores are retained.
+`pilot-portal.ts` exposes read-only projections of current community rounds for
+these views. It does not restore legacy unsigned writes or server-held demo actors.
+Repository names include their owner to avoid collisions; a bare name resolves only
+when unambiguous. Only packages with funded collection rounds appear. Publishing
+new funded work still uses the governor command below.
+
+A blue measurement check requires a closed round, a supporting observation,
+community agreement and finality, including subsequent review events. A closed
+unsupported observation is labelled unverified. Confirmed scores use the ledger's
+`pilot_scoreInputs` policy; local estimates use the latest reported observation per
+metric and version, including observations without agreement. Historical confirmed
+observations remain visible even when newer disputed rounds exclude that metric
+from the current confirmed score.
+
 ## Guided local setup
 
 Open `/user/settings/` on the local port-3005 portal. Settings checks a GitHub username and account age, creates one local Ed25519 identity, displays the public SSH signing key, verifies its publication on GitHub, submits a signed admission request, and controls the local miner. This is key-based account linking, not GitHub OAuth login; no personal access token is needed for setup. Adding the public key on GitHub and governor approval remain deliberate user/operator actions.

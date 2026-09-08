@@ -12,7 +12,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Layout,
     children: [
       { path: 'payouts/', name: 'Most recent payouts', component: () => import('@/views/Payouts.vue') },
-      { path: 'community/', name: 'Community verification', component: () => import('@/views/Community.vue') },
+      { path: 'community/', name: 'Community verification', component: () => import.meta.env.VITE_PILOT === 'true' ? import('@/views/Pilot.vue') : import('@/views/Community.vue') },
       { path: 'about/', name: 'About', component: () => import('@/views/About.vue') },
       {
         path: '',
@@ -57,7 +57,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'user/settings/',
         name: 'Settings',
-        component: () => import('@/views/UserSettings.vue'),
+        component: () => import.meta.env.VITE_PILOT === 'true' ? import('@/views/PilotSettings.vue') : import('@/views/UserSettings.vue'),
         props: true,
       },
       {
@@ -91,9 +91,7 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(),
   // linkActiveClass: 'router-link-active',
-  routes: import.meta.env.VITE_PILOT === 'true'
-    ? [{ path: '/user/settings/', name: 'Identity & mining', component: () => import('@/views/PilotSettings.vue') }, { path: '/:pathMatch(.*)*', name: 'Live network', component: () => import('@/views/Pilot.vue') }]
-    : routes,
+  routes,
 });
 
 export default router;

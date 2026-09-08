@@ -86,8 +86,10 @@ export default defineComponent({
   },
   async mounted() {
     this.refreshTimer = setInterval(() => this.updateTrustFacts(), 5000);
+    if (import.meta.env.VITE_PILOT !== 'true') {
     this.socket = new WebSocket(`${import.meta.env.VITE_PROTOCOL === 'https' ? 'wss' : 'ws'}://${import.meta.env.VITE_HOST}/websocket/measurements`);
     this.socket.onmessage = () => this.updateTrustFacts();
+    }
     if (this.version !== '') {
       await this.updateTrustFacts();
     }
@@ -96,8 +98,9 @@ export default defineComponent({
   computed: {
     measurementSummary() {
       const confirmed = this.trustFacts.filter(f => f.status === 'confirmed').length;
+      const unverified = this.trustFacts.filter(f => f.status === 'unverified').length;
       const failed = this.trustFacts.filter(f => f.status === 'failed').length;
-      return { total: this.trustFacts.length, confirmed, failed, pending: this.trustFacts.length - confirmed - failed };
+      return { total: this.trustFacts.length, confirmed, failed, unverified, pending: this.trustFacts.length - confirmed - failed - unverified };
     },
     /** Filters out the correct facts for each category, and filters out any
     categories that do not contain any trustfacts */
@@ -149,6 +152,7 @@ export default defineComponent({
         <strong>{{ measurementSummary.total }} measurements</strong>
         <span class="summary-confirmed">✓ {{ measurementSummary.confirmed }} confirmed</span>
         <span><span class="summary-pending-dot" aria-hidden="true"></span>{{ measurementSummary.pending }} pending</span>
+        <span v-if="measurementSummary.unverified">{{ measurementSummary.unverified }} unverified</span>
         <span v-if="measurementSummary.failed">ⓘ {{ measurementSummary.failed }} need attention</span>
       </div>
       <span v-else>Loading measurements…</span>

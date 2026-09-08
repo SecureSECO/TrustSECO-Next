@@ -80,7 +80,7 @@ const packageLink = (name: string, version: string) => `/package/${encodeURIComp
 const scoreText = (score: unknown) => typeof score === 'number' ? score.toFixed(1) : '—';
 const timeText = (date?: string) => date ? new Date(date).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Time not recorded';
 const factLabel = (fact: string) => fact.replace(/^(gh|lib|cve|so|vs)_/, '').replaceAll('_',' ');
-const statusText = (status: string) => ({confirmed:'Confirmed',recorded:'Confirmation pending',submitted:'Confirmation pending',collected:'Collected',failed:'Submission needs attention'}[status] || 'Status unavailable');
+const statusText = (status: string) => ({unverified:'Not community-verified',confirmed:'Confirmed',recorded:'Confirmation pending',submitted:'Confirmation pending',collected:'Collected',failed:'Submission needs attention'}[status] || 'Status unavailable');
 async function refresh() {
   if (busy.value) return;
   busy.value = true;

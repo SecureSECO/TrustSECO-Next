@@ -10,6 +10,7 @@ defineProps({
   loading: { type: Boolean, required: true },
 });
 
+const pilot = import.meta.env.VITE_PILOT === 'true';
 const statusHovered = ref(false);
 const statusFocused = ref(false);
 const statusPinned = ref(false);
@@ -238,12 +239,12 @@ function convertFactValue(factValue: string, factCode: string): string {
       <h2 class="fact-name card-child">{{ codeToName[fact_code] }}</h2>
       <div v-if="measurement" class="measurement-status" @mouseenter="statusHovered = true" @mouseleave="statusHovered = false" @focusin="statusFocused = true" @focusout="statusFocused = false" @keydown.esc="statusPinned = false; statusHovered = false; statusFocused = false">
         <button type="button" @click="statusPinned = !statusPinned" :aria-expanded="statusHovered || statusFocused || statusPinned" :class="['status-dot', measurement.status === 'confirmed' ? 'confirmed' : measurement.status === 'failed' ? 'failed' : 'pending']"
-          :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
+          :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'unverified' ? 'Not community-verified. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
           <span aria-hidden="true">{{ measurement.status === 'confirmed' ? '✓' : measurement.status === 'failed' ? 'i' : '' }}</span>
         </button>
         <div v-show="statusHovered || statusFocused || statusPinned" class="status-popover">
-          <strong>{{ ({collected: 'Measurement collected', submitted: 'Submitted to the ledger', recorded: 'Recorded on the ledger', confirmed: 'Ledger-confirmed', failed: 'Could not submit to ledger'})[measurement.status || 'collected'] }}</strong>
-          <p>{{ measurement.status === 'confirmed' ? 'Finalized on the ledger. This does not independently verify source accuracy.' : measurement.status === 'failed' ? 'The measurement remains available, but submission failed.' : 'Waiting for final confirmation.' }}</p>
+          <strong>{{ ({unverified: 'Not community-verified', collected: 'Measurement collected', submitted: 'Submitted to the ledger', recorded: 'Recorded on the ledger', confirmed: 'Ledger-confirmed', failed: 'Could not submit to ledger'})[measurement.status || 'collected'] }}</strong>
+          <p>{{ measurement.status === 'confirmed' ? pilot ? 'Supported by community agreement in a closed, finalized round. Agreement does not guarantee source accuracy.' : 'Finalized on the ledger. This does not independently verify source accuracy.' : measurement.status === 'failed' ? 'The measurement remains available, but submission failed.' : measurement.status === 'unverified' ? 'The closed round did not confirm this observation.' : pilot ? 'Awaiting a closed round with community agreement and ledger finality.' : 'Waiting for final confirmation.' }}</p>
           <p>Source: {{ measurement.source || 'Unknown' }}</p>
           <p>Collected: {{ measurement.collectedAt ? new Date(measurement.collectedAt).toLocaleString() : 'Time not recorded' }}</p>
           <p>Submitted by: {{ measurement.uid }}</p>

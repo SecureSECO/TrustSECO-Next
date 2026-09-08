@@ -1,6 +1,6 @@
 <template>
   <main class="setup">
-    <a href="/">← TrustSECO</a><h1>Identity &amp; mining</h1>
+    <h1>Settings</h1><h2>Identity &amp; mining</h2>
     <p>Set up this node to contribute signed observations. Your private key stays on this machine.</p>
     <p v-if="error" role="alert" class="notice">{{ error }}</p><p v-if="message" role="status" class="notice">{{ message }}</p>
     <p v-if="loading">Loading setup…</p>

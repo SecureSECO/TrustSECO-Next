@@ -103,14 +103,14 @@ export default class DltApi extends DltInterface {
   }
 
   async getPackage(name: string) {
-    const { data } = await axios.get(this.#getLink(`package/${name}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}`));
     if (!data.packageName) return null;
     return parsePackage(data);
   }
 
   // TODO: Trust Facts should be per name AND version, but the API doesn't support this
   async getTrustFacts(name: string, version: string) {
-    const { data } = await axios.get(this.#getLink(`measurements/${name}`));
+    const { data } = await axios.get(this.#getLink(`measurements/${encodeURIComponent(name)}`));
     if (!data.facts) {
       return [];
     }
@@ -148,12 +148,12 @@ export default class DltApi extends DltInterface {
   }
 
   async getTrustScore(name: string, version?: string) {
-    const { data } = await axios.get(this.#getLink(`package/${name}/trust-score/${version ?? ''}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}/trust-score/${encodeURIComponent(version ?? '')}`));
     return (typeof data === 'number' ? data : undefined);
   }
 
   async getTrustScoreCategories(name: string, version: string): Promise<Record<string, number>> {
-    const { data } = await axios.get(this.#getLink(`package/${name}/trust-score-categories/${version}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}/trust-score-categories/${encodeURIComponent(version)}`));
     return data;
   }
 

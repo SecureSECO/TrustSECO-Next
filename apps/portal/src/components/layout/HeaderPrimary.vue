@@ -10,6 +10,7 @@
       <router-link v-if="communityDemo" to="/community/" active-class="selected">Community</router-link>
     </nav>
     <div class="account-area">
+      <router-link v-if="pilot" class="help-link" to="/user/settings/">Settings</router-link>
       <router-link class="help-link" to="/about/">About</router-link>
       <details v-if="privateServer" class="account-menu" @keydown.esc="closeMenu">
         <summary>{{ username || 'My account' }} <span aria-hidden="true">⌄</span></summary>
@@ -29,7 +30,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 const base = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api`;
-const communityDemo = import.meta.env.VITE_COMMUNITY_DEMO === 'true';
+const pilot = import.meta.env.VITE_PILOT === 'true';
+const communityDemo = pilot || import.meta.env.VITE_COMMUNITY_DEMO === 'true';
 const privateServer = ref(false);
 const username = ref('');
 const credits = ref('—');

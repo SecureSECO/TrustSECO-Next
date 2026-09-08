@@ -7,6 +7,7 @@ import send from 'koa-send';
 import fs from 'fs';
 import crypto from 'crypto';
 import { createWSClient } from '@klayr/api-client';
+import { portalRouter } from './pilot-portal';
 import { setupRouter, queueAdmission } from './pilot-setup';
 
 const endpoint = process.env.DLT_ENDPOINT;
@@ -100,6 +101,8 @@ router.post('/event', async ctx => {
     }
 });
 app.use(router.routes()).use(router.allowedMethods());
+const portal = portalRouter(withClient);
+app.use(portal.routes()).use(portal.allowedMethods());
 const localSetup = setupRouter(() => withClient(c => c.invoke('pilot_snapshot')));
 app.use(localSetup.routes()).use(localSetup.allowedMethods());
 app.use(async (ctx, next) => { if (ctx.path.startsWith('/api/')) { ctx.status = 404; return; } await next(); });
