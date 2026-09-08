@@ -86,7 +86,8 @@ export function applyEvent(original: CommunityState, payload: string, signature:
         fail(member, 'Enrolled contributor required');
         const r = s.rounds.find(x => x.id === e.round);
         fail(r && !r.closed && at <= r.closesAt, 'Round closed or unknown');
-        fail(integer(e.value) && e.value <= 1000000000, 'Invalid star count');
+        const releaseDate = ['lib_first_release_date', 'lib_latest_release_date'].includes(r.metric);
+        fail(integer(e.value) && e.value <= (releaseDate ? at : 1000000000), 'Invalid observation value');
         fail(integer(e.observedAt) && e.observedAt >= r.openedAt && e.observedAt <= at, 'Observation outside round or in future');
         fail(e.source === r.source && e.method === r.method, 'Incomparable source or method');
         fail(!r.observations.some(o => o.member === e.actor), 'Contributor already observed this round');

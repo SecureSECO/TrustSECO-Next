@@ -99,3 +99,12 @@ test('registry targets survive storage, prevent collisions and use exact depende
  const initial=freshPilot(pub('governor'),'test-network');await initPilot(store,{},initial);await savePilot(store,{},initial,s);assert.deepEqual((await loadPilot(store,{})).escrows,s.escrows);
  const {METRICS}=require('../dist/app/modules/pilot/policy');assert.deepEqual(METRICS.lib_first_release_date,{absolute:0,relativeBps:0});assert.deepEqual(METRICS.lib_dependency_count,{absolute:0,relativeBps:0});
 });
+
+test('release timestamps accept modern dates and reject future observations',()=>{
+ const body={metric:'lib_first_release_date',source:'Libraries.io REST',method:'libraries-project-v1',packagePlatform:'PyPI',packageName:'Flask'};
+ let s=open(setup(),body);
+ const observation={kind:'observe',round:'r',value:1271428177,source:body.source,method:body.method,observedAt:now};
+ assert.throws(()=>event(s,'a',{...observation,value:now+1}),/Invalid observation value/);
+ for(const actor of ['a','b','c'])s=event(s,actor,observation);
+ s=settlePilot(s,now+11,2);assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2)[0].factData,'1271428177');
+});
