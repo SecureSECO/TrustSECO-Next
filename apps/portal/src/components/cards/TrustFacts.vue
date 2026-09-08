@@ -100,7 +100,7 @@ export default defineComponent({
       const confirmed = this.trustFacts.filter(f => f.status === 'confirmed').length;
       const unverified = this.trustFacts.filter(f => f.status === 'unverified').length;
       const failed = this.trustFacts.filter(f => f.status === 'failed').length;
-      return { total: this.trustFacts.length, confirmed, failed, unverified, pending: this.trustFacts.length - confirmed - failed - unverified };
+      return { observations: this.trustFacts.reduce((n, f) => n + (f.observations?.length || 1), 0), total: this.trustFacts.length, confirmed, failed, unverified, pending: this.trustFacts.length - confirmed - failed - unverified };
     },
     /** Filters out the correct facts for each category, and filters out any
     categories that do not contain any trustfacts */
@@ -149,7 +149,7 @@ export default defineComponent({
   <section class="measurement-summary" aria-label="Measurement summary">
     <div class="summary-row">
       <div class="summary-counts" v-if="!isLoading">
-        <strong>{{ measurementSummary.total }} measurements</strong>
+        <strong>{{ measurementSummary.total }} {{ measurementSummary.total === 1 ? 'fact' : 'facts' }} · {{ measurementSummary.observations }} {{ measurementSummary.observations === 1 ? 'observation' : 'observations' }}</strong>
         <span class="summary-confirmed">✓ {{ measurementSummary.confirmed }} confirmed</span>
         <span><span class="summary-pending-dot" aria-hidden="true"></span>{{ measurementSummary.pending }} pending</span>
         <span v-if="measurementSummary.unverified">{{ measurementSummary.unverified }} unverified</span>
@@ -158,14 +158,14 @@ export default defineComponent({
       <span v-else>Loading measurements…</span>
       <va-switch v-model="confirmedOnly" label="Confirmed only" />
     </div>
-    <p class="summary-hint">Live measurements, with ledger confirmation when available. Hover or tap an indicator for details.</p>
+    <p class="summary-hint">One card per fact and verification round. Expand a card to inspect contributor observations.</p>
     <p v-if="loadError" role="alert">{{ loadError }}</p>
   </section>
   <va-card v-if="categoryTrustFacts.length === 0">
     <va-card-title>{{ confirmedOnly ? 'No finalized measurements yet' : 'No measurements collected yet' }}</va-card-title>
 
     <va-card-content>
-      <p> Collection and ledger confirmation may still be in progress. This view updates automatically. </p>
+      <p> This package may be queued for collection. Collection and ledger confirmation may still be in progress. This view updates automatically. </p>
     </va-card-content>
   </va-card>
   <div class="cardContainer">

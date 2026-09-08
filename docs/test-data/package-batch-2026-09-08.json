@@ -1,0 +1,367 @@
+{
+  "network": "trustseco-8b7bb864",
+  "createdAt": "2026-09-08T19:04:45.140Z",
+  "selection": "Random shuffle of a curated pool of Python packages; successful GitHub mappings only",
+  "packages": [
+    {
+      "repository": "psf/black",
+      "name": "black",
+      "platform": "Pypi",
+      "version": "26.5.1",
+      "roundID": "catalog-20260908-01",
+      "cataloguedAt": "2026-09-08T19:04:48.793Z",
+      "source": "https://libraries.io/api/PyPI/black"
+    },
+    {
+      "repository": "pandas-dev/pandas",
+      "name": "pandas",
+      "platform": "Pypi",
+      "version": "3.0.5",
+      "roundID": "catalog-20260908-02",
+      "cataloguedAt": "2026-09-08T19:04:51.549Z",
+      "source": "https://libraries.io/api/PyPI/pandas"
+    },
+    {
+      "repository": "delgan/loguru",
+      "name": "loguru",
+      "platform": "Pypi",
+      "version": "0.7.3",
+      "roundID": "catalog-20260908-03",
+      "cataloguedAt": "2026-09-08T19:04:53.488Z",
+      "source": "https://libraries.io/api/PyPI/loguru"
+    },
+    {
+      "repository": "numpy/numpy",
+      "name": "numpy",
+      "platform": "Pypi",
+      "version": "2.5.3",
+      "roundID": "catalog-20260908-04",
+      "cataloguedAt": "2026-09-08T19:04:57.979Z",
+      "source": "https://libraries.io/api/PyPI/numpy"
+    },
+    {
+      "repository": "cloudpipe/cloudpickle",
+      "name": "cloudpickle",
+      "platform": "Pypi",
+      "version": "3.1.2",
+      "roundID": "catalog-20260908-05",
+      "cataloguedAt": "2026-09-08T19:05:00.012Z",
+      "source": "https://libraries.io/api/PyPI/cloudpickle"
+    },
+    {
+      "repository": "boto/boto3",
+      "name": "boto3",
+      "platform": "Pypi",
+      "version": "1.43.89",
+      "roundID": "catalog-20260908-06",
+      "cataloguedAt": "2026-09-08T19:05:04.807Z",
+      "source": "https://libraries.io/api/PyPI/boto3"
+    },
+    {
+      "repository": "networkx/networkx",
+      "name": "networkx",
+      "platform": "Pypi",
+      "version": "3.6.1",
+      "roundID": "catalog-20260908-07",
+      "cataloguedAt": "2026-09-08T19:05:06.719Z",
+      "source": "https://libraries.io/api/PyPI/networkx"
+    },
+    {
+      "repository": "scikit-learn/scikit-learn",
+      "name": "scikit-learn",
+      "platform": "Pypi",
+      "version": "1.9.0",
+      "roundID": "catalog-20260908-08",
+      "cataloguedAt": "2026-09-08T19:05:08.796Z",
+      "source": "https://libraries.io/api/PyPI/scikit-learn"
+    },
+    {
+      "repository": "wntrblm/nox",
+      "name": "nox",
+      "platform": "Pypi",
+      "version": "2026.8.17",
+      "roundID": "catalog-20260908-09",
+      "cataloguedAt": "2026-09-08T19:05:12.876Z",
+      "source": "https://libraries.io/api/PyPI/nox"
+    },
+    {
+      "repository": "sqlalchemy/alembic",
+      "name": "alembic",
+      "platform": "Pypi",
+      "version": "1.19.2",
+      "roundID": "catalog-20260908-10",
+      "cataloguedAt": "2026-09-08T19:05:14.760Z",
+      "source": "https://libraries.io/api/PyPI/alembic"
+    },
+    {
+      "repository": "duckdb/duckdb-python",
+      "name": "duckdb",
+      "platform": "Pypi",
+      "version": "1.5.5",
+      "roundID": "catalog-20260908-11",
+      "cataloguedAt": "2026-09-08T19:05:18.689Z",
+      "source": "https://libraries.io/api/PyPI/duckdb"
+    },
+    {
+      "repository": "psf/requests",
+      "name": "requests",
+      "platform": "Pypi",
+      "version": "2.34.2",
+      "roundID": "catalog-20260908-12",
+      "cataloguedAt": "2026-09-08T19:05:20.700Z",
+      "source": "https://libraries.io/api/PyPI/requests"
+    },
+    {
+      "repository": "python-babel/babel",
+      "name": "babel",
+      "platform": "Pypi",
+      "version": "2.18.0",
+      "roundID": "catalog-20260908-13",
+      "cataloguedAt": "2026-09-08T19:05:26.431Z",
+      "source": "https://libraries.io/api/PyPI/babel"
+    },
+    {
+      "repository": "pypa/hatch",
+      "name": "hatch",
+      "platform": "Pypi",
+      "version": "1.18.0",
+      "roundID": "catalog-20260908-14",
+      "cataloguedAt": "2026-09-08T19:05:28.336Z",
+      "source": "https://libraries.io/api/PyPI/hatch"
+    },
+    {
+      "repository": "redis/redis-py",
+      "name": "redis",
+      "platform": "Pypi",
+      "version": "8.1.0",
+      "roundID": "catalog-20260908-15",
+      "cataloguedAt": "2026-09-08T19:05:30.857Z",
+      "source": "https://libraries.io/api/PyPI/redis"
+    },
+    {
+      "repository": "fastapi/typer",
+      "name": "typer",
+      "platform": "Pypi",
+      "version": "0.27.2",
+      "roundID": "catalog-20260908-16",
+      "cataloguedAt": "2026-09-08T19:05:33.158Z",
+      "source": "https://libraries.io/api/PyPI/typer"
+    },
+    {
+      "repository": "dask/distributed",
+      "name": "distributed",
+      "platform": "Pypi",
+      "version": "2026.8.0",
+      "roundID": "catalog-20260908-17",
+      "cataloguedAt": "2026-09-08T19:05:35.266Z",
+      "source": "https://libraries.io/api/PyPI/distributed"
+    },
+    {
+      "repository": "pycqa/isort",
+      "name": "isort",
+      "platform": "Pypi",
+      "version": "9.0.1",
+      "roundID": "catalog-20260908-18",
+      "cataloguedAt": "2026-09-08T19:05:37.246Z",
+      "source": "https://libraries.io/api/PyPI/isort"
+    },
+    {
+      "repository": "zarr-developers/zarr-python",
+      "name": "zarr",
+      "platform": "Pypi",
+      "version": "3.3.0",
+      "roundID": "catalog-20260908-19",
+      "cataloguedAt": "2026-09-08T19:05:39.209Z",
+      "source": "https://libraries.io/api/PyPI/zarr"
+    },
+    {
+      "repository": "pyinvoke/invoke",
+      "name": "invoke",
+      "platform": "Pypi",
+      "version": "3.0.3",
+      "roundID": "catalog-20260908-20",
+      "cataloguedAt": "2026-09-08T19:05:41.582Z",
+      "source": "https://libraries.io/api/PyPI/invoke"
+    },
+    {
+      "repository": "coveragepy/coveragepy",
+      "name": "coverage",
+      "platform": "Pypi",
+      "version": "7.16.0",
+      "roundID": "catalog-20260908-21",
+      "cataloguedAt": "2026-09-08T19:05:45.766Z",
+      "source": "https://libraries.io/api/PyPI/coverage"
+    },
+    {
+      "repository": "python-attrs/attrs",
+      "name": "attrs",
+      "platform": "Pypi",
+      "version": "26.1.0",
+      "roundID": "catalog-20260908-22",
+      "cataloguedAt": "2026-09-08T19:05:47.756Z",
+      "source": "https://libraries.io/api/PyPI/attrs"
+    },
+    {
+      "repository": "uiri/toml",
+      "name": "toml",
+      "platform": "Pypi",
+      "version": "0.10.2",
+      "roundID": "catalog-20260908-23",
+      "cataloguedAt": "2026-09-08T19:05:49.907Z",
+      "source": "https://libraries.io/api/PyPI/toml"
+    },
+    {
+      "repository": "astral-sh/uv",
+      "name": "uv",
+      "platform": "Pypi",
+      "version": "0.12.10",
+      "roundID": "catalog-20260908-24",
+      "cataloguedAt": "2026-09-08T19:06:06.178Z",
+      "source": "https://libraries.io/api/PyPI/uv"
+    },
+    {
+      "repository": "aio-libs/aiohttp",
+      "name": "aiohttp",
+      "platform": "Pypi",
+      "version": "3.14.3",
+      "roundID": "catalog-20260908-25",
+      "cataloguedAt": "2026-09-08T19:06:12.850Z",
+      "source": "https://libraries.io/api/PyPI/aiohttp"
+    },
+    {
+      "repository": "pypa/build",
+      "name": "build",
+      "platform": "Pypi",
+      "version": "1.6.0",
+      "roundID": "catalog-20260908-26",
+      "cataloguedAt": "2026-09-08T19:06:14.844Z",
+      "source": "https://libraries.io/api/PyPI/build"
+    },
+    {
+      "repository": "pypa/virtualenv",
+      "name": "virtualenv",
+      "platform": "Pypi",
+      "version": "21.7.8",
+      "roundID": "catalog-20260908-27",
+      "cataloguedAt": "2026-09-08T19:06:16.890Z",
+      "source": "https://libraries.io/api/PyPI/virtualenv"
+    },
+    {
+      "repository": "kludex/uvicorn",
+      "name": "uvicorn",
+      "platform": "Pypi",
+      "version": "0.52.4",
+      "roundID": "catalog-20260908-28",
+      "cataloguedAt": "2026-09-08T19:06:18.719Z",
+      "source": "https://libraries.io/api/PyPI/uvicorn"
+    },
+    {
+      "repository": "celery/celery",
+      "name": "celery",
+      "platform": "Pypi",
+      "version": "5.6.3",
+      "roundID": "catalog-20260908-29",
+      "cataloguedAt": "2026-09-08T19:06:20.846Z",
+      "source": "https://libraries.io/api/PyPI/celery"
+    },
+    {
+      "repository": "python-openxml/python-docx",
+      "name": "python-docx",
+      "platform": "Pypi",
+      "version": "1.2.0",
+      "roundID": "catalog-20260908-30",
+      "cataloguedAt": "2026-09-08T19:06:22.994Z",
+      "source": "https://libraries.io/api/PyPI/python-docx"
+    },
+    {
+      "repository": "rq/rq",
+      "name": "rq",
+      "platform": "Pypi",
+      "version": "2.12.0",
+      "roundID": "catalog-20260908-31",
+      "cataloguedAt": "2026-09-08T19:06:24.990Z",
+      "source": "https://libraries.io/api/PyPI/rq"
+    },
+    {
+      "repository": "textualize/rich",
+      "name": "rich",
+      "platform": "Pypi",
+      "version": "15.0.0",
+      "roundID": "catalog-20260908-32",
+      "cataloguedAt": "2026-09-08T19:06:27.279Z",
+      "source": "https://libraries.io/api/PyPI/rich"
+    },
+    {
+      "repository": "paramiko/paramiko",
+      "name": "paramiko",
+      "platform": "Pypi",
+      "version": "5.0.0",
+      "roundID": "catalog-20260908-33",
+      "cataloguedAt": "2026-09-08T19:06:29.503Z",
+      "source": "https://libraries.io/api/PyPI/paramiko"
+    },
+    {
+      "repository": "python-poetry/poetry",
+      "name": "poetry",
+      "platform": "Pypi",
+      "version": "2.4.3",
+      "roundID": "catalog-20260908-34",
+      "cataloguedAt": "2026-09-08T19:06:35.753Z",
+      "source": "https://libraries.io/api/PyPI/poetry"
+    },
+    {
+      "repository": "sympy/sympy",
+      "name": "sympy",
+      "platform": "Pypi",
+      "version": "1.14.0",
+      "roundID": "catalog-20260908-35",
+      "cataloguedAt": "2026-09-08T19:06:37.774Z",
+      "source": "https://libraries.io/api/PyPI/sympy"
+    },
+    {
+      "repository": "pylint-dev/pylint",
+      "name": "pylint",
+      "platform": "Pypi",
+      "version": "4.0.8",
+      "roundID": "catalog-20260908-36",
+      "cataloguedAt": "2026-09-08T19:06:39.760Z",
+      "source": "https://libraries.io/api/PyPI/pylint"
+    },
+    {
+      "repository": "pyca/cryptography",
+      "name": "cryptography",
+      "platform": "Pypi",
+      "version": "50.0.1",
+      "roundID": "catalog-20260908-37",
+      "cataloguedAt": "2026-09-08T19:06:43.627Z",
+      "source": "https://libraries.io/api/PyPI/cryptography"
+    },
+    {
+      "repository": "pallets/click",
+      "name": "click",
+      "platform": "Pypi",
+      "version": "8.5.0",
+      "roundID": "catalog-20260908-38",
+      "cataloguedAt": "2026-09-08T19:06:45.420Z",
+      "source": "https://libraries.io/api/PyPI/click"
+    },
+    {
+      "repository": "boto/botocore",
+      "name": "botocore",
+      "platform": "Pypi",
+      "version": "1.43.89",
+      "roundID": "catalog-20260908-39",
+      "cataloguedAt": "2026-09-08T19:06:49.609Z",
+      "source": "https://libraries.io/api/PyPI/botocore"
+    },
+    {
+      "repository": "encode/httpx",
+      "name": "httpx",
+      "platform": "Pypi",
+      "version": "0.28.1",
+      "roundID": "catalog-20260908-40",
+      "cataloguedAt": "2026-09-08T19:06:51.544Z",
+      "source": "https://libraries.io/api/PyPI/httpx"
+    }
+  ]
+}

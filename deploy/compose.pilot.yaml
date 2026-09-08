@@ -44,8 +44,9 @@ services:
       PILOT_LOCAL_ORIGIN: http://localhost:3005
       PILOT_IDENTITY_DIR: /local-identity
       PILOT_REQUEST_DIR: /admission-requests
+      PILOT_PACKAGE_QUEUE_FILE: /package-queue/packages.json
     ports: ["127.0.0.1:3005:3000"]
-    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro", "./pilot-runtime/local-identity:/local-identity", "./pilot-runtime/admission-requests:/admission-requests"]
+    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro", "./pilot-runtime/local-identity:/local-identity", "./pilot-runtime/admission-requests:/admission-requests", "./pilot-runtime/package-queue:/package-queue:ro"]
   worker-a:
     image: trustseco-pilot-ledger
     platform: linux/amd64
@@ -94,6 +95,15 @@ services:
     depends_on: [web]
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
     volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-f:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+  package-publisher:
+    image: trustseco-pilot-web
+    platform: linux/amd64
+    profiles: [bulk-test]
+    network_mode: service:web
+    depends_on: [web]
+    command: [node, /tools/package-queue.cjs, "http://localhost:3000", /queue/packages.json, /governor/identity.json]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/package-queue:/queue:ro", "./pilot-runtime/governor:/governor"]
+
 volumes:
   node1:
     name: trustseco-8b7bb864_node1

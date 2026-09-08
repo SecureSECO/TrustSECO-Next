@@ -27,3 +27,19 @@ test('package browsing routes accept encoded repository names and reject legacy 
  const app=new Koa(),router=portalRouter(async work=>work(c));app.use(router.routes());const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
  try{for(const path of ['/api/dlt/package/owner%2Fpkg','/api/dlt/package/owner%2Fpkg/trust-score/','/api/dlt/package/owner%2Fpkg/trust-score/1.0','/api/dlt/measurements/owner%2Fpkg']){const response=await fetch(base+path);assert.ok([200,204].includes(response.status),path)}assert.equal((await fetch(base+'/api/dlt/add-job',{method:'POST'})).status,404);assert.equal((await(await fetch(base+'/api/dlt/packages?query=missing')).json()).total,0)}finally{await new Promise(r=>server.close(r))}
 });
+
+test('fact cards group a round using its agreed value and retain differing observations',()=>{
+ const {factGroups}=require('../dist/pilot-portal');const r=round();r.result.value=11;r.assignment={committee:['alice','bob','carol']};
+ r.observations[0].value=10;r.observations[1].value=11;r.observations[2].value=12;
+ const groups=factGroups({rounds:[r],audit:[{height:10}]},'owner/pkg',10);
+ assert.equal(groups.length,1);assert.equal(groups[0].factData,'11');assert.equal(groups[0].confirmationCount,3);assert.equal(groups[0].observations.length,4);assert.equal(groups[0].observations[3].status,'unverified');assert.equal(groups[0].assigned,true);assert.equal(groups[0].error,undefined);
+ assert.equal(factGroups({rounds:[r],audit:[{height:10}]},'owner/pkg',9)[0].status,'recorded');
+});
+test('grouping preserves separate versions/rounds and does not confirm disputed values',()=>{
+ const {factGroups}=require('../dist/pilot-portal');const a=round(),b=round('owner/pkg','2.0');a.result.status='disputed';
+ const groups=factGroups({rounds:[a,b],audit:[]},'owner/pkg',10);assert.equal(groups.length,2);assert.equal(groups[0].status,'unverified');assert.equal(groups[0].agreement,false);assert.deepEqual(groups.map(g=>g.version),['1.0','2.0']);
+});
+test('queued packages are browsable without creating observations or duplicate packages',()=>{
+ const {queueStatus}=require('../dist/package-queue');const s={audit:[],rounds:[round()],catalog:[{repository:'owner/pkg',version:'2.0',platform:'PyPI',roundID:'future'},{repository:'another/lib',version:'1.0',platform:'PyPI',roundID:'next'}]};
+ assert.equal(packages(s).length,2);assert.deepEqual(packages(s)[0].packageReleases,['1.0','2.0']);assert.equal(measurements(s,'another/lib',10).length,0);assert.equal(queueStatus(s).queued,2);
+});
