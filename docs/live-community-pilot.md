@@ -1,3 +1,10 @@
+> Protocol extension (not deployed by this change): [random observer assignment](random-observer-assignment.md)
+> adds an explicit, one-way activation event. Until activation, the legacy behavior
+> described below remains in force. Afterwards only three assigned operators may
+> observe each round; all frozen eligible operators first contribute entropy. A
+> missing response expires work without a redraw. Read the activation plan and
+> selective-abort/identity/copying limitations before enabling it.
+
 # Live community verification and TrustCOIN
 
 This is a separate network and application entry point. It preserves the existing community demonstration at port 3004. The local integration network uses port 3005, chain ID `73657033`, four separately keyed validator processes and 15-second blocks. All local test identities are explicitly labelled: separate processes on this Mac are not independent operators.

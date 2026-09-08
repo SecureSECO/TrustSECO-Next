@@ -39,8 +39,8 @@ export function setupRouter(snapshot: () => Promise<any>) {
     let active = false, activity = identity.settings().mining ? 'Starting mining' : 'Mining is off', lastSuccess: string | null = null;
     const tick = async () => {
         if (active || !identity.settings().mining) return;
-        active = true; activity = 'Collecting or submitting an observation';
-        try { const worked = await mineOnce(relay, identity.file, credentials.read()); if (worked) lastSuccess = new Date().toISOString(); activity = worked ? 'Observation recorded' : 'Waiting for work'; }
+        active = true; activity = 'Contributing to assignment or collecting an observation';
+        try { const worked = await mineOnce(relay, identity.file, credentials.read()); if (worked) lastSuccess = new Date().toISOString(); activity = worked ? 'Signed mining event recorded' : 'Waiting for work'; }
         catch (e) { activity = (e as Error).message; }
         finally { active = false; }
     };

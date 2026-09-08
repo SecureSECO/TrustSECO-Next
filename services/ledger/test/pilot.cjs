@@ -10,13 +10,13 @@ const signature=(payload,id,domain='TrustSECO-community-v1')=>crypto.sign(null,B
 function envelope(actor,body){const payload=JSON.stringify({id:'e'+(++seq),actor,network:'test-network',...body});return {payload,signature:signature(payload,actor)}}
 function event(s,actor,body,at=now,height=1){const e=envelope(actor,body);return applyPilot(s,e.payload,e.signature,at,height)}
 function enrolment(id){const joinPayload=JSON.stringify({network:'test-network',login:id,publicKey:pub(id),expiresAt:now+3600,nonce:crypto.randomUUID()});return {kind:'enrol',member:id,key:pub(id),githubId:String(id.charCodeAt(0)),operator:id,accountCreatedAt:now-200*86400,evidence:'Test fixture only',joinPayload,joinSignature:signature(joinPayload,id,'TrustSECO-join-v1')}}
-function setup(){let s=freshPilot(pub('governor'),'test-network');for(const id of ['a','b','c','d'])s=event(s,'governor',enrolment(id));return s}
+function setup(){let s=freshPilot(pub('governor'),'test-network','legacy-v1');for(const id of ['a','b','c','d'])s=event(s,'governor',enrolment(id));return s}
 const openBody={kind:'open',round:'r',package:'pallets/flask',repository:'pallets/flask',version:'3.1.2',metric:'gh_contributor_count',source:'GitHub REST',method:'github-rest-v1',duration:10,bounty:'100'};
 function open(s=setup(),body={}){return event(s,'governor',{...openBody,...body})}
 function observations(s,values=[100,101,100]){for(let i=0;i<values.length;i++)s=event(s,['a','b','c','d'][i],{kind:'observe',round:'r',value:values[i],source:'GitHub REST',method:'github-rest-v1',observedAt:now});return s}
 const closed=values=>settlePilot(observations(open(),values),now+11,2);
 test('admission requires contributor proof and prevents cross-network signatures',()=>{
- const s=freshPilot(pub('governor'),'test-network');assert.throws(()=>event(s,'governor',{...enrolment('a'),joinSignature:'bad'}),/proof/);
+ const s=freshPilot(pub('governor'),'test-network','legacy-v1');assert.throws(()=>event(s,'governor',{...enrolment('a'),joinSignature:'bad'}),/proof/);
  assert.throws(()=>event(s,'governor',{...enrolment('a'),network:'another'}),/network/);
  assert.throws(()=>event(s,'governor',{...enrolment('a'),key:pub('b')}),/key mismatch/);
  assert.throws(()=>event(s,'governor',enrolment('a'),now+7200),/expired/);
@@ -75,7 +75,7 @@ test('unfinalized review cannot restore confirmed score inputs',()=>{
 test('normalized storage preserves balances, escrow, audit and payments across reload',async()=>{
  const data=new Map();let writes=0;
  const store={has:async(c,k)=>data.has(k.toString('hex')),get:async(c,k)=>data.get(k.toString('hex')),set:async(c,k,v)=>{writes++;data.set(k.toString('hex'),v)},del:async(c,k)=>data.delete(k.toString('hex'))};
- const initial=freshPilot(pub('governor'),'test-network');await initPilot(store,{},initial);
+ const initial=freshPilot(pub('governor'),'test-network','legacy-v1');await initPilot(store,{},initial);
  const next=settlePilot(closed(),now+11+DELAY,3);await savePilot(store,{},initial,next);assert.deepEqual(await loadPilot(store,{}),next);
  const previousWrites=writes;await savePilot(store,{},next,next);assert.equal(writes,previousWrites);
 });
@@ -96,7 +96,7 @@ test('registry targets survive storage, prevent collisions and use exact depende
  for(const actor of ['a','b','c'])s=event(s,actor,{kind:'observe',round:'r',value:5,source:body.source,method:body.method,observedAt:now});
  s=settlePilot(s,now+11,2);assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2)[0].factData,'5');
  const data=new Map(),store={has:async(c,k)=>data.has(k.toString('hex')),get:async(c,k)=>data.get(k.toString('hex')),set:async(c,k,v)=>data.set(k.toString('hex'),v),del:async(c,k)=>data.delete(k.toString('hex'))};
- const initial=freshPilot(pub('governor'),'test-network');await initPilot(store,{},initial);await savePilot(store,{},initial,s);assert.deepEqual((await loadPilot(store,{})).escrows,s.escrows);
+ const initial=freshPilot(pub('governor'),'test-network','legacy-v1');await initPilot(store,{},initial);await savePilot(store,{},initial,s);assert.deepEqual((await loadPilot(store,{})).escrows,s.escrows);
  const {METRICS}=require('../dist/app/modules/pilot/policy');assert.deepEqual(METRICS.lib_first_release_date,{absolute:0,relativeBps:0});assert.deepEqual(METRICS.lib_dependency_count,{absolute:0,relativeBps:0});
 });
 

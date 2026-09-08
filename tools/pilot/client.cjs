@@ -2,6 +2,7 @@
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto");
+const { entropyEvent, canObserve, expiredEnvelope } = require('./assignment.cjs');
 const credentialContext = new (require('node:async_hooks').AsyncLocalStorage)();
 const credentials = () => credentialContext.getStore() || {github:process.env.GITHUB_TOKEN,libraries:process.env.LIBRARIES_IO_API_KEY};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -221,17 +222,32 @@ async function mineOnceInner(url, keyfile) {
   const identity = read(keyfile),
     outbox = keyfile + ".outbox";
   if (fs.existsSync(outbox)) {
-    await sendEnvelope(url, read(outbox));
-    fs.unlinkSync(outbox);
-    return true;
+    const pending = read(outbox), event = JSON.parse(pending.payload), current = await snapshot(url);
+    if (event.network !== current.network) throw Error('Pending event belongs to another network');
+    if (!current.audit.some(a => a.id === event.id) && expiredEnvelope(event, current)) {
+      fs.renameSync(outbox, outbox + '.expired-' + crypto.randomUUID());
+    } else {
+      await sendEnvelope(url, pending);
+      fs.unlinkSync(outbox);
+      return true;
+    }
   }
   const s = await snapshot(url),
     m = s.members.find((m) => m.id === identity.id);
   if (!m || m.revoked || m.standing === "suspended")
     throw Error("Contributor is not admitted or is suspended/revoked");
+  const entropy = entropyEvent(s, identity, keyfile);
+  if (entropy) {
+    const payload = JSON.stringify({...entropy,id:crypto.randomUUID(),actor:identity.id,network:s.network});
+    privateFile(outbox, {payload,signature:sign(payload,identity.privateKey)});
+    await sendEnvelope(url, read(outbox));
+    fs.unlinkSync(outbox);
+    return true;
+  }
   const candidates = s.rounds.filter(
     (r) =>
       !r.closed &&
+      canObserve(r, s, identity.id) &&
       r.closesAt > s.at + 45 &&
       !r.observations.some((o) => o.member === identity.id) &&
       (collectorRetry.get(r.id) || 0) <= Date.now()
@@ -379,7 +395,7 @@ async function main() {
     do {
       try {
         if (await mineOnce(a[0], a[1]))
-          console.log("Signed observation recorded");
+          console.log("Signed mining event recorded");
       } catch (e) {
         console.error(e.message);
         if (a.includes("--once")) throw e;
