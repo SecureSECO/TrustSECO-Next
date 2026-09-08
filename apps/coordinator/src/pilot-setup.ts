@@ -34,7 +34,7 @@ export function setupRouter(snapshot: () => Promise<any>) {
     if (!localRequestAllowed(origin, new URL(origin).host, origin, 'same-origin', '1')) throw Error('Local setup requires an explicit localhost HTTP origin');
     const identity = new LocalIdentity(process.env.PILOT_IDENTITY_DIR || '/local-identity');
     const relay = baseURL(process.env.PILOT_RELAY_URL || 'http://localhost:3000');
-    let active = false, activity = 'Mining is off', lastSuccess: string | null = null;
+    let active = false, activity = identity.settings().mining ? 'Starting mining' : 'Mining is off', lastSuccess: string | null = null;
     const tick = async () => {
         if (active || !identity.settings().mining) return;
         active = true; activity = 'Collecting or submitting an observation';
