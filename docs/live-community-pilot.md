@@ -7,7 +7,7 @@
 
 # Live community verification and TrustCOIN
 
-This is a separate network and application entry point. It preserves the existing community demonstration at port 3004. The local integration network uses port 3005, chain ID `73657033`, four separately keyed validator processes and 15-second blocks. All local test identities are explicitly labelled: separate processes on this Mac are not independent operators.
+This is a separate network and application entry point. It preserves the existing community demonstration at port 3004. The local integration network uses port 3005, chain ID `8b7bb864` (fresh assignment test; the previous `73657033` chain is backed up), four separately keyed validator processes and 15-second blocks. All local test identities are explicitly labelled: separate processes on this Mac are not independent operators.
 
 ## What is connected
 
@@ -113,7 +113,7 @@ Identity recovery downloads deliberately do not include API credentials.
 The local miner reads credentials on each collection attempt without mutating global
 environment variables. The GitHub token also applies to local identity checks. CLI
 miners can use `GITHUB_TOKEN` and `LIBRARIES_IO_API_KEY`. The local Settings credentials
-belong to that node, not the three fixture workers. API keys go only to their provider;
+belong to that node. The explicit local `mining-test` profile also mounts this credential file read-only into six labelled fixture workers; this is shared test infrastructure, not independent operators. API keys go only to their provider;
 redirects are refused, errors omit request URLs, and signed evidence excludes the
 Libraries.io authentication query parameter. Saving a key does not create an identity,
 admit a contributor, start mining, or fund new work.
@@ -199,18 +199,34 @@ For a fresh local test, build the images, then run:
 ```sh
 docker build --platform linux/amd64 -t trustseco-pilot-ledger services/ledger
 docker build --platform linux/amd64 -t trustseco-pilot-web --build-arg PILOT=true --build-arg PORTAL_HOST=localhost:3005 -f deploy/web.Dockerfile .
-docker run --rm --platform linux/amd64 -e NODE_PATH=/usr/src/app/node_modules \
+docker run --rm --platform linux/amd64 -e NODE_PATH=/usr/src/app/node_modules -e PILOT_CHAIN_ID=8b7bb864 \
   -v "$PWD/tools/pilot:/tools:ro" -v "$PWD/deploy/pilot-runtime:/runtime" \
   trustseco-pilot-ledger node /tools/prepare-local.cjs
 docker run --rm --platform linux/amd64 \
-  -e TRUSTSECO_PILOT=true -e PILOT_NETWORK=trustseco-73657033 \
+  -e TRUSTSECO_PILOT=true -e PILOT_NETWORK=trustseco-8b7bb864 \
   -e PILOT_GOVERNOR_FILE=/pilot/governor.pem \
   -v "$PWD/deploy/pilot-runtime/shared:/pilot" trustseco-pilot-ledger \
   sh -c 'npm run build && ./bin/run genesis-block:create --output /pilot --assets-file /pilot/genesis_assets.json --config /pilot/config.json'
 docker compose -f deploy/compose.pilot.yaml up -d
 ```
 
-For explicitly labelled local fixture identities only, run `local-fixtures.cjs` in the web container's network namespace, mounting `pilot-runtime/governor` at `/governor` and `pilot-runtime/contributors` at `/fixtures`. Then `docker compose -f deploy/compose.pilot.yaml --profile mining-test up -d` starts workers, each with only its own identity directory. Real operators use the admission flow above instead.
+For explicitly labelled local fixture identities only, run `local-fixtures.cjs` with `PILOT_NETWORK=trustseco-8b7bb864` and `PILOT_FIXTURE_COUNT=6` in the web container's network namespace, mounting `pilot-runtime/governor` at `/governor` and `pilot-runtime/contributors` at `/fixtures`. Then `docker compose -f deploy/compose.pilot.yaml --profile mining-test up -d` starts workers, each with only its own identity directory. Real operators use the admission flow above instead.
+
+After starting a fresh network, populate/check the SDK eligibility index from each
+validator's own container before publishing work:
+
+```sh
+for n in 1 2 3 4; do
+  docker exec -i "trustseco-pilot-validator$n-1" node < tools/pilot/self-stake.cjs
+done
+```
+
+This SDK derives self-stakes from genesis but does not populate its eligible-validator
+index there. The helper checks both and, only if missing, submits a normal additional
+stake of 1,000,000,000 native base units from that validator's own key. This is separate
+from TrustCOIN. Wait for stake snapshots and the active-set transition, then verify
+all four produce blocks and finality advances with one offline. A healthy RPC and
+four positive self-stakes alone do not prove redundant validation.
 
 Preparation refuses to overwrite keys/genesis. Preserve the existing network if the directory already exists. The new module is opt-in through `TRUSTSECO_PILOT`; never enable it on an existing production chain without an agreed migration. This implementation deliberately selects a fresh genesis, with old networks retained separately.
 

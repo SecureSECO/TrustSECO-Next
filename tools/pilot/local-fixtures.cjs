@@ -6,13 +6,14 @@ const fs = require("node:fs"),
   const url = "http://localhost:3000",
     root = "/fixtures";
   const s = await (await fetch(url + "/api/pilot/snapshot")).json();
-  if (s.testNetwork !== true || s.network !== "trustseco-73657033")
+  if (s.testNetwork !== true || s.network !== (process.env.PILOT_NETWORK || "trustseco-73657033"))
     throw Error("Local test network required");
   const governor = JSON.parse(
     fs.readFileSync("/governor/identity.json", "utf8")
   );
   fs.mkdirSync(root, { recursive: true, mode: 0o700 });
-  for (const id of ["test-a", "test-b", "test-c"]) {
+  const ids = process.env.PILOT_FIXTURE_COUNT === "6" ? ["test-a", "test-b", "test-c", "test-d", "test-e", "test-f"] : ["test-a", "test-b", "test-c"];
+  for (const id of ids) {
     const directory = root + "/" + id;
     fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
     const file = directory + "/identity.json";
@@ -62,7 +63,7 @@ const fs = require("node:fs"),
       })
     );
   }
-  console.log("Three explicitly labelled local test identities admitted.");
+  console.log(ids.length + " explicitly labelled local test identities admitted.");
 })().catch((e) => {
   console.error(e.message);
   process.exit(1);

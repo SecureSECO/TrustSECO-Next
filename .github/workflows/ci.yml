@@ -16,9 +16,9 @@ jobs:
       - run: npm ci
       - run: npx tsc
       - run: node --test test/measurements.cjs test/score-inputs.cjs
-      - run: node --test test/pilot-setup.cjs test/pilot-portal.cjs
+      - run: node --test test/pilot-setup.cjs test/pilot-portal.cjs test/pilot-relay.cjs
       - run: node --test ../../tools/pilot/client.test.cjs ../../tools/pilot/assignment.test.cjs
-      - run: node --test ../../tools/pilot/local-identity.test.cjs ../../tools/pilot/credentials.test.cjs ../../tools/pilot/libraries.test.cjs
+      - run: node --test ../../tools/pilot/local-identity.test.cjs ../../tools/pilot/credentials.test.cjs ../../tools/pilot/libraries.test.cjs ../../tools/pilot/self-stake.test.cjs
   portal:
     runs-on: ubuntu-latest
     defaults:

@@ -76,7 +76,7 @@ router.post('/event', async ctx => {
         if (!key || member?.revoked || event.network !== snapshot.network || typeof event.id !== 'string' || event.id.length > 2000 || !event.id) ctx.throw(403, 'Unknown or revoked signing identity');
         if (!crypto.verify(null, Buffer.from('TrustSECO-community-v1\n' + body.payload), key, Buffer.from(body.signature, 'base64'))) ctx.throw(403, 'Invalid contributor signature');
         if (snapshot.audit.some(a => a.id === event.id)) { ctx.body = { eventId: event.id, status: 'recorded' }; return; }
-        if (!['enrol', 'open', 'observe', 'close', 'substantiate', 'appeal', 'overturn', 'reinstate', 'transfer', 'revoke'].includes(event.kind)) ctx.throw(400, 'Unknown event kind');
+        if (!['enrol', 'open', 'observe', 'close', 'substantiate', 'appeal', 'overturn', 'reinstate', 'transfer', 'revoke', 'activate-assignment', 'entropy-commit', 'entropy-reveal'].includes(event.kind)) ctx.throw(400, 'Unknown event kind');
         const tx = { module: 'pilot', command: 'record', params: { payload: body.payload, signature: body.signature }, fee: 100000000n };
         tx.fee = client.transaction.computeMinFee(await client.transaction.create(tx, transportKey));
         const signed = await client.transaction.create(tx, transportKey);
@@ -92,7 +92,7 @@ router.post('/event', async ctx => {
                     if (state.audit.some(a => a.id === event.id)) break;
                 }
             } catch { /* Worker will retry its durable envelope. */ }
-            finally { busy = false; await pendingClient.disconnect(); }
+            finally { busy = false; await pendingClient.disconnect().catch(() => { /* SDK disconnect timeouts must not crash the relay. */ }); }
         })();
     } finally {
         if (client) { busy = false; await client.disconnect(); }

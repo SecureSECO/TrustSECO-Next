@@ -35,7 +35,7 @@ execFileSync(
   [
     "/tools/genesis.cjs",
     root + "/shared",
-    "73657033",
+    process.env.PILOT_CHAIN_ID || "73657033",
     root + "/governor/public.pem",
     root + "/relayer/relayer-public.json",
     ...[1, 2, 3, 4].map((i) => root + "/validator" + i + "/public.json"),
