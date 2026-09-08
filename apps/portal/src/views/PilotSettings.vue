@@ -26,7 +26,7 @@
       <section id="mining"><h2>Automatic mining</h2>
         <div class="mining-toggle"><button type="button" role="switch" aria-label="Automatic mining" :aria-checked="state.mining" :class="['mining-switch',{on:state.mining}]" :disabled="busy || (!state.mining && !!miningBlocker)" @click="toggle"><span aria-hidden="true"></span></button><strong>{{ state.mining ? 'Mining is on' : 'Start mining' }}</strong></div>
         <p v-if="miningBlocker" role="status">{{ miningBlocker }}</p>
-        <p>{{ state.activity }}</p><p v-if="state.lastSuccess">Last recorded observation: {{ new Date(state.lastSuccess).toLocaleString() }}</p>
+        <p>{{ state.activity }}</p><p v-if="state.lastSuccess">Last recorded mining event: {{ new Date(state.lastSuccess).toLocaleString() }}</p>
         <p v-if="!state.credentials?.github?.configured">No GitHub API token: public GitHub collection can run with lower rate limits. Add a token below for regular mining.</p>
         <p v-if="!state.credentials?.libraries?.configured">No Libraries.io API key: Libraries.io collection cannot run until you save its key. GitHub collection can still run.</p>
         <p>Mining runs on this node even when you close this page. Stopping lets an in-flight submission finish. With no available jobs, the miner waits for work.</p>

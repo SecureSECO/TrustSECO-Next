@@ -1,8 +1,10 @@
 import { JsonStore, loadState, saveState, migrateState, legacyKey } from '../community/storage';
 import { PilotState, Payment, Escrow } from './policy';
+import { ASSIGNMENT_VERSION } from './assignment';
 
 const key = (s: string) => Buffer.from(`pilot:${s}`);
 interface Meta {
+	assignmentVersion?: PilotState['assignmentVersion'];
 	network: string;
 	supply: string;
 	payoutCount: number;
@@ -12,8 +14,10 @@ export async function loadPilot<C>(store: JsonStore<C>, ctx: C): Promise<PilotSt
 	const community = await loadState(store, ctx);
 	const read = async <T>(id: string) => JSON.parse((await store.get(ctx, key(id))).json) as T;
 	const meta = await read<Meta>('meta');
+	if (meta.assignmentVersion !== undefined && meta.assignmentVersion !== ASSIGNMENT_VERSION) throw new Error('Unsupported assignment policy');
 	const s: PilotState = {
 		community,
+		...(meta.assignmentVersion ? { assignmentVersion: meta.assignmentVersion } : {}),
 		network: meta.network,
 		supply: meta.supply,
 		revoked: meta.revoked,
@@ -32,6 +36,7 @@ function records(s: PilotState) {
 	r.set(
 		'meta',
 		JSON.stringify({
+			...(s.assignmentVersion ? { assignmentVersion: s.assignmentVersion } : {}),
 			network: s.network,
 			supply: s.supply,
 			payoutCount: s.payouts.length,

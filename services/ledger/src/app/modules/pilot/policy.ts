@@ -1,4 +1,5 @@
 import { createPublicKey, verify } from 'crypto';
+import { Assignment, ASSIGNMENT_VERSION, createAssignment, contribute } from './assignment';
 import {
 	applyEvent,
 	CommunityState,
@@ -25,6 +26,7 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 };
 export const DELAY = 86400;
 export interface Escrow {
+	assignment?: Assignment;
 	packagePlatform?: string;
 	packageName?: string;
 	sponsor: string;
@@ -47,6 +49,7 @@ export interface Payment {
 	kind: 'reward' | 'refund';
 }
 export interface PilotState {
+	assignmentVersion?: typeof ASSIGNMENT_VERSION;
 	community: CommunityState;
 	network: string;
 	supply: string;
@@ -55,8 +58,10 @@ export interface PilotState {
 	payouts: Payment[];
 	revoked: string[];
 }
-export function freshPilot(governor: string, network: string): PilotState {
+/** Preserve historical genesis/replay. Production opts in through the signed activation event. */
+export function freshPilot(governor: string, network: string, mode: 'legacy-v1' | typeof ASSIGNMENT_VERSION = 'legacy-v1'): PilotState {
 	return {
+		...(mode === ASSIGNMENT_VERSION ? { assignmentVersion: ASSIGNMENT_VERSION } : {}),
 		community: initialState(governor),
 		network,
 		supply: '1000000',
@@ -77,7 +82,11 @@ const money = (value: unknown): bigint => {
 	);
 	return BigInt(value);
 };
-export const roundResult = (s: PilotState, r: Round) => evaluate(r, s.community, METRICS[r.metric]);
+export const roundResult = (s: PilotState, r: Round) => {
+	const assignment = s.escrows[r.id]?.assignment;
+	const evaluated = assignment ? { ...r, observations: r.observations.filter(o => assignment.committee.includes(o.member)) } : r;
+	return evaluate(evaluated, s.community, METRICS[r.metric]);
+};
 export function joinProof(
 	payload: string,
 	signature: string,
@@ -152,6 +161,8 @@ export function applyPilot(
 		source: string;
 		method: string;
 		reason: string;
+		contribution: string;
+		observedAt: number;
 	};
 	requireThat(e && typeof e === 'object' && e.network === previous.network, 'Wrong network');
 	requireThat(!previous.revoked.includes(e.actor), 'Signing key revoked');
@@ -229,11 +240,25 @@ export function applyPilot(
 				'Conflicting registry mapping for repository/version',
 			);
 		}
+		if (s.assignmentVersion) {
+			requireThat(!s.community.rounds.some(r => r.metric === e.metric &&
+				s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version),
+				'Fact already attempted; assignment redraws are forbidden');
+			createAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height);
+		}
 		const bounty = money(e.bounty);
 		requireThat(bounty >= BigInt(3), 'Bounty must fund at least three contributors');
 		requireThat(BigInt(s.balances[e.actor] ?? '0') >= bounty, 'Insufficient TrustCOIN balance');
 	}
-	if (e.kind === 'transfer' || e.kind === 'revoke') {
+	if (e.kind === 'observe') {
+		const assignment = s.escrows[e.round]?.assignment;
+		if (assignment) {
+			requireThat(assignment.committee.includes(e.actor), 'Observer is not assigned to this round');
+			requireThat(at >= assignment.revealUntil && e.observedAt >= assignment.revealUntil, 'Measurement window has not started');
+			requireThat(!s.community.members.find(m => m.id === e.actor)?.suspended, 'Assigned observer is suspended');
+		}
+	}
+	if (['transfer', 'revoke', 'activate-assignment', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
 		const key =
 			e.actor === 'governor'
 				? s.community.governor
@@ -256,7 +281,17 @@ export function applyPilot(
 			'Invalid signature',
 		);
 		requireThat(s.community.audit.length < 10000, 'Event capacity reached');
-		if (e.kind === 'transfer') {
+		if (e.kind === 'activate-assignment') {
+			requireThat(e.actor === 'governor' && !s.assignmentVersion, 'Governor may activate assignment once');
+			requireThat(Object.values(s.escrows).every(escrow => escrow.settled), 'Settle all legacy escrows before activation');
+			s.assignmentVersion = ASSIGNMENT_VERSION;
+		} else if (e.kind === 'entropy-commit' || e.kind === 'entropy-reveal') {
+			const round = s.community.rounds.find(r => r.id === e.round);
+			const assignment = s.escrows[e.round]?.assignment;
+			requireThat(round && !round.closed && assignment, 'Assigned round required');
+			// Frozen participants may finish entropy after suspension; revocation still rejects their signatures.
+			s.escrows[e.round].assignment = contribute(assignment, e.actor, e.kind, e.contribution, at, height);
+		} else if (e.kind === 'transfer') {
 			const amount = money(e.amount);
 			requireThat(own(s.balances, e.recipient), 'Unknown recipient');
 			requireThat(BigInt(s.balances[e.actor] ?? '0') >= amount, 'Insufficient TrustCOIN balance');
@@ -291,9 +326,17 @@ export function applyPilot(
 		if (e.kind === 'reinstate')
 			requireThat(!s.revoked.includes(e.member), 'Revoked keys cannot be reinstated');
 		if (e.kind === 'open') {
+			const assignment = s.assignmentVersion ? createAssignment(s.network, e.round,
+				[e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height) : undefined;
+			if (assignment) {
+				const opened = s.community.rounds.find(r => r.id === e.round);
+				requireThat(opened, 'Round missing');
+				opened.closesAt += assignment.revealUntil - at;
+			}
 			const bounty = money(e.bounty);
 			s.balances[e.actor] = (BigInt(s.balances[e.actor]) - bounty).toString();
 			s.escrows[e.round] = {
+				...(assignment ? { assignment } : {}),
 				sponsor: e.actor,
 				bounty: e.bounty,
 				repository: e.repository.toLowerCase(),
@@ -379,7 +422,7 @@ export function settlePilot(previous: PilotState, at: number, height: number): P
 export function pilotView(s: PilotState, at: number) {
 	return {
 		network: s.network,
-		policy: { version: 'pilot-v1', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
+		policy: { version: s.assignmentVersion ? 'pilot-assignment-v2' : 'pilot-v1', assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
 		governorKey: s.community.governor,
 		members: s.community.members.map(m => ({
 			...m,
@@ -392,6 +435,7 @@ export function pilotView(s: PilotState, at: number) {
 		rounds: s.community.rounds.map(r => ({
 			...r,
 			result: roundResult(s, r),
+			assignment: s.escrows[r.id]?.assignment,
 			escrow: s.escrows[r.id],
 		})),
 		audit: s.community.audit,
