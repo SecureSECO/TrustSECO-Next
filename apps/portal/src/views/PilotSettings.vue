@@ -7,6 +7,15 @@
     <section v-else-if="!available"><h2>Use your local node</h2><p>This shared portal cannot create or hold your contributor key. Open Settings on your locally installed TrustSECO node to set up an identity and start mining.</p></section>
     <template v-else-if="state">
       <p v-if="state.networkError" role="alert">{{ state.networkError }}. Your saved identity remains available.</p>
+      <section><h2>Data sources &amp; API keys</h2><p>These credentials let this node collect data. Your signing identity below proves who submitted it. Keys are saved privately on this node and never sent to the ledger.</p>
+        <form v-for="source in sources" :key="source.id" @submit.prevent="saveCredential(source.id)">
+          <label :for="source.id + '-token'">{{ source.label }}</label>
+          <input :id="source.id + '-token'" v-model="tokens[source.id]" type="password" autocomplete="new-password" :placeholder="state.credentials?.[source.id]?.configured ? 'Saved — enter a new key to replace it' : 'Paste API key'" />
+          <p>{{ source.help }}</p><p role="status">{{ state.credentials?.[source.id]?.configured ? 'Key saved on this node' : 'No key saved' }}<span v-if="state.credentials?.[source.id]?.check"> · {{ state.credentials[source.id].check.message }} · {{ new Date(state.credentials[source.id].check.checkedAt).toLocaleString() }}</span></p>
+          <button :disabled="busy || !tokens[source.id].trim()">Save key</button><button type="button" :disabled="busy || !state.credentials?.[source.id]?.configured" @click="checkCredential(source.id)">Test connection</button><button type="button" :disabled="busy || !state.credentials?.[source.id]?.configured" @click="removeCredential(source.id)">Remove key</button>
+        </form>
+        <p>Saved keys apply to the next collection attempt; no restart is needed. Identity recovery files do not contain API keys.</p>
+      </section>
       <section><h2>1. Your GitHub identity</h2>
         <form v-if="!state.identity" @submit.prevent="create">
           <label for="login">GitHub username</label><input id="login" v-model="login" autocomplete="username" placeholder="Your GitHub username" required />
@@ -32,6 +41,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 const state = ref<any>(null), loading = ref(true), available = ref(false), busy = ref(false), error = ref(''), message = ref(''), login = ref(''), password = ref(''), linked = ref(false), receipt = ref<any>(null), joinRequest = ref<any>(null), recovery = ref<any>(null);
+const sources = [{id:'github',label:'GitHub API token',help:'Used by GitHub collectors for authenticated API access. Without it, public requests have lower rate limits.'},{id:'libraries',label:'Libraries.io API key',help:'Used by the Libraries.io contributor-count collector. Requires a funded Libraries.io collection round.'}];
+const tokens = ref<Record<string,string>>({github:'',libraries:''});
+const saveCredential = (source:string) => act(async()=>{await api('credentials',{source,token:tokens.value[source].trim()});tokens.value[source]='';message.value='API key saved privately on this node.';});
+const checkCredential = (source:string) => act(async()=>{const result=await api('credentials/check',{source});message.value=result.message;});
+const removeCredential = (source:string) => act(async()=>{await api('credentials',{source,token:''});tokens.value[source]='';message.value='API key removed.';});
 let timer: ReturnType<typeof setInterval> | undefined;
 async function api(route: string, body?: any) {
   const response = await fetch('/api/local/' + route, { method: body === undefined ? 'GET' : 'POST', headers: { 'X-TrustSECO-Local': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(45000) });

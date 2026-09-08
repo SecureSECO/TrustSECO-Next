@@ -4,22 +4,23 @@ import path from 'path';
 import crypto from 'crypto';
 const pilotTools = fs.existsSync(path.join(__dirname, '../tools/pilot/client.cjs')) ? path.join(__dirname, '../tools/pilot') : path.join(__dirname, '../../../tools/pilot');
 const { LocalIdentity, localRequestAllowed } = require(path.join(pilotTools, 'local-identity.cjs'));
+const { Credentials } = require(path.join(pilotTools, 'credentials.cjs'));
 const { mineOnce, baseURL, sshKey } = require(path.join(pilotTools, 'client.cjs'));
 
-async function github(route: string) {
-    const response = await fetch('https://api.github.com' + route, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'TrustSECO-setup' }, signal: AbortSignal.timeout(15000) });
+async function github(route: string, token?: string) {
+    const response = await fetch('https://api.github.com' + route, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'TrustSECO-setup', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, redirect: 'error', signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw Error(`GitHub returned ${response.status}; please try again later`);
     return response.json() as Promise<any>;
 }
-export async function checkGithub(login: string, sshKey?: string) {
+export async function checkGithub(login: string, sshKey?: string, token?: string) {
     if (typeof login !== 'string' || !/^[a-z0-9][a-z0-9-]{0,38}$/.test(login) || ['governor', 'constructor', 'prototype'].includes(login)) throw Error('Enter a personal GitHub username');
-    const profile = await github('/users/' + login);
+    const profile = await github('/users/' + login, token);
     if (!Number.isSafeInteger(profile.id) || profile.id <= 0) throw Error('GitHub returned an invalid account ID');
     if (profile.type !== 'User' || profile.login.toLowerCase() !== login) throw Error('A personal GitHub account is required');
     const eligible = Date.parse(profile.created_at) <= Date.now() - 180 * 86400000;
     let linked = false;
     if (sshKey) for (let page = 1; page <= 10; page++) {
-        const keys = await github(`/users/${login}/ssh_signing_keys?per_page=100&page=${page}`);
+        const keys = await github(`/users/${login}/ssh_signing_keys?per_page=100&page=${page}`, token);
         if (!Array.isArray(keys)) throw Error('Could not read GitHub signing keys');
         if (keys.some(k => k.key.split(' ').slice(0, 2).join(' ') === sshKey)) { linked = true; break; }
         if (keys.length < 100) break;
@@ -33,12 +34,13 @@ export function setupRouter(snapshot: () => Promise<any>) {
     if (!origin) return router;
     if (!localRequestAllowed(origin, new URL(origin).host, origin, 'same-origin', '1')) throw Error('Local setup requires an explicit localhost HTTP origin');
     const identity = new LocalIdentity(process.env.PILOT_IDENTITY_DIR || '/local-identity');
+    const credentials = new Credentials(process.env.PILOT_IDENTITY_DIR || '/local-identity');
     const relay = baseURL(process.env.PILOT_RELAY_URL || 'http://localhost:3000');
     let active = false, activity = identity.settings().mining ? 'Starting mining' : 'Mining is off', lastSuccess: string | null = null;
     const tick = async () => {
         if (active || !identity.settings().mining) return;
         active = true; activity = 'Collecting or submitting an observation';
-        try { const worked = await mineOnce(relay, identity.file); if (worked) lastSuccess = new Date().toISOString(); activity = worked ? 'Observation recorded' : 'Waiting for work'; }
+        try { const worked = await mineOnce(relay, identity.file, credentials.read()); if (worked) lastSuccess = new Date().toISOString(); activity = worked ? 'Observation recorded' : 'Waiting for work'; }
         catch (e) { activity = (e as Error).message; }
         finally { active = false; }
     };
@@ -51,20 +53,22 @@ export function setupRouter(snapshot: () => Promise<any>) {
         const publicIdentity = identity.public(); let network: any, networkError: string | null = null;
         try { network = await snapshot(); } catch { networkError = 'Cannot connect to the ledger'; }
         const member = network?.members.find(m => m.id === publicIdentity?.login && m.key === publicIdentity?.publicKey);
-        ctx.body = { identity: publicIdentity, request: fs.existsSync(identity.file + '.request') ? JSON.parse(fs.readFileSync(identity.file + '.request', 'utf8')) : null, network: network?.network, networkError, admitted: !!member, standing: member?.standing, revoked: member?.revoked, mining: identity.settings().mining, activity: !identity.settings().mining && !active ? 'Mining is off' : activity, lastSuccess };
+        ctx.body = { credentials: credentials.status(), identity: publicIdentity, request: fs.existsSync(identity.file + '.request') ? JSON.parse(fs.readFileSync(identity.file + '.request', 'utf8')) : null, network: network?.network, networkError, admitted: !!member, standing: member?.standing, revoked: member?.revoked, mining: identity.settings().mining, activity: !identity.settings().mining && !active ? 'Mining is off' : activity, lastSuccess };
     });
+    router.post('/credentials', ctx => { const body = ctx.request.body as any; ctx.body = credentials.save(body?.source, body?.token); });
+    router.post('/credentials/check', async ctx => { ctx.body = await credentials.check((ctx.request.body as any)?.source); });
     router.post('/identity', async ctx => {
         const login = String((ctx.request.body as any)?.login || '').trim().toLowerCase();
-        const profile = await checkGithub(login); if (!profile.eligible) ctx.throw(400, 'GitHub account must be at least 180 days old');
+        const profile = await checkGithub(login, undefined, credentials.read().github); if (!profile.eligible) ctx.throw(400, 'GitHub account must be at least 180 days old');
         ctx.body = identity.create(login);
     });
     router.post('/verify', async ctx => {
         const key = identity.public(); if (!key) ctx.throw(400, 'Create an identity first');
-        ctx.body = await checkGithub(key.login, key.sshKey);
+        ctx.body = await checkGithub(key.login, key.sshKey, credentials.read().github);
     });
     router.post('/request', async ctx => {
         const key = identity.public(); if (!key) ctx.throw(400, 'Create an identity first');
-        const profile = await checkGithub(key.login, key.sshKey);
+        const profile = await checkGithub(key.login, key.sshKey, credentials.read().github);
         if (!profile.eligible || !profile.linked) ctx.throw(400, 'Publish your signing key on GitHub and verify it first');
         const network = await snapshot(), request = identity.join(network.network);
         const response = await fetch(relay + '/api/pilot/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request), signal: AbortSignal.timeout(20000) });

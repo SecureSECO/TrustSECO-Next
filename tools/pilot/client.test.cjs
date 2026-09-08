@@ -43,7 +43,7 @@ test("uncertain transfer retries retain the exact signed event and reject replac
     };
     await assert.rejects(
       durableEvent("http://localhost", file, body),
-      /timeout/
+      /Could not reach localhost/
     );
     const pending = fs.readFileSync(file + ".event-outbox", "utf8");
     await assert.rejects(

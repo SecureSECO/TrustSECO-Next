@@ -18,7 +18,7 @@ jobs:
       - run: node --test test/measurements.cjs test/score-inputs.cjs
       - run: node --test test/pilot-setup.cjs test/pilot-portal.cjs
       - run: node --test ../../tools/pilot/client.test.cjs
-      - run: node --test ../../tools/pilot/local-identity.test.cjs
+      - run: node --test ../../tools/pilot/local-identity.test.cjs ../../tools/pilot/credentials.test.cjs
   portal:
     runs-on: ubuntu-latest
     defaults:

@@ -2,6 +2,8 @@
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto");
+const credentialContext = new (require('node:async_hooks').AsyncLocalStorage)();
+const credentials = () => credentialContext.getStore() || {github:process.env.GITHUB_TOKEN,libraries:process.env.LIBRARIES_IO_API_KEY};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function sshKey(pem) {
   const x = crypto.createPublicKey(pem).export({ format: "jwk" });
@@ -33,14 +35,15 @@ function baseURL(value) {
 async function json(url, options = {}) {
   const r = await fetch(url, {
     ...options,
+    redirect: 'error',
     signal: AbortSignal.timeout(20000),
-  });
+  }).catch(() => { throw Error('Could not reach ' + new URL(url).hostname); });
   if (!r.ok) {
     const e = Error("HTTP " + r.status + " from " + new URL(url).hostname);
     e.status = r.status;
     throw e;
   }
-  return r.json();
+  return r.json().catch(() => { throw Error('Invalid JSON from ' + new URL(url).hostname); });
 }
 async function github(p) {
   return json("https://api.github.com" + p, {
@@ -48,8 +51,8 @@ async function github(p) {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "TrustSECO-pilot",
-      ...(process.env.GITHUB_TOKEN
-        ? { Authorization: "Bearer " + process.env.GITHUB_TOKEN }
+      ...(credentials().github
+        ? { Authorization: "Bearer " + credentials().github }
         : {}),
     },
   });
@@ -165,7 +168,13 @@ async function collect(repository, metric) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw Error("Invalid repository");
   const [owner] = repository.split("/");
   let raw, value, source;
-  if (metric === "gh_contributor_count") {
+  if (metric === "lib_contributor_count") {
+    if (!credentials().libraries) throw Error("Save a Libraries.io API key in Settings to collect this metric");
+    source = "https://libraries.io/api/github/" + repository;
+    raw = await json(source + '?api_key=' + encodeURIComponent(credentials().libraries));
+    if (raw.full_name?.toLowerCase() !== repository.toLowerCase() || raw.private === true) throw Error('Libraries.io repository mismatch');
+    value = raw.contributions_count;
+  } else if (metric === "gh_contributor_count") {
     source = "/repos/" + repository + "/contributors?anon=1";
     raw = await pages(source);
     value = raw.length;
@@ -198,15 +207,16 @@ async function collect(repository, metric) {
   return {
     value,
     observedAt: Math.floor(Date.now() / 1000),
-    evidence: "https://api.github.com" + source,
+    evidence: source.startsWith("https://libraries.io/") ? source : "https://api.github.com" + source,
     evidenceHash: crypto
       .createHash("sha256")
       .update(JSON.stringify(raw))
       .digest("hex"),
   };
 }
+function mineOnce(url, keyfile, saved) { return credentialContext.run(saved || credentials(), () => mineOnceInner(url,keyfile)); }
 const collectorRetry = new Map();
-async function mineOnce(url, keyfile) {
+async function mineOnceInner(url, keyfile) {
   const identity = read(keyfile),
     outbox = keyfile + ".outbox";
   if (fs.existsSync(outbox)) {
@@ -380,7 +390,7 @@ async function main() {
 }
 module.exports = {
   sshKey,
-  collect,
+  collect: (repository, metric, saved) => credentialContext.run(saved || credentials(), () => collect(repository, metric)),
   admission,
   sign,
   submit,

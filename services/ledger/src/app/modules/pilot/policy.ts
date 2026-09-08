@@ -8,9 +8,11 @@ import {
 	standing,
 } from '../community/policy';
 
+// Additive collector support: existing GitHub round validation and outcomes are unchanged.
 export const METRICS: Record<string, { absolute: number; relativeBps: number }> = {
 	gh_owner_stargazer_count: { absolute: 5, relativeBps: 200 },
 	gh_contributor_count: { absolute: 1, relativeBps: 100 },
+	lib_contributor_count: { absolute: 1, relativeBps: 100 },
 	gh_open_issues_count: { absolute: 1, relativeBps: 100 },
 	gh_yearly_commit_count: { absolute: 2, relativeBps: 200 },
 };
@@ -170,7 +172,10 @@ export function applyPilot(
 			'Version required',
 		);
 		requireThat(
-			e.source === 'GitHub REST' && e.method === 'github-rest-v1' && own(METRICS, e.metric),
+			own(METRICS, e.metric) &&
+				(e.metric === 'lib_contributor_count'
+					? e.source === 'Libraries.io REST' && e.method === 'libraries-repository-v1'
+					: e.source === 'GitHub REST' && e.method === 'github-rest-v1'),
 			'Unsupported live collector',
 		);
 		requireThat(

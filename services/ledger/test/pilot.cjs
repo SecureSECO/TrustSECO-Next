@@ -79,3 +79,12 @@ test('normalized storage preserves balances, escrow, audit and payments across r
  const next=settlePilot(closed(),now+11+DELAY,3);await savePilot(store,{},initial,next);assert.deepEqual(await loadPilot(store,{}),next);
  const previousWrites=writes;await savePilot(store,{},next,next);assert.equal(writes,previousWrites);
 });
+
+test('Libraries.io rounds require their own source and feed finalized scores and rewards',()=>{
+ assert.throws(()=>open(setup(),{metric:'lib_contributor_count'}),/Unsupported/);
+ assert.throws(()=>open(setup(),{source:'Libraries.io REST',method:'libraries-repository-v1'}),/Unsupported/);
+ let s=open(setup(),{metric:'lib_contributor_count',source:'Libraries.io REST',method:'libraries-repository-v1'});
+ for(const actor of ['a','b','c'])s=event(s,actor,{kind:'observe',round:'r',value:100,source:'Libraries.io REST',method:'libraries-repository-v1',observedAt:now});
+ s=settlePilot(s,now+11,2);assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2)[0].fact,'lib_contributor_count');
+ s=settlePilot(s,now+11+DELAY,3);assert.equal(s.balances.a,'33');assert.ok(conserved(s));
+});

@@ -6,7 +6,14 @@ This is a separate network and application entry point. It preserves the existin
 
 `tools/pilot/client.cjs` collects public GitHub repository data, signs observations using the contributor's own Ed25519 key and submits signed envelopes. The relay holds only a separate transaction-fee key. It cannot impersonate contributors or the governor. Its entry point is `dist/pilot.js`; legacy account, token and demo-actor write routes are unavailable.
 
-Four collector types are supported: repository contributors (including anonymous contributors), open issues excluding pull requests, GitHub's last 52 weeks of commit activity, and the sum of stars across the owner's public repositories. The latter deliberately matches the existing score's owner-star metric; it is not the star count of just one repository. Failed/incomplete sources do not become zero-valued facts. A failing collector backs off without blocking the other collectors.
+Four GitHub collector types are supported: repository contributors (including anonymous contributors), open issues excluding pull requests, GitHub's last 52 weeks of commit activity, and the sum of stars across the owner's public repositories. The latter deliberately matches the existing score's owner-star metric; it is not the star count of just one repository. Failed/incomplete sources do not become zero-valued facts. A failing collector backs off without blocking the other collectors.
+
+The Libraries.io repository collector also supports `lib_contributor_count`, reading
+`contributions_count` from `/api/github/{owner}/{repository}`. This counts contributor
+records in Libraries.io's repository index, which may lag GitHub. It uses a separate
+source/method (`Libraries.io REST`, `libraries-repository-v1`), with tolerance 1 or 1%,
+and never substitutes a missing field or failed request with zero. Other historical
+Libraries.io collectors have not yet been ported to the signed miner.
 
 These are current repository measurements associated with a package version. They do not reconstruct historical repository statistics for that version. The signed observation includes its source URL, timestamp and response hash; full GitHub responses are not archived by this client, so the hash alone does not guarantee later source availability.
 
@@ -49,6 +56,33 @@ The private working key stays in the local node’s private directory (0700, fil
 Local routes are opt-in through `PILOT_LOCAL_ORIGIN` and require the exact localhost Host/Origin plus a custom request header. They reject cross-site requests and are absent on the shared operator deployment. Never enable local setup on a publicly exposed relay. `PILOT_IDENTITY_DIR` holds the node identity and durable outbox. `PILOT_REQUEST_DIR` holds public, signed admission requests; it contains no contributor private keys.
 
 The operator checks the admission inbox (`deploy/pilot-runtime/admission-requests` locally), reviews independence, then uses the existing `client.cjs admit` command on the selected numeric-GitHub-ID JSON file. That command rechecks GitHub and expiry before signing admission with the governor key. Requests expire after 12 hours and can be renewed from Settings. The governor key is still not mounted into the web service. The contributor sees admission automatically and can then start mining. Mining preference survives a service restart, and stopping permits an in-flight submission to finish.
+
+## Data-source credentials
+
+Settings exposes GitHub and Libraries.io password fields even before an identity is
+created. Save, replace, remove and test each credential separately. They are stored
+in `credentials.json` beside the node identity (directory 0700, file 0600), excluded
+from source control by the existing runtime-directory ignore rule. This file is not
+encrypted at rest; protect the host disk. Status responses return only configuration
+flags and sanitized, timestamped connection results, never the keys themselves.
+Identity recovery downloads deliberately do not include API credentials.
+
+The local miner reads credentials on each collection attempt without mutating global
+environment variables. The GitHub token also applies to local identity checks. CLI
+miners can use `GITHUB_TOKEN` and `LIBRARIES_IO_API_KEY`. The local Settings credentials
+belong to that node, not the three fixture workers. API keys go only to their provider;
+redirects are refused, errors omit request URLs, and signed evidence excludes the
+Libraries.io authentication query parameter. Saving a key does not create an identity,
+admit a contributor, start mining, or fund new work.
+
+Example funded Libraries.io work (submitted with the existing governor CLI):
+
+```json
+{"kind":"open","round":"flask-libraries-contributors-1","package":"pallets/flask","repository":"pallets/flask","version":"3.1.2","metric":"lib_contributor_count","source":"Libraries.io REST","method":"libraries-repository-v1","duration":300,"bounty":"300"}
+```
+
+All validators must run the collector-aware image before publishing this new round
+type. The additive upgrade preserves existing GitHub rounds, genesis and balances.
 
 ## Identity admission (command line)
 
