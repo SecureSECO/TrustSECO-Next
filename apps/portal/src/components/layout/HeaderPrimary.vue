@@ -6,6 +6,7 @@
       <router-link to="/packages/" active-class="selected">Packages</router-link>
       <router-link to="/jobs" active-class="selected">Activity</router-link>
       <router-link to="/metrics/" active-class="selected">Node</router-link>
+      <router-link to="/payouts/" active-class="selected">Most recent payouts</router-link>
       <router-link v-if="communityDemo" to="/community/" active-class="selected">Community</router-link>
     </nav>
     <div class="account-area">
@@ -13,9 +14,9 @@
       <details v-if="privateServer" class="account-menu" @keydown.esc="closeMenu">
         <summary>{{ username || 'My account' }} <span aria-hidden="true">⌄</span></summary>
         <div class="account-panel">
-          <span class="account-caption">Credits</span>
+          <span class="account-caption">TrustCOIN</span>
           <strong>{{ credits }}</strong>
-          <p>Credits fund measurement jobs. Accepted work can earn rewards under the ledger’s rules.</p>
+          <p>TrustCOIN funds measurement jobs. Accepted work can earn rewards under the ledger’s rules.</p>
           <p v-if="accountError" role="status">Balance unavailable. Try refreshing.</p>
           <button type="button" @click="refreshAccount">Refresh balance</button>
           <router-link to="/user/settings/" @click="closeMenu">Account settings →</router-link>

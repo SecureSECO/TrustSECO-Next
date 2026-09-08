@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 
 import { Modules, StateMachine } from 'klayr-sdk';
+import { PayoutStore, paidKey, appendPayout } from './stores/payouts';
 import { AddJobCommand } from './commands/add_job_command';
 import { CodaEndpoint } from './endpoint';
 import { CodaMethod , requiredVerifications } from './method';
@@ -21,12 +22,14 @@ export class CodaModule extends Modules.BaseModule {
 		super();
 		// registeration of stores and events
 		this.stores.register(CodaJobListStore, new CodaJobListStore(this.name, 0));
+        this.stores.register(PayoutStore, new PayoutStore(this.name, 2));
 		this.stores.register(CodaJobIdStore, new CodaJobIdStore(this.name, 1));
 	}
 
 	public metadata(): Modules.ModuleMetadata {
 		return {
 			endpoints: [
+                { name: this.endpoint.getRecentPayouts.name },
 				{
 					name: this.endpoint.encodeCodaJob.name,
 					request: minimalCodaJobSchema,
@@ -75,6 +78,7 @@ export class CodaModule extends Modules.BaseModule {
 		const jobsStore = this.stores.get(CodaJobListStore);
         const { jobs } = await jobsStore.get(context, jobListKey);
         const jobsToKeep: CodaJob[] = [];
+        const payoutStore = this.stores.get(PayoutStore);
 
         for (const job of jobs) {
             const differenceInBlockHeight = context.header.height - parseInt(job.date, 10);
@@ -104,7 +108,9 @@ export class CodaModule extends Modules.BaseModule {
 			const reward = await this.calculateReward(context, job, facts.length);
 
 			for (const fact of facts) {
-				await this.accountsMethod.changeBalance(context, fact.account.uid, reward)
+				if (await payoutStore.has(context, paidKey(job.jobID, fact.account.uid))) continue;
+                await this.accountsMethod.changeBalance(context, fact.account.uid, reward);
+                if (reward > BigInt(0)) await appendPayout(payoutStore, context, { uid: fact.account.uid, amount: reward.toString(), jobID: job.jobID, package: job.package, version: job.version, height: context.header.height, timestamp: context.header.timestamp });
 			}
         }
 

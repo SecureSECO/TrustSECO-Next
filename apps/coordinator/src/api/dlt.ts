@@ -19,6 +19,19 @@ const verification_router: Router = new Router({});
 
 verification_router.use(linkBlockMiddleware);
 
+router.get('/payouts', async ctx => {
+    try {
+        const client = await getClient();
+        const node = await client.node.getNodeInfo();
+        const history: any = await client.invoke('coda_getRecentPayouts', typeof ctx.query.before === 'string' ? { before: ctx.query.before } : {});
+        if (!Array.isArray(history.payouts)) throw new Error('Payout history unavailable');
+        ctx.body = { ...history, currency: 'TrustCOIN', finalizedHeight: node.finalizedHeight };
+    } catch {
+        ctx.status = 503;
+        ctx.body = { error: 'Payout history is unavailable on this node. Its ledger may need updating.' };
+    }
+});
+
 router.get('/scores/:packageName/:version', async ctx => {
     const client = await getClient();
     const snapshot = await getMeasurements(ctx.params.packageName);

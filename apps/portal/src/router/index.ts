@@ -11,6 +11,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/',
     component: Layout,
     children: [
+      { path: 'payouts/', name: 'Most recent payouts', component: () => import('@/views/Payouts.vue') },
       { path: 'community/', name: 'Community verification', component: () => import('@/views/Community.vue') },
       { path: 'about/', name: 'About', component: () => import('@/views/About.vue') },
       {

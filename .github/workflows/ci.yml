@@ -49,6 +49,7 @@ jobs:
       - run: node test/score-subsets.cjs
       - run: node test/seed-peers.cjs
       - run: node test/community.cjs
+      - run: node test/payouts.cjs
   spider:
     runs-on: ubuntu-latest
     defaults:
