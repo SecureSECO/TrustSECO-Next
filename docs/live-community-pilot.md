@@ -131,6 +131,14 @@ all eight measurements succeeded (651 indexed contributors, 9 non-development
 dependencies, 12,105 dependent packages, 64 releases, SourceRank 28). These are provider
 observations at collection time, not permanent package properties.
 
+The local ledger integration test then recorded 24 signed observations across all eight
+Libraries.io rounds (three local test identities per metric), with matching values.
+The test exposed and fixed the inherited one-billion star-count limit for release
+Unix timestamps; future dates remain rejected. Build/lint and all 15 pilot policy
+tests pass, alongside the 23 client/setup/provider tests. The four validators were
+upgraded together without resetting the chain. These are process-level tests on one
+Mac, not evidence of independent human contributors or a completed 24-hour payout.
+
 All validators must run the collector-aware image before publishing this new round
 type. The additive upgrade preserves existing GitHub rounds, genesis and balances.
 
