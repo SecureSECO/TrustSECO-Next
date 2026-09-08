@@ -1,0 +1,221 @@
+{
+  "at": "2026-09-08T22:31:54.684Z",
+  "complete": true,
+  "commonFinalizedHeight": 799,
+  "sameFinalizedBlock": true,
+  "sameTip": true,
+  "nodes": [
+    {
+      "endpoint": "ws://validator1:7887/rpc-ws",
+      "chainID": "8b7bb864",
+      "height": 805,
+      "finalizedHeight": 799,
+      "lagBlocks": 6,
+      "syncing": false,
+      "tip": "2d520ab4c0c8b1f63818fe07b303590fa03b0a317d9c11d8b0421eb29ec25d7f",
+      "peers": 3,
+      "peerBans": {
+        "bannedPeers": {},
+        "count": 0
+      },
+      "bftPrevotedHeight": 802,
+      "generators": [
+        {
+          "address": "klyavheq44t3bduspavsjxbyybokjdmqzynbjo3jj",
+          "enabled": true,
+          "height": 805
+        }
+      ],
+      "validators": [
+        {
+          "name": "validator_2",
+          "address": "klygnn4hnp89undm57hgmn36tnhwc847srdd9qreg",
+          "lastGeneratedHeight": 801,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_0",
+          "address": "klyavheq44t3bduspavsjxbyybokjdmqzynbjo3jj",
+          "lastGeneratedHeight": 805,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_1",
+          "address": "klykzx789ze5moadk27d2c2vqkcyow2cpbnoupcbn",
+          "lastGeneratedHeight": 802,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_3",
+          "address": "klyz4dbga5u6swfnqo9vs5yvkxoejeju3xz8ywbbg",
+          "lastGeneratedHeight": 804,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        }
+      ],
+      "commonFinalizedBlockID": "04411bf1c94d7098a4a17199708df945c206339c9a8a6a4e8f69f816d1a70bba"
+    },
+    {
+      "endpoint": "ws://validator2:7887/rpc-ws",
+      "chainID": "8b7bb864",
+      "height": 805,
+      "finalizedHeight": 799,
+      "lagBlocks": 6,
+      "syncing": false,
+      "tip": "2d520ab4c0c8b1f63818fe07b303590fa03b0a317d9c11d8b0421eb29ec25d7f",
+      "peers": 3,
+      "peerBans": {
+        "bannedPeers": {},
+        "count": 0
+      },
+      "bftPrevotedHeight": 802,
+      "generators": [
+        {
+          "address": "klykzx789ze5moadk27d2c2vqkcyow2cpbnoupcbn",
+          "enabled": true,
+          "height": 802
+        }
+      ],
+      "validators": [
+        {
+          "name": "validator_2",
+          "address": "klygnn4hnp89undm57hgmn36tnhwc847srdd9qreg",
+          "lastGeneratedHeight": 801,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_0",
+          "address": "klyavheq44t3bduspavsjxbyybokjdmqzynbjo3jj",
+          "lastGeneratedHeight": 805,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_1",
+          "address": "klykzx789ze5moadk27d2c2vqkcyow2cpbnoupcbn",
+          "lastGeneratedHeight": 802,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_3",
+          "address": "klyz4dbga5u6swfnqo9vs5yvkxoejeju3xz8ywbbg",
+          "lastGeneratedHeight": 804,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        }
+      ],
+      "commonFinalizedBlockID": "04411bf1c94d7098a4a17199708df945c206339c9a8a6a4e8f69f816d1a70bba"
+    },
+    {
+      "endpoint": "ws://validator3:7887/rpc-ws",
+      "chainID": "8b7bb864",
+      "height": 805,
+      "finalizedHeight": 799,
+      "lagBlocks": 6,
+      "syncing": false,
+      "tip": "2d520ab4c0c8b1f63818fe07b303590fa03b0a317d9c11d8b0421eb29ec25d7f",
+      "peers": 3,
+      "peerBans": {
+        "bannedPeers": {},
+        "count": 0
+      },
+      "bftPrevotedHeight": 802,
+      "generators": [
+        {
+          "address": "klygnn4hnp89undm57hgmn36tnhwc847srdd9qreg",
+          "enabled": true,
+          "height": 801
+        }
+      ],
+      "validators": [
+        {
+          "name": "validator_2",
+          "address": "klygnn4hnp89undm57hgmn36tnhwc847srdd9qreg",
+          "lastGeneratedHeight": 801,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_0",
+          "address": "klyavheq44t3bduspavsjxbyybokjdmqzynbjo3jj",
+          "lastGeneratedHeight": 805,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_1",
+          "address": "klykzx789ze5moadk27d2c2vqkcyow2cpbnoupcbn",
+          "lastGeneratedHeight": 802,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_3",
+          "address": "klyz4dbga5u6swfnqo9vs5yvkxoejeju3xz8ywbbg",
+          "lastGeneratedHeight": 804,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        }
+      ],
+      "commonFinalizedBlockID": "04411bf1c94d7098a4a17199708df945c206339c9a8a6a4e8f69f816d1a70bba"
+    },
+    {
+      "endpoint": "ws://validator4:7887/rpc-ws",
+      "chainID": "8b7bb864",
+      "height": 805,
+      "finalizedHeight": 799,
+      "lagBlocks": 6,
+      "syncing": false,
+      "tip": "2d520ab4c0c8b1f63818fe07b303590fa03b0a317d9c11d8b0421eb29ec25d7f",
+      "peers": 3,
+      "peerBans": {
+        "bannedPeers": {},
+        "count": 0
+      },
+      "bftPrevotedHeight": 802,
+      "generators": [
+        {
+          "address": "klyz4dbga5u6swfnqo9vs5yvkxoejeju3xz8ywbbg",
+          "enabled": true,
+          "height": 804
+        }
+      ],
+      "validators": [
+        {
+          "name": "validator_2",
+          "address": "klygnn4hnp89undm57hgmn36tnhwc847srdd9qreg",
+          "lastGeneratedHeight": 801,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_0",
+          "address": "klyavheq44t3bduspavsjxbyybokjdmqzynbjo3jj",
+          "lastGeneratedHeight": 805,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_1",
+          "address": "klykzx789ze5moadk27d2c2vqkcyow2cpbnoupcbn",
+          "lastGeneratedHeight": 802,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        },
+        {
+          "name": "validator_3",
+          "address": "klyz4dbga5u6swfnqo9vs5yvkxoejeju3xz8ywbbg",
+          "lastGeneratedHeight": 804,
+          "isBanned": false,
+          "consecutiveMissedBlocks": 0
+        }
+      ],
+      "commonFinalizedBlockID": "04411bf1c94d7098a4a17199708df945c206339c9a8a6a4e8f69f816d1a70bba"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const crypto=require('node:crypto');
-const {freshPilot,applyPilot,settlePilot,conserved,roundResult,verifiedInputs,DELAY}=require('../dist/app/modules/pilot/policy');
+const {freshPilot,applyPilot,settlePilot,conserved,roundResult,verifiedInputs,pilotView,DELAY}=require('../dist/app/modules/pilot/policy');
 const {initPilot,loadPilot,savePilot}=require('../dist/app/modules/pilot/storage');
 const keys=Object.fromEntries(['governor','a','b','c','d'].map(id=>[id,crypto.generateKeyPairSync('ed25519')]));
 const pub=id=>keys[id].publicKey.export({type:'spki',format:'pem'}).toString();
@@ -67,10 +67,47 @@ test('scores exclude open, disputed and unfinalized rounds',()=>{
  assert.deepEqual(verifiedInputs(closed(),'pallets/flask','3.1.2',2),[{fact:'gh_contributor_count',factData:'100',round:'r'}]);
  assert.deepEqual(verifiedInputs(closed([100,900,500]),'pallets/flask','3.1.2',2),[]);
 });
-test('unfinalized review cannot restore confirmed score inputs',()=>{
- const s=event(closed(),'governor',{kind:'revoke',member:'d',reason:'test'},now+12,3);
- assert.deepEqual(verifiedInputs(s,'pallets/flask','3.1.2',2),[]);
- assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',3).length,1);
+test('unrelated pending mining and contributor reviews leave finalized facts confirmed',()=>{
+ let s=event(closed(),'governor',{...openBody,round:'other',repository:'other/pkg',package:'other/pkg'},now+12,3);
+ s=event(s,'governor',{kind:'revoke',member:'d',reason:'Unrelated identity'},now+13,4);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',2).length,1);
+ assert.equal(pilotView(s,now+13).rounds[0].confirmationHeight,2);
+ assert.equal(pilotView(s,now+13).rounds[1].confirmationHeight,null);
+});
+test('a relevant review withholds agreement and its overturn must itself finalize',()=>{
+ let s=closed();const observation=s.community.rounds[0].observations[0].id;
+ s=event(s,'governor',{kind:'substantiate',round:'r',observation,cause:'bad-source',evidence:'Fixture evidence',reason:'Invalid collection'},now+12,3);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',3).length,0);
+ s=event(s,'governor',{kind:'overturn',incident:s.community.incidents[0].id,reason:'Evidence corrected'},now+13,4);
+ assert.equal(roundResult(s,s.community.rounds[0]).status,'verified');
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',3).length,0);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',4).length,1);
+ const before=JSON.stringify(s);assert.equal(pilotView(s,now+13).rounds[0].confirmationHeight,4);assert.equal(JSON.stringify(s),before);
+});
+test('cross-round reviews and reinstatement track every observer, including outliers',()=>{
+ let s=closed([100,101,100,900]);
+ s=event(s,'governor',{...openBody,round:'other',repository:'other/pkg',package:'other/pkg'},now+12,3);
+ s=event(s,'d',{kind:'observe',round:'other',value:50,source:openBody.source,method:openBody.method,observedAt:now+13},now+13,4);
+ s=settlePilot(s,now+23,5);
+ s=event(s,'governor',{kind:'substantiate',round:'other',observation:s.community.rounds[1].observations[0].id,cause:'bad-source',evidence:'Fixture evidence',reason:'Review'},now+24,6);
+ assert.equal(pilotView(s,now+24).rounds[0].confirmationHeight,6);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',5).length,0);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',6).length,1);
+ // Isolate restoration of an already suspended identity without five duplicate incidents.
+ s.community.members.find(m=>m.id==='d').suspended=true;
+ s=event(s,'governor',{kind:'reinstate',member:'d',reason:'Review complete'},now+25,7);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',6).length,0);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',7).length,1);
+});
+test('a pending review of the latest closed round cannot fall back to an older score',()=>{
+ let s=closed();s=event(s,'governor',{...openBody,round:'new'},now+12,3);
+ for(const actor of ['a','b','d'])s=event(s,actor,{kind:'observe',round:'new',value:200,source:openBody.source,method:openBody.method,observedAt:now+13},now+13,4);
+ s=settlePilot(s,now+23,5);
+ s=event(s,'governor',{kind:'substantiate',round:'new',observation:s.community.rounds[1].observations[2].id,cause:'bad-source',evidence:'Fixture evidence',reason:'Review'},now+24,6);
+ s=event(s,'governor',{kind:'overturn',incident:s.community.incidents[0].id,reason:'Corrected'},now+25,7);
+ assert.equal(pilotView(s,now+25).rounds[0].confirmationHeight,2);
+ assert.deepEqual(verifiedInputs(s,'pallets/flask','3.1.2',6),[]);
+ assert.equal(verifiedInputs(s,'pallets/flask','3.1.2',7)[0].factData,'200');
 });
 test('normalized storage preserves balances, escrow, audit and payments across reload',async()=>{
  const data=new Map();let writes=0;

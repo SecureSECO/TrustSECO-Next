@@ -419,7 +419,33 @@ export function settlePilot(previous: PilotState, at: number, height: number): P
 	requireThat(conserved(s), 'TrustCOIN conservation failed');
 	return s;
 }
+// Reviews can change a contributor's eligibility across rounds. Index them once so
+// unrelated mining and transfers do not invalidate an already finalized result.
+function memberReviewHeights(s: PilotState): Map<string, number> {
+	const incidents = new Map(s.community.incidents.map(i => [i.id, i]));
+	const heights = new Map<string, number>();
+	for (const audit of s.community.audit) {
+		let member: string | undefined;
+		if (audit.kind === 'substantiate') member = incidents.get(audit.id)?.member;
+		else if (audit.kind === 'overturn') {
+			const event = JSON.parse(audit.payload) as { incident: string };
+			member = incidents.get(event.incident)?.member;
+		} else if (audit.kind === 'reinstate' || audit.kind === 'revoke') {
+			const event = JSON.parse(audit.payload) as { member: string };
+			member = event.member;
+		}
+		if (member) heights.set(member, Math.max(heights.get(member) ?? 0, audit.height));
+	}
+	return heights;
+}
+function confirmationHeight(s: PilotState, r: Round, reviews: Map<string, number>): number | null {
+	const closedHeight = s.escrows[r.id]?.closedHeight;
+	if (!r.closed || closedHeight == null) return null;
+	// Include every observer: reinstating a former non-supporter can change agreement.
+	return r.observations.reduce((height, o) => Math.max(height, reviews.get(o.member) ?? 0), closedHeight);
+}
 export function pilotView(s: PilotState, at: number) {
+	const reviews = memberReviewHeights(s);
 	return {
 		network: s.network,
 		policy: { version: s.assignmentVersion ? 'pilot-assignment-v2' : 'pilot-v1', assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
@@ -435,6 +461,7 @@ export function pilotView(s: PilotState, at: number) {
 		rounds: s.community.rounds.map(r => ({
 			...r,
 			result: roundResult(s, r),
+			confirmationHeight: confirmationHeight(s, r, reviews),
 			assignment: s.escrows[r.id]?.assignment,
 			escrow: s.escrows[r.id],
 		})),
@@ -449,7 +476,7 @@ export function verifiedInputs(
 	version: string,
 	finalizedHeight: number,
 ) {
-	if (s.community.audit.some(e => e.height > finalizedHeight)) return [];
+	const reviews = memberReviewHeights(s);
 	const latest = new Map<string, Round>();
 	for (const r of s.community.rounds) {
 		const e = s.escrows[r.id];
@@ -465,6 +492,8 @@ export function verifiedInputs(
 		if (!previous || r.openedAt > previous.openedAt) latest.set(r.metric, r);
 	}
 	return [...latest.values()].flatMap(r => {
+		const height = confirmationHeight(s, r, reviews);
+		if (height === null || height > finalizedHeight) return [];
 		const v = roundResult(s, r);
 		return v.status === 'verified'
 			? [{ fact: r.metric, factData: String(v.value), round: r.id }]

@@ -43,3 +43,11 @@ test('queued packages are browsable without creating observations or duplicate p
  const {queueStatus}=require('../dist/package-queue');const s={audit:[],rounds:[round()],catalog:[{repository:'owner/pkg',version:'2.0',platform:'PyPI',roundID:'future'},{repository:'another/lib',version:'1.0',platform:'PyPI',roundID:'next'}]};
  assert.equal(packages(s).length,2);assert.deepEqual(packages(s)[0].packageReleases,['1.0','2.0']);assert.equal(measurements(s,'another/lib',10).length,0);assert.equal(queueStatus(s).queued,2);
 });
+
+test('per-round finality ignores unrelated events but waits for relevant reviews',()=>{
+ const r={...round(),confirmationHeight:10},s={rounds:[r],audit:[{height:99}]};
+ assert.equal(measurements(s,'owner/pkg',10).filter(f=>f.status==='confirmed').length,3);
+ r.confirmationHeight=11;assert.equal(measurements(s,'owner/pkg',10).filter(f=>f.status==='confirmed').length,0);
+ assert.equal(measurements(s,'owner/pkg',11).filter(f=>f.status==='confirmed').length,3);
+ for(const invalid of [null,-1,'10',9]){r.confirmationHeight=invalid;assert.equal(measurements(s,'owner/pkg',100).filter(f=>f.status==='confirmed').length,0)}
+});

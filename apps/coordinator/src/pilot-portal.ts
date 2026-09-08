@@ -28,11 +28,15 @@ function resolve(state: any, name: string) {
     return result;
 }
 export function measurements(state: any, repository: string, finalizedHeight: number) {
-    // Match scoreInputs' conservative finality gate, including subsequent appeals/reviews.
+    // The ledger supplies the same per-round gate used by scoreInputs. Keep the
+    // conservative fallback only for older nodes that do not expose this field.
     const reviewsFinal = state.audit.every((a: any) => a.height <= finalizedHeight);
     return state.rounds.flatMap((r: any, index: number) => r.escrow.repository !== repository ? [] : r.observations.map((o: any) => {
         const supported = r.result.status === 'verified' && r.result.supporters.includes(o.id);
-        const confirmed = r.closed && supported && reviewsFinal && r.escrow.closedHeight <= finalizedHeight;
+        const resultFinal = r.confirmationHeight === undefined
+            ? reviewsFinal && r.escrow.closedHeight != null && r.escrow.closedHeight <= finalizedHeight
+            : Number.isSafeInteger(r.confirmationHeight) && r.confirmationHeight >= r.escrow.closedHeight && r.confirmationHeight <= finalizedHeight;
+        const confirmed = r.closed && supported && resultFinal;
         const unverified = r.closed && !supported;
         return { packageName: repository, version: r.escrow.version, jobID: index + 1, fact: r.metric, factData: String(o.value), account: { uid: o.member },
             status: confirmed ? 'confirmed' : unverified ? 'unverified' : 'recorded', source: r.source,

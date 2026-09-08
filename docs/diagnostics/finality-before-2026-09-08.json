@@ -1,0 +1,38 @@
+{
+  "chainID": "8b7bb864",
+  "capturedAt": "2026-09-08T21:47Z",
+  "nodes": [
+    {
+      "node": 1,
+      "height": 757,
+      "finalizedHeight": 650,
+      "tip": "20a21a0f8553c859cd73c353ed0242d30f115ff6c3e1f3a424d992b561536a5f",
+      "peers": 0,
+      "maxHeightPrevoted": 663
+    },
+    {
+      "node": 2,
+      "height": 699,
+      "finalizedHeight": 589,
+      "tip": "7e36bf3a5b69cb32f09216038ba235895210f05e8f5125f308319516e9105111",
+      "peers": 0,
+      "maxHeightPrevoted": 592
+    },
+    {
+      "node": 3,
+      "height": 743,
+      "finalizedHeight": 650,
+      "tip": "de4fef58a27b12d072bb82536ac68246010b120e0b15453791d812b6a94651f9",
+      "peers": 0,
+      "maxHeightPrevoted": 655
+    },
+    {
+      "node": 4,
+      "height": 757,
+      "finalizedHeight": 650,
+      "tip": "5e17f8088d7edd8d329d67ccf2f897d4761c29ea7df5eae11e740ee3f65105bf",
+      "peers": 0,
+      "maxHeightPrevoted": 663
+    }
+  ]
+}
