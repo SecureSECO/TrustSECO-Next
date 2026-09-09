@@ -1,5 +1,5 @@
 import { createPublicKey, verify } from 'crypto';
-import { validateSecurity } from '../scoring/engine';
+import { validateSecurity, canonicalEcosystem } from '../scoring/engine';
 import { AVAILABILITY_VERSION, LEASE_SECONDS, Lease, BeaconAssignment, availableMembers, createBeaconAssignment, acceptBeacon, advanceReserves, canSubmit, assignmentPhase } from './availability';
 import { Assignment, ASSIGNMENT_VERSION, createAssignment, contribute } from './assignment';
 import {
@@ -31,7 +31,7 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 export const DELAY = 86400;
 export interface Escrow {
 	stackOverflowTag?: string;
-	scoreCorrection?: {height:number; at:number; reason:string; evidence:string};
+	scoreCorrection?: {height: number; at: number; reason: string; evidence: string};
 	refreshOf?: string;
 	failures?: Record<string, {reason: string; at: number}>;
 	assignment?: Assignment | BeaconAssignment;
@@ -106,7 +106,9 @@ export const roundResult = (s: PilotState, r: Round) => {
         const results = [...groups.values()].map(observations => evaluate({...r,observations},s.community,METRICS[r.metric]));
         const winners = results.filter(result => result.status === 'verified');
         if (winners.length === 1) return winners[0];
-        return {status: evaluated.observations.length >= 3 ? 'disputed' as const : r.closed ? 'expired' as const : 'pending' as const, supporters:[],conflicts:evaluated.observations.map(o=>o.id),value:null};
+        let status: 'disputed' | 'expired' | 'pending' = r.closed ? 'expired' : 'pending';
+        if (evaluated.observations.length >= 3) status = 'disputed';
+        return {status, supporters:[],conflicts:evaluated.observations.map(o=>o.id),value:null};
     }
     return evaluate(evaluated, s.community, METRICS[r.metric]);
 };
@@ -275,7 +277,7 @@ export function applyPilot(
 						x.repository === e.repository.toLowerCase() &&
 						x.version === e.version &&
 						x.packagePlatform &&
-						(x.packagePlatform !== e.packagePlatform || x.packageName !== e.packageName),
+						(canonicalEcosystem(x.packagePlatform) !== canonicalEcosystem(e.packagePlatform) || x.packageName !== e.packageName),
 				),
 				'Conflicting registry mapping for repository/version',
 			);
@@ -299,7 +301,7 @@ export function applyPilot(
         if (round?.metric === 'security_advisories') {
             const security = validateSecurity(e.security);
             const escrow = s.escrows[e.round];
-            requireThat(security.ecosystem === escrow.packagePlatform && security.name === escrow.packageName && security.version === escrow.version, 'Security snapshot target mismatch');
+            requireThat(security.ecosystem === canonicalEcosystem(escrow.packagePlatform ?? '') && security.name === escrow.packageName && security.version === escrow.version, 'Security snapshot target mismatch');
             requireThat(e.value === security.advisories.length, 'Security count mismatch');
         }
 

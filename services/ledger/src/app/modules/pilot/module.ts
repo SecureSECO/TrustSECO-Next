@@ -51,7 +51,7 @@ class RecordCommand extends Modules.BaseCommand {
 	}
 }
 class PilotEndpoint extends Modules.BaseEndpoint {
-    public async scorePolicy() { return scoringPolicy; }
+    public scorePolicy() { return scoringPolicy; }
     public async score(c: Types.ModuleEndpointContext) {
         const {repository,version,finalizedHeight} = c.params;
         if (typeof repository !== 'string' || typeof version !== 'string' || !Number.isSafeInteger(finalizedHeight) || Number(finalizedHeight)<0 || Number(finalizedHeight)>c.header.height) throw new Error('Invalid score request');

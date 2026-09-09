@@ -92,3 +92,12 @@ test('signed exact-version security observations require complete bound snapshot
 	assert.equal(s.escrows.security.scoreCorrection.at, now + 12);
 	assert.throws(() => event(s, 'governor', correction, now + 13, 4), /already/);
 });
+
+test('stored Pypi registry mappings remain compatible with canonical PyPI security targets',()=>{
+ let s=event(setup(),'governor',{...body,round:'old-library',metric:'lib_sourcerank',source:'Libraries.io REST',method:'libraries-project-v1',packagePlatform:'Pypi'});
+ const old=JSON.stringify(s.escrows['old-library']);
+ s=event(s,'governor',body);s=event(s,'a',observe());
+ assert.equal(s.community.rounds.at(-1).observations[0].security.ecosystem,'PyPI');assert.equal(JSON.stringify(s.escrows['old-library']),old);
+ assert.throws(()=>event(s,'governor',{...body,round:'wrong-registry',metric:'lib_release_count',source:'Libraries.io REST',method:'libraries-project-v1',packagePlatform:'Maven'}),/Conflicting registry/);
+ const legacyTarget=event(setup(),'governor',{...body,packagePlatform:'Pypi'});assert.doesNotThrow(()=>event(legacyTarget,'a',observe()));
+});

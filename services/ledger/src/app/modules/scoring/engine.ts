@@ -2,6 +2,10 @@ import { CVSS30, CVSS31, CVSS40 } from '@pandatix/js-cvss';
 import policy = require('./policy.json');
 
 export { policy };
+/** Equivalent spelling in existing Libraries.io queue entries, not a registry remapping. */
+export function canonicalEcosystem(value: string): string {
+	return value.toLowerCase() === 'pypi' ? 'PyPI' : value;
+}
 export interface Advisory {
 	id: string;
 	aliases: string[];
@@ -142,7 +146,7 @@ export function validateSecurity(input: unknown): SecuritySnapshot {
 		.sort((a, b) => compareIds(a.id, b.id));
 	return {
 		schema: 1,
-		ecosystem: s.ecosystem,
+		ecosystem: canonicalEcosystem(s.ecosystem),
 		name: s.name,
 		version: s.version,
 		complete: true,

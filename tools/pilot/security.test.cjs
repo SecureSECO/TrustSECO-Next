@@ -137,3 +137,9 @@ test("PyPI package identities use standard name normalization, not fuzzy matchin
     /different package/
   );
 });
+
+test('collector accepts existing Pypi spelling and queries canonical OSV ecosystem',async()=>{
+ const result=await collectSecurity({...target,packagePlatform:'Pypi'},async(u,o)=>{
+  if(!o)return kev;assert.equal(JSON.parse(o.body).package.ecosystem,'PyPI');return {vulns:[]};
+ });assert.equal(result.security.ecosystem,'PyPI');
+});

@@ -2,6 +2,10 @@ const crypto = require("node:crypto");
 const KEV =
   "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/;
+// Libraries.io's existing queue spelling Pypi names the same registry as OSV's PyPI.
+function canonicalEcosystem(value) {
+  return typeof value === "string" && value.toLowerCase() === "pypi" ? "PyPI" : value;
+}
 function severity(score) {
   return score === 0
     ? "none"
@@ -45,7 +49,7 @@ function cvss(vectors) {
   return { score: null, scoreVersion: null, vector: null, severity: "unknown" };
 }
 async function collectSecurity(target, request) {
-  const ecosystem = target.packagePlatform,
+  const ecosystem = canonicalEcosystem(target.packagePlatform),
     name = target.packageName,
     version = target.version;
   if (
@@ -235,4 +239,4 @@ async function collectStackOverflow(target, request) {
       .digest("hex"),
   };
 }
-module.exports = { collectSecurity, collectStackOverflow, cvss, KEV };
+module.exports = { canonicalEcosystem, collectSecurity, collectStackOverflow, cvss, KEV };

@@ -1,5 +1,6 @@
 // Shared scheduling/read projection. No credentials, network calls or writes.
 const {createHash}=require('node:crypto');
+const {canonicalEcosystem}=require('./security.cjs');
 const METRICS=['security_advisories','so_popularity','lib_sourcerank','lib_release_count','gh_open_issues_count','lib_dependent_count','lib_dependency_count','gh_contributor_count','lib_contributor_count','lib_first_release_date','lib_latest_release_date','lib_release_frequency','gh_yearly_commit_count','gh_owner_stargazer_count'];
 const REFRESH_SECONDS=86400, MAX_CONCURRENT=4;
 function targets(network,packages,rounds,at){
@@ -12,11 +13,11 @@ function targets(network,packages,rounds,at){
   if(registry&&metric!=='security_advisories')try{require('./libraries.cjs').targetPath({packagePlatform:p.platform,packageName:p.name,version:p.version});}catch{applicable=false;}
   if(metric==='so_popularity'&&!/^[a-z0-9][a-z0-9.+#-]{0,59}$/.test(p.stackOverflowTag||''))applicable=false;
   if(metric==='security_advisories'&&(typeof p.name!=='string'||!p.name||p.version==='latest'))applicable=false;
-  if(metric==='security_advisories'&&!['PyPI','npm','Go','crates.io','Maven','NuGet','RubyGems','Packagist','Hex','Pub'].includes(p.platform))applicable=false;
+  if(metric==='security_advisories'&&!['PyPI','npm','Go','crates.io','Maven','NuGet','RubyGems','Packagist','Hex','Pub'].includes(canonicalEcosystem(p.platform)))applicable=false;
   const dueAt=previous?previous.openedAt+REFRESH_SECONDS:0;
   const id='collect-'+createHash('sha256').update(JSON.stringify([network,repository,p.version,metric,previous?.id||'initial'])).digest('hex').slice(0,40);
   const status=!applicable?'unavailable':!previous?'queued':!previous.closed?'collecting':previous.result.status==='verified'?'verified':previous.result.status==='disputed'?'disputed':previous.escrow.failures&&Object.keys(previous.escrow.failures).length?'source-unavailable':'insufficient-contributors';
-  return {repository,version:p.version,metric,status,dueAt,previous,applicable,ready:applicable&&(!previous||(previous.closed&&at>=dueAt)),event:{kind:'open',round:id,package:repository,repository,version:p.version,metric,source:metric==='security_advisories'?'OSV + CISA KEV':metric==='so_popularity'?'Stack Exchange API':metric.startsWith('lib_')?'Libraries.io REST':'GitHub REST',method:metric==='security_advisories'?'osv-kev-v1':metric==='so_popularity'?'stackoverflow-share-ppm-v1':registry?'libraries-project-v1':metric.startsWith('lib_')?'libraries-repository-v1':'github-rest-v1',...(registry?{packagePlatform:p.platform,packageName:p.name}:{}),...(p.stackOverflowTag&&metric==='so_popularity'?{stackOverflowTag:p.stackOverflowTag}:{}),...(previous?{refreshOf:previous.id}:{}),duration:900,bounty:'300'}};
+  return {repository,version:p.version,metric,status,dueAt,previous,applicable,ready:applicable&&(!previous||(previous.closed&&at>=dueAt)),event:{kind:'open',round:id,package:repository,repository,version:p.version,metric,source:metric==='security_advisories'?'OSV + CISA KEV':metric==='so_popularity'?'Stack Exchange API':metric.startsWith('lib_')?'Libraries.io REST':'GitHub REST',method:metric==='security_advisories'?'osv-kev-v1':metric==='so_popularity'?'stackoverflow-share-ppm-v1':registry?'libraries-project-v1':metric.startsWith('lib_')?'libraries-repository-v1':'github-rest-v1',...(registry?{packagePlatform:metric==='security_advisories'?canonicalEcosystem(p.platform):p.platform,packageName:p.name}:{}),...(p.stackOverflowTag&&metric==='so_popularity'?{stackOverflowTag:p.stackOverflowTag}:{}),...(previous?{refreshOf:previous.id}:{}),duration:900,bounty:'300'}};
  }));
 }
 function summary(state,packages){

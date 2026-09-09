@@ -30,3 +30,10 @@ test('slow provider and metric rounds cannot monopolize all four slots',()=>{
  assert.notEqual(next(s,ps).event.source,'GitHub REST');
  const e=next(s,ps).event;s.rounds.push({...round(e,{closed:false}),source:e.source});assert.notEqual(next(s,ps).event.metric,e.metric);
 });
+
+test('existing Pypi queue spelling maps to OSV PyPI without rewriting Libraries.io targets',()=>{
+ const planned=targets('n',[{...packages[0],platform:'Pypi'}],[],100);
+ const security=planned.find(t=>t.metric==='security_advisories');assert.equal(security.applicable,true);assert.equal(security.event.packagePlatform,'PyPI');
+ assert.equal(planned.find(t=>t.metric==='lib_sourcerank').event.packagePlatform,'Pypi');
+ assert.equal(targets('n',[{...packages[0],platform:'UnknownPythonRegistry'}],[],100).find(t=>t.metric==='security_advisories').applicable,false);
+});
