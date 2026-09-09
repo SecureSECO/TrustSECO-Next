@@ -236,7 +236,7 @@ async function mineOnceInner(url, keyfile) {
     m = s.members.find((m) => m.id === identity.id);
   if (!m || m.revoked || m.standing === "suspended")
     throw Error("Contributor is not admitted or is suspended/revoked");
-  const entropy = entropyEvent(s, identity, keyfile);
+  const entropy = await require('./availability.cjs').assignmentEvent(s,identity) || entropyEvent(s, identity, keyfile);
   if (entropy) {
     const payload = JSON.stringify({...entropy,id:crypto.randomUUID(),actor:identity.id,network:s.network});
     privateFile(outbox, {payload,signature:sign(payload,identity.privateKey)});

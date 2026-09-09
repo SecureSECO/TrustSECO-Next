@@ -1,0 +1,153 @@
+{
+  "network": "trustseco-8b7bb864",
+  "ledger": {
+    "height": 1339,
+    "finalizedHeight": 1334,
+    "chainID": "8b7bb864"
+  },
+  "cases": [
+    {
+      "case": "two online: insufficient contributors",
+      "available": 2,
+      "openRounds": 0
+    },
+    {
+      "case": "six admitted, three online",
+      "round": "availability-acceptance-three-online",
+      "result": {
+        "status": "verified",
+        "supporters": [
+          "9289f9f6-706c-4ee4-8bcd-0613e918e7f5",
+          "cb5dc0e4-cbdb-4758-bbcd-786fef1e41af",
+          "fb35c237-985c-4fdf-a1b3-8af92e6db26b"
+        ],
+        "conflicts": [],
+        "value": 28
+      },
+      "pool": [
+        {
+          "id": "test-a",
+          "operator": "local-fixture-test-a"
+        },
+        {
+          "id": "test-b",
+          "operator": "local-fixture-test-b"
+        },
+        {
+          "id": "test-c",
+          "operator": "local-fixture-test-c"
+        }
+      ],
+      "confirmationHeight": 1279,
+      "metric": "lib_sourcerank"
+    },
+    {
+      "case": "assigned observer offline, reserve takeover",
+      "round": "availability-acceptance-reserve",
+      "missing": "test-d",
+      "reserve": "test-a",
+      "result": {
+        "status": "verified",
+        "supporters": [
+          "52a00083-2498-4290-8ce3-bcca814172d2",
+          "6037640c-4f71-467c-9b63-c6e0c43fc577",
+          "a89f6525-30e9-4d9e-9069-6712f166314d"
+        ],
+        "conflicts": [],
+        "value": 64
+      },
+      "slots": [
+        {
+          "member": "test-d",
+          "from": 1788939210,
+          "until": 1788939510,
+          "replaced": true
+        },
+        {
+          "member": "test-c",
+          "from": 1788939210,
+          "until": 1788939510,
+          "replaced": false
+        },
+        {
+          "member": "test-f",
+          "from": 1788939210,
+          "until": 1788939510,
+          "replaced": false
+        },
+        {
+          "member": "test-a",
+          "from": 1788939511,
+          "until": 1788939810,
+          "replaced": false
+        }
+      ],
+      "confirmationHeight": 1332,
+      "metric": "lib_release_count"
+    }
+  ],
+  "testedAt": "2026-09-09",
+  "scope": "Local Docker network: four validators and six fixture identities on one Mac; live Libraries.io calls. This does not demonstrate independent human operators or separate-host resilience.",
+  "package": {
+    "repository": "pallets/flask",
+    "version": "3.1.1",
+    "platform": "PyPI",
+    "name": "Flask"
+  },
+  "automatedTests": {
+    "ledger": 41,
+    "portalCoordinatorMiner": 53,
+    "failures": 0
+  },
+  "finalityAfterTest": {
+    "at": "2026-09-09T07:42:04.901Z",
+    "commonFinalizedHeight": 1338,
+    "sameFinalizedBlock": true,
+    "sameTip": true,
+    "blockID": "c9304ae1a0a44bc65570ca4f372187469c06e77c5de33cb85508320c88482b6b",
+    "nodes": [
+      {
+        "endpoint": "ws://validator1:7887/rpc-ws",
+        "height": 1343,
+        "finalizedHeight": 1338,
+        "peers": 3,
+        "syncing": false
+      },
+      {
+        "endpoint": "ws://validator2:7887/rpc-ws",
+        "height": 1343,
+        "finalizedHeight": 1338,
+        "peers": 3,
+        "syncing": false
+      },
+      {
+        "endpoint": "ws://validator3:7887/rpc-ws",
+        "height": 1343,
+        "finalizedHeight": 1338,
+        "peers": 3,
+        "syncing": false
+      },
+      {
+        "endpoint": "ws://validator4:7887/rpc-ws",
+        "height": 1343,
+        "finalizedHeight": 1338,
+        "peers": 3,
+        "syncing": false
+      }
+    ]
+  },
+  "restoredServices": [
+    "validator1",
+    "validator2",
+    "validator3",
+    "validator4",
+    "web",
+    "worker-a",
+    "worker-b",
+    "worker-c",
+    "worker-d",
+    "worker-e",
+    "worker-f",
+    "package-publisher"
+  ]
+}

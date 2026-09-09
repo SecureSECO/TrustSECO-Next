@@ -51,3 +51,9 @@ test('per-round finality ignores unrelated events but waits for relevant reviews
  assert.equal(measurements(s,'owner/pkg',11).filter(f=>f.status==='confirmed').length,3);
  for(const invalid of [null,-1,'10',9]){r.confirmationHeight=invalid;assert.equal(measurements(s,'owner/pkg',100).filter(f=>f.status==='confirmed').length,0)}
 });
+
+test('collection queue exposes insufficient available contributors without claiming collection',()=>{
+ const {queueStatus}=require('../dist/package-queue');const s={policy:{assignment:'availability-beacon-v1'},availableContributors:2,rounds:[],catalog:[{repository:'a/b',version:'1',roundID:'r'}]};
+ assert.equal(queueStatus(s).waitingForContributors,true);assert.equal(queueStatus(s).queued,1);assert.equal(queueStatus(s).collecting,0);
+ s.availableContributors=3;assert.equal(queueStatus(s).waitingForContributors,false);
+});

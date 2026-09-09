@@ -11,5 +11,5 @@ export function queueStatus(state: any) {
         const r = state.rounds.find((r: any) => r.id === p.roundID);
         return {repository:p.repository, version:p.version, state: !r ? 'queued' : !r.closed ? 'collecting' : r.result.status === 'verified' ? 'verified' : r.result.status};
     });
-    return {entries, queued:entries.filter((e: any)=>e.state==='queued').length, collecting:entries.filter((e: any)=>e.state==='collecting').length, verified:entries.filter((e: any)=>e.state==='verified').length};
+    return {entries, ...(state.policy?.assignment === 'availability-beacon-v1' ? {availableContributors:state.availableContributors, waitingForContributors:state.availableContributors < 3} : {}), queued:entries.filter((e: any)=>e.state==='queued').length, collecting:entries.filter((e: any)=>e.state==='collecting').length, verified:entries.filter((e: any)=>e.state==='verified').length};
 }

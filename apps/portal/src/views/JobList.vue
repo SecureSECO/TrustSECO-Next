@@ -1,5 +1,6 @@
 <template>
   <div class="activity-heading"><h1>Activity</h1><router-link to="/user/settings/#mining">Mining settings →</router-link></div>
+  <AssignmentOverview v-if="pilot"/>
   <NetworkOverview/>
   <section id="node-details" class="node-details"><h2>Node details</h2><DLTMetricsComponent/></section>
   <va-card v-if="!pilot"><va-card-title>Spider log</va-card-title><va-card-content><SpiderLogComponent/></va-card-content></va-card>
@@ -15,13 +16,14 @@
 import JobsListComponent from '../components/tables/Jobs.vue';
 import DLTMetricsComponent from '../components/DLTMetricsComponent.vue';
 import SpiderLogComponent from '../components/SpiderLog.vue';
+import AssignmentOverview from '../components/AssignmentOverview.vue';
 import NetworkOverview from '../components/NetworkOverview.vue';
 
 export default {
   name: 'jobs-view',
   data: () => ({pilot: import.meta.env.VITE_PILOT === 'true'}),
   components: {
-    NetworkOverview, DLTMetricsComponent, SpiderLogComponent,
+    AssignmentOverview, NetworkOverview, DLTMetricsComponent, SpiderLogComponent,
     JobsListComponent,
   },
 };

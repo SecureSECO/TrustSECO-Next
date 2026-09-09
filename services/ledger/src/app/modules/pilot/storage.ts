@@ -1,5 +1,6 @@
 import { JsonStore, loadState, saveState, migrateState, legacyKey } from '../community/storage';
 import { PilotState, Payment, Escrow } from './policy';
+import { AVAILABILITY_VERSION } from './availability';
 import { ASSIGNMENT_VERSION } from './assignment';
 
 const key = (s: string) => Buffer.from(`pilot:${s}`);
@@ -14,7 +15,7 @@ export async function loadPilot<C>(store: JsonStore<C>, ctx: C): Promise<PilotSt
 	const community = await loadState(store, ctx);
 	const read = async <T>(id: string) => JSON.parse((await store.get(ctx, key(id))).json) as T;
 	const meta = await read<Meta>('meta');
-	if (meta.assignmentVersion !== undefined && meta.assignmentVersion !== ASSIGNMENT_VERSION) throw new Error('Unsupported assignment policy');
+	if (meta.assignmentVersion !== undefined && meta.assignmentVersion !== ASSIGNMENT_VERSION && meta.assignmentVersion !== AVAILABILITY_VERSION) throw new Error('Unsupported assignment policy');
 	const s: PilotState = {
 		community,
 		...(meta.assignmentVersion ? { assignmentVersion: meta.assignmentVersion } : {}),
@@ -25,6 +26,7 @@ export async function loadPilot<C>(store: JsonStore<C>, ctx: C): Promise<PilotSt
 		escrows: {},
 		payouts: [],
 	};
+	if (meta.assignmentVersion === AVAILABILITY_VERSION) s.availability = await read<NonNullable<PilotState['availability']>>('availability');
 	for (const id of ['governor', ...community.members.map(m => m.id)])
 		s.balances[id] = await read<string>(`balance:${id}`);
 	for (const r of community.rounds) s.escrows[r.id] = await read<Escrow>(`escrow:${r.id}`);
@@ -43,6 +45,7 @@ function records(s: PilotState) {
 			revoked: s.revoked,
 		}),
 	);
+	if (s.availability) r.set('availability', JSON.stringify(s.availability));
 	for (const [id, b] of Object.entries(s.balances)) r.set(`balance:${id}`, JSON.stringify(b));
 	for (const [id, e] of Object.entries(s.escrows)) r.set(`escrow:${id}`, JSON.stringify(e));
 	s.payouts.forEach((p, i) => r.set(`payout:${i}`, JSON.stringify(p)));

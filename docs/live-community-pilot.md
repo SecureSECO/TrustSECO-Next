@@ -1,3 +1,5 @@
+> Current upgrade: [availability-aware assignment](availability-aware-assignment.md) adds expiring availability, a verified future beacon and fixed reserves. The commit/reveal description below remains relevant to historical rounds.
+
 > Protocol extension (not deployed by this change): [random observer assignment](random-observer-assignment.md)
 > adds an explicit, one-way activation event. Until activation, the legacy behavior
 > described below remains in force. Afterwards only three assigned operators may

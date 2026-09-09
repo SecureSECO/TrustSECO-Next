@@ -1,4 +1,5 @@
 import { createPublicKey, verify } from 'crypto';
+import { AVAILABILITY_VERSION, LEASE_SECONDS, Lease, BeaconAssignment, availableMembers, createBeaconAssignment, acceptBeacon, advanceReserves, canSubmit, assignmentPhase } from './availability';
 import { Assignment, ASSIGNMENT_VERSION, createAssignment, contribute } from './assignment';
 import {
 	applyEvent,
@@ -26,7 +27,7 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 };
 export const DELAY = 86400;
 export interface Escrow {
-	assignment?: Assignment;
+	assignment?: Assignment | BeaconAssignment;
 	packagePlatform?: string;
 	packageName?: string;
 	sponsor: string;
@@ -49,7 +50,8 @@ export interface Payment {
 	kind: 'reward' | 'refund';
 }
 export interface PilotState {
-	assignmentVersion?: typeof ASSIGNMENT_VERSION;
+	assignmentVersion?: typeof ASSIGNMENT_VERSION | typeof AVAILABILITY_VERSION;
+	availability?: Record<string, Lease>;
 	community: CommunityState;
 	network: string;
 	supply: string;
@@ -59,9 +61,10 @@ export interface PilotState {
 	revoked: string[];
 }
 /** Preserve historical genesis/replay. Production opts in through the signed activation event. */
-export function freshPilot(governor: string, network: string, mode: 'legacy-v1' | typeof ASSIGNMENT_VERSION = 'legacy-v1'): PilotState {
+export function freshPilot(governor: string, network: string, mode: 'legacy-v1' | typeof ASSIGNMENT_VERSION | typeof AVAILABILITY_VERSION = 'legacy-v1'): PilotState {
 	return {
-		...(mode === ASSIGNMENT_VERSION ? { assignmentVersion: ASSIGNMENT_VERSION } : {}),
+		...(mode !== 'legacy-v1' ? { assignmentVersion: mode } : {}),
+		...(mode === AVAILABILITY_VERSION ? { availability: {} } : {}),
 		community: initialState(governor),
 		network,
 		supply: '1000000',
@@ -163,10 +166,20 @@ export function applyPilot(
 		reason: string;
 		contribution: string;
 		observedAt: number;
+		until: number;
+		beaconRound: number;
+		beaconSignature: string;
+		duration: number;
 	};
 	requireThat(e && typeof e === 'object' && e.network === previous.network, 'Wrong network');
 	requireThat(!previous.revoked.includes(e.actor), 'Signing key revoked');
 	const s = JSON.parse(JSON.stringify(previous)) as PilotState;
+	if (s.assignmentVersion === AVAILABILITY_VERSION) {
+		for (const r of s.community.rounds) {
+			const a = s.escrows[r.id]?.assignment;
+			if (a?.version === AVAILABILITY_VERSION) s.escrows[r.id].assignment = advanceReserves(a, r, at);
+		}
+	}
 	if (e.kind === 'enrol') {
 		requireThat(
 			/^[a-z0-9][a-z0-9-]{0,38}$/.test(e.member) &&
@@ -244,7 +257,8 @@ export function applyPilot(
 			requireThat(!s.community.rounds.some(r => r.metric === e.metric &&
 				s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version),
 				'Fact already attempted; assignment redraws are forbidden');
-			createAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height);
+			if (s.assignmentVersion === AVAILABILITY_VERSION) createBeaconAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, s.availability ?? {}, at, height, e.duration);
+			else createAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height);
 		}
 		const bounty = money(e.bounty);
 		requireThat(bounty >= BigInt(3), 'Bounty must fund at least three contributors');
@@ -254,11 +268,12 @@ export function applyPilot(
 		const assignment = s.escrows[e.round]?.assignment;
 		if (assignment) {
 			requireThat(assignment.committee.includes(e.actor), 'Observer is not assigned to this round');
-			requireThat(at >= assignment.revealUntil && e.observedAt >= assignment.revealUntil, 'Measurement window has not started');
+			if (assignment.version === AVAILABILITY_VERSION) requireThat(canSubmit(assignment, e.actor, e.observedAt, at), 'Observer slot is not active');
+			else requireThat(at >= assignment.revealUntil && e.observedAt >= assignment.revealUntil, 'Measurement window has not started');
 			requireThat(!s.community.members.find(m => m.id === e.actor)?.suspended, 'Assigned observer is suspended');
 		}
 	}
-	if (['transfer', 'revoke', 'activate-assignment', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
+	if (['transfer', 'revoke', 'activate-assignment', 'activate-availability', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
 		const key =
 			e.actor === 'governor'
 				? s.community.governor
@@ -281,14 +296,30 @@ export function applyPilot(
 			'Invalid signature',
 		);
 		requireThat(s.community.audit.length < 10000, 'Event capacity reached');
-		if (e.kind === 'activate-assignment') {
+		if (e.kind === 'activate-availability') {
+			requireThat(e.actor === 'governor' && s.assignmentVersion !== AVAILABILITY_VERSION, 'Governor may activate availability once');
+			requireThat(s.community.rounds.every(r => r.closed), 'Close existing rounds before activation');
+			s.assignmentVersion = AVAILABILITY_VERSION; s.availability = {};
+		} else if (e.kind === 'availability') {
+			requireThat(s.assignmentVersion === AVAILABILITY_VERSION, 'Availability policy is not active');
+			requireThat(s.community.members.some(m => m.id === e.actor && !m.suspended), 'Active contributor required');
+			requireThat(Number.isSafeInteger(e.until) && (e.until === 0 || (e.until > at && e.until <= at + LEASE_SECONDS)), 'Invalid availability expiry');
+			s.availability = s.availability ?? {}; s.availability[e.actor] = {until: e.until, height};
+		} else if (e.kind === 'assignment-beacon') {
+			requireThat(s.community.members.some(m => m.id === e.actor && !m.suspended), 'Active contributor required');
+			const r = s.community.rounds.find(x => x.id === e.round);
+			const escrow = s.escrows[e.round];
+			requireThat(r && !r.closed && escrow?.assignment?.version === AVAILABILITY_VERSION, 'Beacon assignment required');
+			escrow.assignment = acceptBeacon(escrow.assignment, e.beaconRound, e.beaconSignature, at, height);
+			r.closesAt = at + escrow.assignment.window * (escrow.assignment.pool.length - 2);
+		} else if (e.kind === 'activate-assignment') {
 			requireThat(e.actor === 'governor' && !s.assignmentVersion, 'Governor may activate assignment once');
 			requireThat(Object.values(s.escrows).every(escrow => escrow.settled), 'Settle all legacy escrows before activation');
 			s.assignmentVersion = ASSIGNMENT_VERSION;
 		} else if (e.kind === 'entropy-commit' || e.kind === 'entropy-reveal') {
 			const round = s.community.rounds.find(r => r.id === e.round);
 			const assignment = s.escrows[e.round]?.assignment;
-			requireThat(round && !round.closed && assignment, 'Assigned round required');
+			requireThat(round && !round.closed && assignment?.version === ASSIGNMENT_VERSION, 'Assigned round required');
 			// Frozen participants may finish entropy after suspension; revocation still rejects their signatures.
 			s.escrows[e.round].assignment = contribute(assignment, e.actor, e.kind, e.contribution, at, height);
 		} else if (e.kind === 'transfer') {
@@ -326,12 +357,14 @@ export function applyPilot(
 		if (e.kind === 'reinstate')
 			requireThat(!s.revoked.includes(e.member), 'Revoked keys cannot be reinstated');
 		if (e.kind === 'open') {
-			const assignment = s.assignmentVersion ? createAssignment(s.network, e.round,
-				[e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height) : undefined;
+			let assignment: Assignment | BeaconAssignment | undefined;
+			if (s.assignmentVersion === AVAILABILITY_VERSION) assignment = createBeaconAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, s.availability ?? {}, at, height, e.duration);
+			else if (s.assignmentVersion) assignment = createAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height);
 			if (assignment) {
 				const opened = s.community.rounds.find(r => r.id === e.round);
 				requireThat(opened, 'Round missing');
-				opened.closesAt += assignment.revealUntil - at;
+				if (assignment.version === AVAILABILITY_VERSION) opened.closesAt = assignment.beaconDeadline;
+				else opened.closesAt += assignment.revealUntil - at;
 			}
 			const bounty = money(e.bounty);
 			s.balances[e.actor] = (BigInt(s.balances[e.actor]) - bounty).toString();
@@ -376,8 +409,12 @@ export function settlePilot(previous: PilotState, at: number, height: number): P
 	for (const round of s.community.rounds) {
 		const escrow = s.escrows[round.id];
 		if (!escrow || escrow.settled) continue;
-		// Automatic closure prevents an absent coordinator from indefinitely trapping the bounty.
-		if (!round.closed && at > round.closesAt) {
+		if (escrow.assignment?.version === AVAILABILITY_VERSION) {
+			escrow.assignment = advanceReserves(escrow.assignment, round, at);
+		}
+		const assignmentComplete = escrow.assignment?.version === AVAILABILITY_VERSION && escrow.assignment.seed !== null && (round.observations.length === 3 || escrow.assignment.committee.length < 3);
+		// Automatic closure preserves the planned deadline and records actual closure in escrow.
+		if (!round.closed && (at > round.closesAt || assignmentComplete)) {
 			round.closed = true;
 			round.result = roundResult(s, round);
 			escrow.closedAt = at;
@@ -445,10 +482,13 @@ function confirmationHeight(s: PilotState, r: Round, reviews: Map<string, number
 	return r.observations.reduce((height, o) => Math.max(height, reviews.get(o.member) ?? 0), closedHeight);
 }
 export function pilotView(s: PilotState, at: number) {
+	let version = s.assignmentVersion ? 'pilot-assignment-v2' : 'pilot-v1';
+	if (s.assignmentVersion === AVAILABILITY_VERSION) version = 'pilot-availability-v3';
 	const reviews = memberReviewHeights(s);
 	return {
 		network: s.network,
-		policy: { version: s.assignmentVersion ? 'pilot-assignment-v2' : 'pilot-v1', assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
+		policy: { version, assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
+		...(s.assignmentVersion === AVAILABILITY_VERSION ? { availability: s.availability, availableContributors: availableMembers(s.community.members, s.revoked, s.availability ?? {}, at).length } : {}),
 		governorKey: s.community.governor,
 		members: s.community.members.map(m => ({
 			...m,
@@ -463,6 +503,7 @@ export function pilotView(s: PilotState, at: number) {
 			result: roundResult(s, r),
 			confirmationHeight: confirmationHeight(s, r, reviews),
 			assignment: s.escrows[r.id]?.assignment,
+			...(s.escrows[r.id]?.assignment?.version === AVAILABILITY_VERSION ? { assignmentPhase: assignmentPhase(s.escrows[r.id].assignment as BeaconAssignment, r, at) } : {}),
 			escrow: s.escrows[r.id],
 		})),
 		audit: s.community.audit,

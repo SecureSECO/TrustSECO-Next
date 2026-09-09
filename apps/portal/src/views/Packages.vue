@@ -3,6 +3,7 @@
     <va-card-title>View Packages</va-card-title>
     <va-card-content>
       <p v-if="queue" class="queue-note">Collection queue: {{ queue.queued }} waiting · {{ queue.collecting }} collecting · {{ queue.verified }} verified rounds. Packages appear immediately; scores appear as observations arrive. One job runs at a time.</p>
+      <p v-if="queue?.waitingForContributors" role="status" class="queue-note">Waiting for contributors: {{ queue.availableContributors }} available; three are needed to start new work.</p>
       <Packages></Packages>
     </va-card-content>
   </va-card>

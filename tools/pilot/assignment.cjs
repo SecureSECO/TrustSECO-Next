@@ -35,11 +35,21 @@ function entropyEvent(state, identity, keyfile) {
   return null;
 }
 function canObserve(round, state, member) {
-  if (!round.assignment) return state.policy?.assignment !== 'commit-reveal-v1';
+  if (round.assignment?.version === 'availability-beacon-v1') return require('./availability.cjs').canObserve(round,state,member);
+  if (!round.assignment) return !['commit-reveal-v1','availability-beacon-v1'].includes(state.policy?.assignment);
   return round.assignment.version === 'commit-reveal-v1' &&
     state.at >= round.assignment.revealUntil && round.assignment.committee.includes(member);
 }
 function expiredEnvelope(event, state) {
+  if (event.kind === 'availability') return event.until !== 0 && event.until <= state.at;
+  if (event.kind === 'assignment-beacon') {
+    const a=state.rounds.find(r=>r.id===event.round)?.assignment;
+    if(a?.seed || (a && state.at > a.beaconDeadline))return true;
+  }
+  if (event.kind === 'observe') {
+    const a=state.rounds.find(r=>r.id===event.round)?.assignment;
+    if(a?.version==='availability-beacon-v1' && !a.slots.some(slot=>!slot.replaced && slot.member===event.actor && state.at<=slot.until))return true;
+  }
   const round = state.rounds.find(r => r.id === event.round);
   if (!round) return false;
   if (round.closed || state.at > round.closesAt) return true;

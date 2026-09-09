@@ -1,3 +1,5 @@
+> Current upgrade: [availability-aware assignment](availability-aware-assignment.md) adds expiring availability, a verified future beacon and fixed reserves. The commit/reveal description below remains relevant to historical rounds.
+
 # Random observer assignment: experimental policy v2
 
 Implementation branch: `feature/random-observer-assignment`. Original base:
