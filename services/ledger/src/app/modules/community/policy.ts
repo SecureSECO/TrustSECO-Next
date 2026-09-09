@@ -7,7 +7,7 @@ export interface Round { id: string; package: string; metric: string; source: st
 export interface Result { status: 'pending' | 'verified' | 'disputed' | 'expired'; supporters: string[]; conflicts: string[]; value: number | null }
 export interface Incident { id: string; member: string; round: string; observation: string; cause: string; evidence: string; reason: string; at: number; overturned: boolean }
 export interface Audit { id: string; kind: string; actor: string; at: number; height: number; payload: string; signature: string }
-export interface CommunityState { governor: string; members: Member[]; rounds: Round[]; incidents: Incident[]; audit: Audit[] }
+export interface CommunityState { auditOffset?: number; governor: string; members: Member[]; rounds: Round[]; incidents: Incident[]; audit: Audit[] }
 export const initialState = (governor: string): CommunityState => ({ governor, members: [], rounds: [], incidents: [], audit: [] });
 function fail(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 2000;

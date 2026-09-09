@@ -27,6 +27,8 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 };
 export const DELAY = 86400;
 export interface Escrow {
+	refreshOf?: string;
+	failures?: Record<string, {reason: string; at: number}>;
 	assignment?: Assignment | BeaconAssignment;
 	packagePlatform?: string;
 	packageName?: string;
@@ -50,6 +52,8 @@ export interface Payment {
 	kind: 'reward' | 'refund';
 }
 export interface PilotState {
+	collectionVersion?: 'scheduled-v1';
+	reviewHeights?: Record<string, number>;
 	assignmentVersion?: typeof ASSIGNMENT_VERSION | typeof AVAILABILITY_VERSION;
 	availability?: Record<string, Lease>;
 	community: CommunityState;
@@ -170,6 +174,7 @@ export function applyPilot(
 		beaconRound: number;
 		beaconSignature: string;
 		duration: number;
+		refreshOf: string;
 	};
 	requireThat(e && typeof e === 'object' && e.network === previous.network, 'Wrong network');
 	requireThat(!previous.revoked.includes(e.actor), 'Signing key revoked');
@@ -254,9 +259,11 @@ export function applyPilot(
 			);
 		}
 		if (s.assignmentVersion) {
-			requireThat(!s.community.rounds.some(r => r.metric === e.metric &&
-				s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version),
-				'Fact already attempted; assignment redraws are forbidden');
+			const prior = s.community.rounds.filter(r => r.metric === e.metric && s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version).slice(-1)[0];
+			if (s.collectionVersion) {
+				requireThat(!prior ? e.refreshOf === undefined : prior.closed && e.refreshOf === prior.id && at >= prior.openedAt + 86400, 'Refresh requires the latest round and a 24-hour interval, regardless of outcome');
+				requireThat(s.community.rounds.filter(r => !r.closed).length < 12, 'Active round capacity reached');
+			} else requireThat(!prior, 'Fact already attempted; assignment redraws are forbidden');
 			if (s.assignmentVersion === AVAILABILITY_VERSION) createBeaconAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, s.availability ?? {}, at, height, e.duration);
 			else createAssignment(s.network, e.round, [e.repository.toLowerCase(), e.version, e.metric], s.community.members, s.revoked, at, height);
 		}
@@ -273,7 +280,7 @@ export function applyPilot(
 			requireThat(!s.community.members.find(m => m.id === e.actor)?.suspended, 'Assigned observer is suspended');
 		}
 	}
-	if (['transfer', 'revoke', 'activate-assignment', 'activate-availability', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
+	if (['transfer', 'revoke', 'activate-assignment', 'activate-availability', 'activate-collection', 'unavailable', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
 		const key =
 			e.actor === 'governor'
 				? s.community.governor
@@ -295,8 +302,20 @@ export function applyPilot(
 			),
 			'Invalid signature',
 		);
-		requireThat(s.community.audit.length < 10000, 'Event capacity reached');
-		if (e.kind === 'activate-availability') {
+		requireThat(e.kind === 'activate-collection' || s.community.audit.length < 10000, 'Event capacity reached');
+		if (e.kind === 'activate-collection') {
+			requireThat(e.actor === 'governor' && s.assignmentVersion === AVAILABILITY_VERSION && !s.collectionVersion, 'Governor may activate collection once after availability');
+			requireThat(s.community.rounds.every(r => r.closed), 'Close existing rounds before activation');
+			s.collectionVersion = 'scheduled-v1';
+		} else if (e.kind === 'unavailable') {
+			const r = s.community.rounds.find(x => x.id === e.round);
+			const escrow = s.escrows[e.round];
+			requireThat(s.collectionVersion && r && !r.closed && escrow?.assignment?.version === AVAILABILITY_VERSION, 'Active collection required');
+			requireThat(canSubmit(escrow.assignment, e.actor, at, at), 'Only the active observer may report unavailability');
+			requireThat(!escrow.failures?.[e.actor] && !r.observations.some(o => o.member === e.actor), 'Collector status already reported');
+			requireThat(['credentials-missing', 'rate-limited', 'access-denied', 'source-unavailable', 'source-incomplete'].includes(e.reason), 'Recognized source failure required');
+			escrow.failures = {...escrow.failures, [e.actor]: {reason:e.reason, at}};
+		} else if (e.kind === 'activate-availability') {
 			requireThat(e.actor === 'governor' && s.assignmentVersion !== AVAILABILITY_VERSION, 'Governor may activate availability once');
 			requireThat(s.community.rounds.every(r => r.closed), 'Close existing rounds before activation');
 			s.assignmentVersion = AVAILABILITY_VERSION; s.availability = {};
@@ -370,6 +389,7 @@ export function applyPilot(
 			s.balances[e.actor] = (BigInt(s.balances[e.actor]) - bounty).toString();
 			s.escrows[e.round] = {
 				...(assignment ? { assignment } : {}),
+				...(s.collectionVersion && e.refreshOf ? {refreshOf:e.refreshOf} : {}),
 				sponsor: e.actor,
 				bounty: e.bounty,
 				repository: e.repository.toLowerCase(),
@@ -390,6 +410,7 @@ export function applyPilot(
 			s.escrows[e.round].closedHeight = height;
 		}
 	}
+	if (s.collectionVersion) s.reviewHeights = Object.fromEntries(memberReviewHeights(s));
 	requireThat(conserved(s), 'TrustCOIN conservation failed');
 	return s;
 }
@@ -460,7 +481,7 @@ export function settlePilot(previous: PilotState, at: number, height: number): P
 // unrelated mining and transfers do not invalidate an already finalized result.
 function memberReviewHeights(s: PilotState): Map<string, number> {
 	const incidents = new Map(s.community.incidents.map(i => [i.id, i]));
-	const heights = new Map<string, number>();
+	const heights = new Map<string, number>(Object.entries(s.reviewHeights ?? {}));
 	for (const audit of s.community.audit) {
 		let member: string | undefined;
 		if (audit.kind === 'substantiate') member = incidents.get(audit.id)?.member;
@@ -487,7 +508,7 @@ export function pilotView(s: PilotState, at: number) {
 	const reviews = memberReviewHeights(s);
 	return {
 		network: s.network,
-		policy: { version, assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
+		policy: { version, ...(s.collectionVersion ? {collection:s.collectionVersion, refreshSeconds:86400} : {}), assignment: s.assignmentVersion ?? 'self-selected-legacy', contributors: 3, delaySeconds: DELAY, tolerances: METRICS },
 		...(s.assignmentVersion === AVAILABILITY_VERSION ? { availability: s.availability, availableContributors: availableMembers(s.community.members, s.revoked, s.availability ?? {}, at).length } : {}),
 		governorKey: s.community.governor,
 		members: s.community.members.map(m => ({
@@ -507,6 +528,7 @@ export function pilotView(s: PilotState, at: number) {
 			escrow: s.escrows[r.id],
 		})),
 		audit: s.community.audit,
+		...(s.collectionVersion ? {auditOffset:s.community.auditOffset ?? 0, auditCount:(s.community.auditOffset ?? 0)+s.community.audit.length} : {}),
 		incidents: s.community.incidents,
 		at,
 	};

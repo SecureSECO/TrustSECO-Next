@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file, @typescript-eslint/member-ordering, class-methods-use-this */
 import { Modules, StateMachine, Types } from 'klayr-sdk';
 import { applyPilot, freshPilot, pilotView, settlePilot, verifiedInputs } from './policy';
-import { initPilot, loadPilot, savePilot } from './storage';
+import { initPilot, loadPilot, savePilot, recordedEvent, auditPage } from './storage';
 
 class PilotStore extends Modules.BaseStore<{ json: string }> {
 	public schema = {
@@ -24,6 +24,7 @@ class RecordCommand extends Modules.BaseCommand {
 	public async verify(
 		c: StateMachine.CommandVerifyContext<{ payload: string; signature: string }>,
 	) {
+		if (await recordedEvent(this.stores.get(PilotStore), c, (JSON.parse(c.params.payload) as {id: string}).id)) throw new Error('Duplicate event');
 		applyPilot(
 			await loadPilot(this.stores.get(PilotStore), c),
 			c.params.payload,
@@ -37,6 +38,7 @@ class RecordCommand extends Modules.BaseCommand {
 		c: StateMachine.CommandExecuteContext<{ payload: string; signature: string }>,
 	) {
 		const store = this.stores.get(PilotStore);
+		if (await recordedEvent(store, c, (JSON.parse(c.params.payload) as {id: string}).id)) throw new Error('Duplicate event');
 		const old = await loadPilot(store, c);
 		await savePilot(
 			store,
@@ -47,6 +49,8 @@ class RecordCommand extends Modules.BaseCommand {
 	}
 }
 class PilotEndpoint extends Modules.BaseEndpoint {
+	public async audit(c: Types.ModuleEndpointContext) { return auditPage(this.stores.get(PilotStore), c, c.params.before === undefined ? undefined : Number(c.params.before)); }
+	public async event(c: Types.ModuleEndpointContext) { return {event: await recordedEvent(this.stores.get(PilotStore), c, c.params.id as string)}; }
 	public async snapshot(c: Types.ModuleEndpointContext) {
 		return pilotView(await loadPilot(this.stores.get(PilotStore), c), c.header.timestamp);
 	}
@@ -96,7 +100,7 @@ export class PilotModule extends Modules.BaseModule {
 	}
 	public metadata(): Modules.ModuleMetadata {
 		return {
-			endpoints: [{ name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
+			endpoints: [{ name: 'audit' }, { name: 'event' }, { name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
 			commands: this.commands.map(c => ({ name: c.name, params: c.schema })),
 			events: [],
 			assets: [],

@@ -8,7 +8,8 @@ x-ledger: &ledger
     PILOT_GOVERNOR_FILE: /pilot/governor.pem
     PILOT_NETWORK: trustseco-8b7bb864
     TRUSTSECO_SEED_PEERS: validator1:8000,validator2:8000,validator3:8000,validator4:8000
-  command: ["sh", "-c", "npm run build && ./bin/run start --config /pilot/config.json --overwrite-config"]
+    TRUSTSECO_FIXED_PEERS: validator1:8000,validator2:8000,validator3:8000,validator4:8000
+  command: ["./bin/run", "start", "--config", "/pilot/config.json", "--overwrite-config"]
   healthcheck:
     test: ["CMD", "node", "-e", "require('@klayr/api-client').createWSClient('ws://127.0.0.1:7887/rpc-ws').then(async c=>{await c.node.getNodeInfo();await c.disconnect();process.exit(0)}).catch(()=>process.exit(1))"]
     interval: 10s

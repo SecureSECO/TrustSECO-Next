@@ -1,3 +1,5 @@
+> Historical notes for the earlier port-3004 implementation. For the current signed network and release gates, use [UU deployment readiness](uu-deployment-readiness.md). Statements below about disconnected collection/scores/rewards do not describe the current port-3005 implementation.
+
 # Research preview release candidate
 
 This candidate builds on the home-dashboard branch. It adds local distributed-validator tooling and seed discovery, a separate 15-second community experiment, TrustCOIN display naming, and durable mining payout history.

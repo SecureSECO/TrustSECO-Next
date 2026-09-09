@@ -10,6 +10,9 @@ RUN npm install
 # Bundle app source
 COPY . .
 
+# Compile once in the image, not concurrently in every validator at startup.
+RUN npm run build
+
 # main port
 EXPOSE 8000
 # rpc

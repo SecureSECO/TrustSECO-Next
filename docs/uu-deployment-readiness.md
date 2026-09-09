@@ -1,24 +1,36 @@
-# UU deployment readiness — 8 September 2026
+# UU deployment readiness — 9 September 2026
 
-The original community demonstration at port 3004 uses simulated contributors whose keys are held by one coordinator. The new, separate implementation and its current limits are documented in [Live community verification and TrustCOIN](live-community-pilot.md). It connects contributor-signed GitHub observations, verification, scores and escrow-backed ledger payments, with independent-key preparation and deployment/recovery tooling. Its local test identities are still not independent people. UU access and real operator assignment remain deferred.
+This checklist concerns the signed network on local port 3005. The older port-3004 demonstration and its release notes are historical. Local fixture identities all run on one Mac and do not constitute independent operators.
 
-The checklist below records the release acceptance gates; the legacy implementation descriptions refer to the port-3004 network, not the new opt-in ledger module.
+## Implemented and locally exercised
 
-## Acceptance gates for a functional UU pilot
+- Contributor-signed collection, tolerance-based agreement, reviewed misconduct and appeals, and separate local/confirmed scores.
+- Four GitHub and eight Libraries.io numeric collectors. Missing upstream data does not become a zero-valued fact.
+- Four separately keyed validator processes on one shared chain, fifteen-second blocks and per-fact finality. Local finality recovery and common finalized-block checks are documented in [the investigation](finality-investigation-2026-09-08.md).
+- Availability-based observer selection with a fixed reserve order. Live tests covered two available contributors waiting, three online contributors reaching finalized agreement and an offline selected observer being replaced automatically. See [acceptance results](availability-aware-assignment.md).
+- Guided local identity/key creation, GitHub identity checks, private API credential settings and a mining switch.
+- Escrow-backed TrustCOIN rewards, a 24-hour review delay, conservation and exactly-once settlement tests. This is not evidence of a completed live 24-hour payout experiment across independent hosts.
+- Operator deployment templates, private local backups and a tested non-signing restore procedure. These are not evidence of working UU certificates or off-site recovery.
 
-1. **Real observation pipeline.** Connect live spider jobs to versioned verification rounds; use consistent package/registry/version identities, collection times and source/method definitions. Three independently admitted contributors must collect compatible observations. Two contributors leave a finding unverified; a timeout never silently weakens the quorum. Tests must cover stale data, conflicting results, duplicate identities, retries and missing sources.
-2. **Real identity and review.** Replace the shared simulation key store and actor selector with authenticated contributors signing with their own keys. Verify GitHub identity/account-age claims rather than trusting fixture data. Establish operator admission, key revocation and designated reviewers. Account age alone is not Sybil resistance; initially use an explicitly permissioned research pilot. Review authority must be separate from ordinary submission.
-3. **Scores and rewards consume verification.** Feed closed corroborated rounds into the community-confirmed score. Keep ledger finality distinct from factual agreement. Define reward eligibility, the roughly 24-hour payment delay, bounty conservation, handling of disputed/insufficient rounds and appeals after payout. Prove deterministic, exactly-once payment across restarts and reorgs. The current payout history records legacy job rewards; it does not connect community eligibility to real payments.
-4. **Network and upgrade plan.** Agree on a shared genesis, 15-second blocks, validator set and quorum/failure assumptions. Use separately held validator keys, both configured UU seed endpoints, persistent storage and identical protocol versions. Two machines do not automatically supply the desired failure tolerance. Deploy payout-history changes via a coordinated upgrade or a fresh pilot chain: historical blocks containing legacy payouts cannot be assumed replay-compatible with the new state writes. Preserve existing chains rather than silently rewriting them.
-5. **Deployment and operations.** Build pinned Linux images; set public hostnames and HTTPS URLs (the current web Dockerfile uses HTTP). Configure a reverse proxy, authenticated write APIs, limited RPC exposure, firewall/peer ports, restricted secrets and backup/restore procedures. Replace localhost/IP-based access assumptions before exposing administrative routes. Add health checks, reconnect/retry handling, logs, disk-growth monitoring and alerting for stalled finality. Use separate contributor credentials rather than copying one operator's credentials to every node.
-6. **Demonstrate the complete loop on independent hosts.** A real package creates jobs, independent contributors submit measurements, agreement becomes visible, finalized results affect a score, an eligible payout appears after the configured delay, and both nodes show the same balances/history. Exercise a conflicting observation, an appeal, a node outage/rejoin and a restore. Document which failures the chosen validator quorum can survive.
+The [full collection and daily refresh extension](collection-and-refresh.md) adds the expanded scheduler, signed source diagnostics, timed refresh, permanent event lookup and a bounded recent-audit working set. The local upgrade and two-provider/outage acceptance passed; see its recorded results. The complete 480-target run and long soak remain outstanding.
 
-Start with this controlled research pilot before open public participation. The next implementation milestone is gate 1 plus real identities, followed by connecting scores/rewards. Do not deploy the demo actor endpoints on UU as if they were production authentication.
+## Remaining release gates
 
-## TrustCOIN and payout history
+| Gate | Acceptance evidence required |
+| --- | --- |
+| Full package run | All 40 configured packages have an outcome for every applicable supported metric. Distinguish finalized facts, source unavailability, disputes and insufficient contributors. Check both GitHub and Libraries.io; do not promise a fixed fact count where upstream data is absent. |
+| Sustained operation | Complete a load run, verify finality continues, measure resource growth, and alert on stalled finality or publication. Removing an audit threshold is not proof of unlimited capacity. |
+| Independent identities | Name the real operators, admit their identities, verify their GitHub signing-key bindings, and keep contributor and validator keys under their respective custody. Local fixtures must not be presented as independent humans. |
+| UU configuration | Obtain SSH access, choose hostnames and image digests, agree on the production genesis/upgrade, fund distinct relay fee accounts, verify HTTPS, restrict RPC/admin access and configure peer ports. |
+| Failure domains | Demonstrate the chosen quorum's failure tolerance. Four equal validators require three: putting two on each of two machines does not tolerate losing either machine. |
+| Recovery | Verify encrypted off-site backups, restore a non-signing observer, prove common finalized state after rejoin, and establish safe validator-key recovery without rolling back signing safety records. |
+| Full reward loop | Let actual verified work pass the real 24-hour delay, check the resulting payout and balances on independent hosts, and exercise disagreement/review handling. |
+| Release artifact | Run checks at the release commit, review/merge changes, tag the tested commit and publish immutable images plus configuration and limitations. |
 
-TrustCOIN is the display name for existing integer credit balances; the persisted `slingers` field is retained for compatibility. There is no conversion, external token issuance or change in value.
+UU access and real operator assignment were deferred by the owner. Continue local implementation and acceptance testing; do not infer those deployment details or copy fixture secrets to UU.
 
-`coda_getRecentPayouts` returns pages of up to 200 positive legacy mining payouts, recorded in the same block execution as the balance credit. Each record contains recipient UID, decimal-string amount, job ID, package/version, height and timestamp. Every new payout is retained in a separate ledger record, with a sequence cursor and a persistent job/recipient receipt to prevent duplicate payment. The UI can page back through older records. It neither reconstructs pre-upgrade transfers nor treats signup grants or simulated eligibility as mining payouts. The coordinator adds ledger finality information. Older ledgers without this endpoint show an unavailable state.
+## Operational boundaries
 
-Legacy eligibility remains more than 5,760 blocks after job creation: approximately 24 hours at a 15-second interval, longer if blocks stop. This is not yet a strict wall-clock deadline or a community-agreement gate. A zero reward is not displayed as a positive payout. Future economic changes require their own protocol design and tests.
+This is a permissioned research network. GitHub account age helps admission but does not solve Sybil resistance, collusion or observation copying. Agreement and ledger finality are separate claims.
+
+Backups contain private signing material, including the SDK generator database. Do not publish them. Restoring an observer strips generator keys; restoring a signing validator requires preserving anti-double-signing history and avoiding duplicate active copies.

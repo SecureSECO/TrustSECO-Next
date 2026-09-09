@@ -1,0 +1,123 @@
+{
+  "network": "trustseco-8b7bb864",
+  "targetCount": 480,
+  "archivedEventLookup": true,
+  "auditCount": 418,
+  "recentAuditCount": 256,
+  "liveVerified": [
+    {
+      "round": "collect-1d4c6b7914035a38c5576431ba46394cf8568c45",
+      "repository": "psf/black",
+      "metric": "lib_release_count",
+      "source": "Libraries.io REST",
+      "value": 74,
+      "observers": [
+        "test-c",
+        "test-e",
+        "test-b"
+      ],
+      "confirmationHeight": 2025
+    },
+    {
+      "round": "collect-8d62cc705d15cf4189e04591db1284031abac775",
+      "repository": "psf/black",
+      "metric": "gh_open_issues_count",
+      "source": "GitHub REST",
+      "value": 268,
+      "observers": [
+        "test-a",
+        "test-e",
+        "test-d"
+      ],
+      "confirmationHeight": 2024
+    }
+  ],
+  "validatorOutage": {
+    "beforeFinalizedHeight": 2026,
+    "afterFinalizedHeight": 2034
+  },
+  "queueAtEnd": {
+    "total": 480,
+    "queued": 433,
+    "collecting": 3,
+    "verified": 27,
+    "disputed": 0,
+    "unavailable": 0,
+    "insufficient": 17,
+    "maxConcurrent": 4,
+    "refreshSeconds": 86400,
+    "availableContributors": 6,
+    "waitingForContributors": false
+  },
+  "scope": "Local fixture operators on one Mac. A completed sample and process-outage check, not independent-host acceptance or completion of all 480 targets.",
+  "rejoin": {
+    "at": "2026-09-09T11:27:55.050Z",
+    "commonFinalizedHeight": 2034,
+    "sameFinalizedBlock": true,
+    "sameTip": true,
+    "nodes": [
+      {
+        "height": 2041,
+        "finalizedHeight": 2034,
+        "peers": 3,
+        "syncing": false,
+        "peerBans": {
+          "bannedPeers": {},
+          "count": 0
+        }
+      },
+      {
+        "height": 2041,
+        "finalizedHeight": 2034,
+        "peers": 3,
+        "syncing": false,
+        "peerBans": {
+          "bannedPeers": {},
+          "count": 0
+        }
+      },
+      {
+        "height": 2041,
+        "finalizedHeight": 2034,
+        "peers": 3,
+        "syncing": false,
+        "peerBans": {
+          "bannedPeers": {},
+          "count": 0
+        }
+      },
+      {
+        "height": 2041,
+        "finalizedHeight": 2034,
+        "peers": 3,
+        "syncing": false,
+        "peerBans": {
+          "bannedPeers": {},
+          "count": 0
+        }
+      }
+    ]
+  },
+  "roundTiming": [
+    {
+      "round": "collect-1d4c6b7914035a38c5576431ba46394cf8568c45",
+      "repository": "psf/black",
+      "metric": "lib_release_count",
+      "openedAt": 1788952605,
+      "closedAt": 1788952995,
+      "confirmationHeight": 2025,
+      "status": "verified",
+      "observations": 3
+    },
+    {
+      "round": "collect-8d62cc705d15cf4189e04591db1284031abac775",
+      "repository": "psf/black",
+      "metric": "gh_open_issues_count",
+      "openedAt": 1788952620,
+      "closedAt": 1788952980,
+      "confirmationHeight": 2024,
+      "status": "verified",
+      "observations": 3
+    }
+  ]
+}

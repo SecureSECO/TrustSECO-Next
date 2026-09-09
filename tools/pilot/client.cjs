@@ -42,6 +42,9 @@ async function json(url, options = {}) {
   if (!r.ok) {
     const e = Error("HTTP " + r.status + " from " + new URL(url).hostname);
     e.status = r.status;
+    e.rateLimited = r.status === 429 || r.headers?.get?.("x-ratelimit-remaining") === "0";
+    const reset = Number(r.headers?.get?.("x-ratelimit-reset")) * 1000;
+    if (e.rateLimited && reset > Date.now()) e.retryAfterMs = Math.min(3600000, reset - Date.now() + 1000);
     throw e;
   }
   return r.json().catch(() => { throw Error('Invalid JSON from ' + new URL(url).hostname); });
@@ -98,11 +101,14 @@ async function submit(url, identity, event) {
   const envelope = { payload, signature: sign(payload, identity.privateKey) };
   return sendEnvelope(url, envelope);
 }
+async function recorded(url, state, id) {
+  return state.audit.find(a => a.id === id) || (state.policy?.collection ? (await json(baseURL(url) + '/api/pilot/event?id=' + encodeURIComponent(id))).event : null);
+}
 async function sendEnvelope(url, envelope) {
   const e = JSON.parse(envelope.payload);
   for (let i = 0; i < 90; i++) {
     const s = await snapshot(url),
-      record = s.audit.find((a) => a.id === e.id);
+      record = await recorded(url, s, e.id);
     if (record) {
       if (
         record.payload !== envelope.payload ||
@@ -126,7 +132,7 @@ async function sendEnvelope(url, envelope) {
   }
   for (let i = 0; i < 90; i++) {
     await sleep(1000);
-    const record = (await snapshot(url)).audit.find((a) => a.id === e.id);
+    const record = await recorded(url, await snapshot(url), e.id);
     if (record) {
       if (
         record.payload !== envelope.payload ||
@@ -139,6 +145,20 @@ async function sendEnvelope(url, envelope) {
   throw Error(
     "Submission not observed yet; retain the same signed envelope for retry"
   );
+}
+// A recovered fork can contain the same logical opening under an earlier event ID.
+// Reconcile only byte-equivalent fields (except the ID), signed and finalized; never transfers.
+async function finalizedOpening(url, state, envelope) {
+  const pending=JSON.parse(envelope.payload);
+  if(pending.kind!=='open'||!state.rounds?.some(r=>r.id===pending.round)||!Number.isSafeInteger(state.ledger?.finalizedHeight))return null;
+  const find=events=>events.find(a=>a.kind==='open'&&JSON.parse(a.payload).round===pending.round);
+  let existing=find(state.audit),before=state.auditOffset;
+  while(!existing&&state.policy?.collection&&before>0){const page=await json(baseURL(url)+'/api/pilot/audit?before='+before);existing=find(page.events);before=page.nextCursor;}
+  if(!existing||existing.height>state.ledger.finalizedHeight)return null;
+  const body=JSON.parse(existing.payload),key=body.actor==='governor'?state.governorKey:state.members.find(m=>m.id===body.actor)?.key;
+  const comparable=e=>JSON.stringify(Object.keys(e).filter(k=>k!=='id').sort().map(k=>[k,e[k]]));
+  if(!key||comparable(body)!==comparable(pending)||!crypto.verify(null,Buffer.from('TrustSECO-community-v1\n'+existing.payload),key,Buffer.from(existing.signature,'base64')))return null;
+  return existing;
 }
 async function durableEvent(url, keyfile, body) {
   const file = keyfile + ".event-outbox";
@@ -161,6 +181,16 @@ async function durableEvent(url, keyfile, body) {
     throw Error(
       "A different event is pending in " + file + "; retry that event first"
     );
+  const state=await snapshot(url),event=JSON.parse(pending.envelope.payload);
+  if(!await recorded(url,state,event.id)){
+    const existing=await finalizedOpening(url,state,pending.envelope);
+    if(existing){
+      const archive=file+'.superseded-'+crypto.randomUUID();
+      privateFile(archive+'.receipt',{canonicalEvent:existing.id,canonicalHeight:existing.height,reason:'Identical opening finalized under another event ID after fork recovery'});
+      fs.renameSync(file,archive);
+      return existing.id;
+    }
+  }
   const id = await sendEnvelope(url, pending.envelope);
   fs.unlinkSync(file);
   return id;
@@ -224,7 +254,7 @@ async function mineOnceInner(url, keyfile) {
   if (fs.existsSync(outbox)) {
     const pending = read(outbox), event = JSON.parse(pending.payload), current = await snapshot(url);
     if (event.network !== current.network) throw Error('Pending event belongs to another network');
-    if (!current.audit.some(a => a.id === event.id) && expiredEnvelope(event, current)) {
+    if (!await recorded(url, current, event.id) && expiredEnvelope(event, current)) {
       fs.renameSync(outbox, outbox + '.expired-' + crypto.randomUUID());
     } else {
       await sendEnvelope(url, pending);
@@ -252,7 +282,7 @@ async function mineOnceInner(url, keyfile) {
       !r.observations.some((o) => o.member === identity.id) &&
       (collectorRetry.get(r.id) || 0) <= Date.now()
   );
-  let r, measurement, failure;
+  let r, measurement, failure, unavailable;
   for (const candidate of candidates) {
     try {
       measurement = await collect(
@@ -264,17 +294,26 @@ async function mineOnceInner(url, keyfile) {
       break;
     } catch (error) {
       failure = error.message;
-      collectorRetry.set(candidate.id, Date.now() + 60000);
+      if (s.policy.collection && !candidate.escrow.failures?.[identity.id] && !unavailable) {
+        const reason = /API key|credentials/i.test(failure) ? 'credentials-missing' : error.rateLimited || error.status===429 ? 'rate-limited' : [401,403].includes(error.status) ? 'access-denied' : /incomplete|missing|invalid|not in|mismatch|does not match|unavailable/i.test(failure) ? 'source-incomplete' : 'source-unavailable';
+        unavailable = {kind:'unavailable',round:candidate.id,reason};
+      }
+      collectorRetry.set(candidate.id, Date.now() + (error.retryAfterMs || 60000));
       console.error(
         "Collector " +
           candidate.metric +
           ": " +
           error.message +
-          "; retry in 60 seconds"
+          "; retry after provider backoff"
       );
     }
   }
   if (!r) {
+    if (unavailable) {
+      const payload=JSON.stringify({...unavailable,id:crypto.randomUUID(),actor:identity.id,network:s.network});
+      privateFile(outbox,{payload,signature:sign(payload,identity.privateKey)});
+      await sendEnvelope(url,read(outbox)); fs.unlinkSync(outbox); return true;
+    }
     if (failure) throw Error('Collection needs attention: ' + failure + '; retrying in 60 seconds');
     if (s.rounds.some(candidate => !candidate.closed && (collectorRetry.get(candidate.id) || 0) > Date.now())) throw Error('Waiting to retry a failed collector');
     return false;

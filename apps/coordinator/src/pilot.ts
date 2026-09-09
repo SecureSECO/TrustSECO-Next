@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { createWSClient } from '@klayr/api-client';
 import { portalRouter } from './pilot-portal';
 import { setupRouter, queueAdmission } from './pilot-setup';
+import { recoverExpiredLease } from './pilot-relay-recovery';
 
 const endpoint = process.env.DLT_ENDPOINT;
 const keyFile = process.env.PILOT_RELAYER_FILE;
@@ -18,6 +19,7 @@ if (typeof transportKey !== 'string' || !/^[a-f0-9]{128}$/i.test(transportKey)) 
 const app = new Koa();
 const router = new Router({ prefix: '/api/pilot' });
 let busy = false;
+let lastFinalized = -1, finalityAdvancedAt = Date.now();
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function withClient<T>(work: (c: any) => Promise<T>): Promise<T> {
     const client = await createWSClient(endpoint);
@@ -34,9 +36,13 @@ router.get('/snapshot', async ctx => {
     ctx.body = await withClient(async c => {
         const node = await c.node.getNodeInfo();
         const snapshot = await c.invoke('pilot_snapshot');
-        return { ...snapshot, testNetwork: process.env.PILOT_TEST_NETWORK === 'true', ledger: { height: node.height, finalizedHeight: node.finalizedHeight, chainID: node.chainID } };
+        if (node.finalizedHeight !== lastFinalized) { lastFinalized=node.finalizedHeight; finalityAdvancedAt=Date.now(); }
+        const stalled = Date.now()-finalityAdvancedAt > 180000 || node.height-node.finalizedHeight > 20;
+        return { ...snapshot, health:{finalityStalled:stalled,reason:stalled?'Finality is stalled or lagging. New collection should wait for recovery.':null}, testNetwork: process.env.PILOT_TEST_NETWORK === 'true', ledger: { height: node.height, finalizedHeight: node.finalizedHeight, chainID: node.chainID } };
     });
 });
+router.get('/audit', async ctx => { ctx.body = await withClient(c => c.invoke('pilot_audit', ctx.query.before === undefined ? {} : {before:Number(ctx.query.before)})); });
+router.get('/event', async ctx => { if (typeof ctx.query.id !== 'string') ctx.throw(400, 'Event ID required'); ctx.body = await withClient(c => c.invoke('pilot_event', {id:ctx.query.id})); });
 router.get('/capabilities', ctx => { ctx.body = { localSetup: !!process.env.PILOT_LOCAL_ORIGIN }; });
 let nextAdmissionAt = 0;
 router.post('/join', async ctx => {
@@ -75,12 +81,18 @@ router.post('/event', async ctx => {
         const key = event.actor === 'governor' ? snapshot.governorKey : member?.key;
         if (!key || member?.revoked || event.network !== snapshot.network || typeof event.id !== 'string' || event.id.length > 2000 || !event.id) ctx.throw(403, 'Unknown or revoked signing identity');
         if (!crypto.verify(null, Buffer.from('TrustSECO-community-v1\n' + body.payload), key, Buffer.from(body.signature, 'base64'))) ctx.throw(403, 'Invalid contributor signature');
-        if (snapshot.audit.some(a => a.id === event.id)) { ctx.body = { eventId: event.id, status: 'recorded' }; return; }
-        if (!['enrol', 'open', 'observe', 'close', 'substantiate', 'appeal', 'overturn', 'reinstate', 'transfer', 'revoke', 'activate-assignment', 'activate-availability', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(event.kind)) ctx.throw(400, 'Unknown event kind');
+        const existing = snapshot.audit.find(a => a.id === event.id) || (snapshot.policy?.collection ? (await client.invoke('pilot_event', {id:event.id})).event : null);
+        if (existing && (existing.payload !== body.payload || existing.signature !== body.signature)) ctx.throw(409, 'Event ID collision');
+        if (existing) { ctx.body = { eventId: event.id, status: 'recorded' }; return; }
+        if (!['enrol', 'open', 'observe', 'close', 'substantiate', 'appeal', 'overturn', 'reinstate', 'transfer', 'revoke', 'activate-assignment', 'activate-availability', 'activate-collection', 'unavailable', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(event.kind)) ctx.throw(400, 'Unknown event kind');
         const tx = { module: 'pilot', command: 'record', params: { payload: body.payload, signature: body.signature }, fee: 100000000n };
         tx.fee = client.transaction.computeMinFee(await client.transaction.create(tx, transportKey));
-        const signed = await client.transaction.create(tx, transportKey);
-        await client.transaction.send(signed);
+        let signed = await client.transaction.create(tx, transportKey);
+        try { await client.transaction.send(signed); }
+        catch (error) {
+            if (!(error as Error).message.includes('fee is not sufficient to replace existing transaction')) throw error;
+            signed = await recoverExpiredLease(client, signed, transportKey);
+        }
         ctx.status = 202; ctx.body = { eventId: event.id, transactionId: signed.id, status: 'submitted' };
         // Keep this nonce serialized until inclusion. A worker retains its envelope across timeouts.
         const pendingClient = client; client = undefined;
@@ -89,7 +101,7 @@ router.post('/event', async ctx => {
                 for (let i = 0; i < 90; i++) {
                     await sleep(1000);
                     const state = await pendingClient.invoke('pilot_snapshot');
-                    if (state.audit.some(a => a.id === event.id)) break;
+                    if (state.audit.some(a => a.id === event.id) || (state.policy?.collection && (await pendingClient.invoke('pilot_event', {id:event.id})).event)) break;
                 }
             } catch { /* Worker will retry its durable envelope. */ }
             finally { busy = false; await pendingClient.disconnect().catch(() => { /* SDK disconnect timeouts must not crash the relay. */ }); }

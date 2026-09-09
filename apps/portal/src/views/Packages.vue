@@ -2,8 +2,10 @@
   <va-card>
     <va-card-title>View Packages</va-card-title>
     <va-card-content>
-      <p v-if="queue" class="queue-note">Collection queue: {{ queue.queued }} waiting · {{ queue.collecting }} collecting · {{ queue.verified }} verified rounds. Packages appear immediately; scores appear as observations arrive. One job runs at a time.</p>
+      <p v-if="queue" class="queue-note">Collection queue: {{ queue.queued }} waiting · {{ queue.collecting }} collecting · {{ queue.verified }} verified rounds. Packages appear immediately; scores appear as observations arrive. Up to {{ queue.maxConcurrent || 1 }} jobs run at a time.</p>
       <p v-if="queue?.waitingForContributors" role="status" class="queue-note">Waiting for contributors: {{ queue.availableContributors }} available; three are needed to start new work.</p>
+      <p v-if="queue?.total" class="queue-note">{{ queue.total }} metric targets · {{ queue.unavailable }} unavailable · {{ queue.insufficient }} without enough contributors · {{ queue.disputed }} disputed. Each metric can be measured again after 24 hours; previous evidence is retained.</p>
+      <details v-if="queue?.entries?.some(e => e.failures && Object.keys(e.failures).length)" class="queue-note"><summary>Collection issues</summary><div v-for="entry in queue.entries.filter(e => e.failures && Object.keys(e.failures).length)" :key="entry.round"><strong>{{ entry.repository }} · {{ entry.metric }}</strong><p v-for="(failure, member) in entry.failures" :key="member">{{ member }}: {{ failure.reason }}</p></div></details>
       <Packages></Packages>
     </va-card-content>
   </va-card>

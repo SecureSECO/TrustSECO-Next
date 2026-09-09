@@ -14,7 +14,7 @@ type StoredRound = Omit<Round, 'observations'> & { observationCount: number };
 function records(state: CommunityState): Map<string, string> {
     const result = new Map<string, string>();
     const put = (key: string, value: unknown) => result.set(key, JSON.stringify(value));
-    put('layout:v1', {version:1, governor:state.governor, members:state.members.length, rounds:state.rounds.length, incidents:state.incidents.length, audit:state.audit.length});
+    put('layout:v1', {version:1, governor:state.governor, members:state.members.length, rounds:state.rounds.length, incidents:state.incidents.length, audit:(state.auditOffset ?? 0)+state.audit.length});
     state.members.forEach((m,i)=>put(`member:${i}`,m));
     state.rounds.forEach((r,i)=>{
         const {observations,...round}=r;
@@ -22,10 +22,10 @@ function records(state: CommunityState): Map<string, string> {
         observations.forEach((o,j)=>put(`observation:${i}:${j}`,o));
     });
     state.incidents.forEach((incident,i)=>put(`incident:${i}`,incident));
-    state.audit.forEach((event,i)=>put(`audit:${i}`,event));
+    state.audit.forEach((event,i)=>put(`audit:${(state.auditOffset ?? 0)+i}`,event));
     return result;
 }
-export async function loadState<C>(store: JsonStore<C>, ctx: C): Promise<CommunityState> {
+export async function loadState<C>(store: JsonStore<C>, ctx: C, auditLimit?: number): Promise<CommunityState> {
     if (!await store.has(ctx, layoutKey)) return JSON.parse((await store.get(ctx, legacyKey)).json) as CommunityState;
     const meta = JSON.parse((await store.get(ctx, layoutKey)).json) as Layout;
     if (meta.version !== 1) throw new Error('Unsupported community storage layout');
@@ -39,7 +39,9 @@ export async function loadState<C>(store: JsonStore<C>, ctx: C): Promise<Communi
         state.rounds.push(round);
     }
     for(let i=0;i<meta.incidents;i+=1)state.incidents.push(await read(`incident:${i}`));
-    for(let i=0;i<meta.audit;i+=1)state.audit.push(await read(`audit:${i}`));
+    const from = auditLimit === undefined ? 0 : Math.max(0, meta.audit-auditLimit);
+    if (auditLimit !== undefined) state.auditOffset=from;
+    for(let i=from;i<meta.audit;i+=1)state.audit.push(await read(`audit:${i}`));
     return state;
 }
 export async function saveState<C>(store: JsonStore<C>, ctx: C, previous: CommunityState, next: CommunityState): Promise<void> {

@@ -12,7 +12,7 @@ services:
       PILOT_GOVERNOR_FILE: /pilot/governor.pem
       TRUSTSECO_SEED_PEERS: ${SEED_PEERS:?Provide at least two peer addresses}
       TRUSTSECO_NODE_ADDRESS: ${NODE_ADDRESS:?Public peer host and port required}
-    command: ["sh", "-c", "npm run build && ./bin/run start --config /pilot/config.json --overwrite-config"]
+    command: ["./bin/run", "start", "--config", "/pilot/config.json", "--overwrite-config"]
     ports: ["8000:8000"]
     volumes:
       - ledger:/root/.klayr

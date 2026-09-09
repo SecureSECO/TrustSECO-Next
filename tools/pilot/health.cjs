@@ -14,7 +14,7 @@ const { createWSClient } = require("@klayr/api-client"),
         finalizedHeight: n.finalizedHeight,
         chainID: n.chainID,
         members: s.members.length,
-        events: s.audit.length,
+        events: s.auditCount ?? s.audit.length,
         rounds: s.rounds.length,
         stateHash: crypto
           .createHash("sha256")

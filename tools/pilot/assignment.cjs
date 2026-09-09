@@ -46,7 +46,7 @@ function expiredEnvelope(event, state) {
     const a=state.rounds.find(r=>r.id===event.round)?.assignment;
     if(a?.seed || (a && state.at > a.beaconDeadline))return true;
   }
-  if (event.kind === 'observe') {
+  if (['observe','unavailable'].includes(event.kind)) {
     const a=state.rounds.find(r=>r.id===event.round)?.assignment;
     if(a?.version==='availability-beacon-v1' && !a.slots.some(slot=>!slot.replaced && slot.member===event.actor && state.at<=slot.until))return true;
   }

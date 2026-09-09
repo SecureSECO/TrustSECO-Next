@@ -1,6 +1,7 @@
 <template>
   <section v-if="state?.policy.assignment === 'availability-beacon-v1'" class="assignment-overview" aria-label="Contributor availability">
     <h2>Contributors &amp; assignments</h2>
+    <p v-if="state.health?.finalityStalled" role="alert">{{ state.health.reason }}</p>
     <p><strong>{{ state.availableContributors }} available</strong> of {{ state.members.length }} admitted contributors.</p>
     <p v-if="state.availableContributors < 3" role="status">Waiting for contributors: new work needs three available operators. Existing assignments keep their fixed reserve order.</p>
     <p v-else>Three observers collect each fact. If an observer misses their deadline, the next reserve takes their slot.</p>
