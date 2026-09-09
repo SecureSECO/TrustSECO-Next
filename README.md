@@ -1,8 +1,19 @@
 # TrustSECO-Next
 
-TrustSECO collects software measurements, signs them, records them on a ledger,
-and presents local and finalized trust scores. This repository brings the
-working components together so a feature can be reviewed and tested in one PR.
+**Open source powers our world. Trust should be part of its foundation.**
+
+We depend on an extraordinary universe of software, built and shared by people
+all over the world. But deciding what to trust is still too often a guessing
+game. TrustSECO is a long-held dream to change that: make the evidence behind
+software trust open, visible and something we can build together.
+
+We collect software measurements, bring them into community verification, and
+record signed observations on a shared ledger. The ambition is to help people
+make better-informed decisions about the software they depend on—and give back
+to the open source ecosystem that makes all of this possible. A score is a
+starting point for asking better questions, not a promise that software is safe.
+
+**Long live the open source universe. Let's make it more trustworthy together.**
 
 ## Start locally
 

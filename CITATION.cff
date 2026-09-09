@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software or the associated data, please cite it using
+  the metadata below.
+type: software
+title: "TrustSECO-Next: Building trust in the open source software ecosystem"
+authors:
+  - name: "The TrustSECO contributors"
+    website: "https://github.com/SecureSECO/TrustSECO-Next/graphs/contributors"
+repository-code: "https://github.com/SecureSECO/TrustSECO-Next"
+url: "https://github.com/SecureSECO/TrustSECO-Next"
+abstract: >-
+  TrustSECO brings software measurements, community verification and signed
+  ledger records together to make the evidence behind software trust open
+  and visible. Its ambition is to help people make better-informed decisions
+  about the open source software they depend on.
+keywords:
+  - software ecosystems
+  - open source
+  - software trust
+  - community verification
