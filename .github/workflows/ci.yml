@@ -16,6 +16,9 @@ jobs:
       - run: npm ci
       - run: npx tsc
       - run: node --test test/measurements.cjs test/score-inputs.cjs
+      - run: node --test test/pilot-setup.cjs test/pilot-portal.cjs test/pilot-relay.cjs test/pilot-relay-recovery.cjs
+      - run: node --test ../../tools/pilot/client.test.cjs ../../tools/pilot/assignment.test.cjs ../../tools/pilot/availability.test.cjs ../../tools/pilot/collection-client.test.cjs ../../tools/pilot/collection-plan.test.cjs
+      - run: node --test ../../tools/pilot/local-identity.test.cjs ../../tools/pilot/credentials.test.cjs ../../tools/pilot/libraries.test.cjs ../../tools/pilot/self-stake.test.cjs
   portal:
     runs-on: ubuntu-latest
     defaults:
@@ -30,6 +33,11 @@ jobs:
       - run: npm run build
         env:
           VITE_HOST: localhost:3002
+          VITE_PROTOCOL: http
+      - run: npm run build
+        env:
+          VITE_PILOT: 'true'
+          VITE_HOST: localhost:3005
           VITE_PROTOCOL: http
   ledger:
     runs-on: ubuntu-latest
@@ -47,6 +55,11 @@ jobs:
       - run: npm test -- --runInBand
       - run: node test/gpg-registration.cjs
       - run: node test/score-subsets.cjs
+      - run: node test/seed-peers.cjs
+      - run: node test/community.cjs
+      - run: node test/community-storage.cjs
+      - run: node test/payouts.cjs
+      - run: node --test test/pilot.cjs test/assignment.cjs test/availability.cjs test/collection.cjs test/fixed-peers.cjs
   spider:
     runs-on: ubuntu-latest
     defaults:

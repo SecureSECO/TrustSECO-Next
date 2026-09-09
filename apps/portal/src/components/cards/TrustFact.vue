@@ -10,6 +10,7 @@ defineProps({
   loading: { type: Boolean, required: true },
 });
 
+const pilot = import.meta.env.VITE_PILOT === 'true';
 const statusHovered = ref(false);
 const statusFocused = ref(false);
 const statusPinned = ref(false);
@@ -57,8 +58,8 @@ const codeToName: Record<string, string> = {
   gh_yearly_commit_count: 'Yearly commit count',
   gh_zero_response_issues_count: 'Issues without responses',
   lib_contributor_count: 'libraries.io Contributor count',
-  lib_dependency_count: 'Dependecy count',
-  lib_dependent_count: 'Dependant packages count',
+  lib_dependency_count: 'Dependency count',
+  lib_dependent_count: 'Dependent packages',
   lib_first_release_date: 'First release date',
   lib_latest_release_date: 'Most recent release',
   lib_release_count: 'Number of releases',
@@ -179,7 +180,7 @@ function convertFactValue(factValue: string, factCode: string): string {
     case 'lib_first_release_date':
     case 'lib_latest_release_date':
       {
-        const date = Date.parse(factValue.replaceAll('"', ''));
+        const date = /^\d+$/.test(factValue) ? Number(factValue) * 1000 : Date.parse(factValue.replaceAll('"', ''));
         res = new Intl.DateTimeFormat('en-GB', {
           year: 'numeric',
           month: 'long',
@@ -238,25 +239,40 @@ function convertFactValue(factValue: string, factCode: string): string {
       <h2 class="fact-name card-child">{{ codeToName[fact_code] }}</h2>
       <div v-if="measurement" class="measurement-status" @mouseenter="statusHovered = true" @mouseleave="statusHovered = false" @focusin="statusFocused = true" @focusout="statusFocused = false" @keydown.esc="statusPinned = false; statusHovered = false; statusFocused = false">
         <button type="button" @click="statusPinned = !statusPinned" :aria-expanded="statusHovered || statusFocused || statusPinned" :class="['status-dot', measurement.status === 'confirmed' ? 'confirmed' : measurement.status === 'failed' ? 'failed' : 'pending']"
-          :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
+          :aria-label="measurement.status === 'confirmed' ? 'Ledger-confirmed. Show details' : measurement.status === 'unverified' ? 'Not community-verified. Show details' : measurement.status === 'failed' ? 'Could not submit to ledger. Show details' : 'Confirmation pending. Show details'">
           <span aria-hidden="true">{{ measurement.status === 'confirmed' ? '✓' : measurement.status === 'failed' ? 'i' : '' }}</span>
         </button>
         <div v-show="statusHovered || statusFocused || statusPinned" class="status-popover">
-          <strong>{{ ({collected: 'Measurement collected', submitted: 'Submitted to the ledger', recorded: 'Recorded on the ledger', confirmed: 'Ledger-confirmed', failed: 'Could not submit to ledger'})[measurement.status || 'collected'] }}</strong>
-          <p>{{ measurement.status === 'confirmed' ? 'Finalized on the ledger. This does not independently verify source accuracy.' : measurement.status === 'failed' ? 'The measurement remains available, but submission failed.' : 'Waiting for final confirmation.' }}</p>
+          <strong>{{ ({unverified: 'Not community-verified', collected: 'Measurement collected', submitted: 'Submitted to the ledger', recorded: 'Recorded on the ledger', confirmed: 'Ledger-confirmed', failed: 'Could not submit to ledger'})[measurement.status || 'collected'] }}</strong>
+          <p>{{ measurement.status === 'confirmed' ? pilot ? 'Supported by community agreement in a closed, finalized round. Agreement does not guarantee source accuracy.' : 'Finalized on the ledger. This does not independently verify source accuracy.' : measurement.status === 'failed' ? 'The measurement remains available, but submission failed.' : measurement.status === 'unverified' ? 'The closed round did not confirm this observation.' : pilot ? 'Awaiting a closed round with community agreement and ledger finality.' : 'Waiting for final confirmation.' }}</p>
           <p>Source: {{ measurement.source || 'Unknown' }}</p>
           <p>Collected: {{ measurement.collectedAt ? new Date(measurement.collectedAt).toLocaleString() : 'Time not recorded' }}</p>
-          <p>Submitted by: {{ measurement.uid }}</p>
+          <p v-if="measurement.uid">Submitted by: {{ measurement.uid }}</p>
           <p v-if="measurement.transactionID">Transaction: {{ measurement.transactionID }}</p>
           <p v-if="measurement.observedHeight">First observed in ledger state at block {{ measurement.observedHeight }}.</p>
           <p v-if="measurement.error">{{ measurement.error }}</p>
         </div>
       </div>
     </div>
+    <p v-if="measurement?.scope" class="measurement-scope">{{ measurement.scope }}</p>
     <p v-if="measurement" class="measurement-source">{{ measurement.source || 'Unknown source' }}<span v-if="measurement.collectedAt"> · {{ new Date(measurement.collectedAt).toLocaleString() }}</span></p>
     <p class="card-child fact-value" v-if="fact_code !== 'cve_vulnerabilities'" :style="rightAlignedFacts.has(fact_code) ? 'text-align: right;' : ''">
       {{ convertFactValue(fact_content, fact_code) }}
     </p>
+    <div v-if="measurement?.observations" class="observation-details">
+      <p v-if="measurement.status === 'confirmed'">Confirmed by {{ measurement.confirmationCount }} {{ measurement.assigned ? 'assigned ' : '' }}contributors</p>
+      <p v-else>{{ measurement.agreement ? 'Agreement reached; awaiting confirmation' : 'No confirmed agreement; latest observation shown' }}</p>
+      <details>
+        <summary>{{ measurement.observations.length }} contributor observations</summary>
+        <ul>
+          <li v-for="(observation, index) in measurement.observations" :key="`${observation.uid}:${index}`">
+            <strong>{{ observation.uid || 'Unknown contributor' }}</strong>
+            <span>{{ observation.value }} · {{ observation.status === 'confirmed' ? 'Confirmed' : observation.status === 'unverified' ? 'Unverified' : 'Pending' }}</span>
+            <time v-if="observation.collectedAt" :datetime="observation.collectedAt">{{ new Date(observation.collectedAt).toLocaleString() }}</time>
+          </li>
+        </ul>
+      </details>
+    </div>
     <div class="seperator" />
     <p class="card-child explanation" v-if="fact_code !== 'cve_vulnerabilities'">
       {{ codeToExplanation[fact_code] }}
@@ -269,6 +285,10 @@ function convertFactValue(factValue: string, factCode: string): string {
 </template>
 
 <style scoped>
+.observation-details { padding: 8px 12px; color: #52657d; font-size: 13px; line-height: 1.5; }
+.observation-details summary { cursor: pointer; margin-top: 8px; color: #1769bb; }
+.observation-details ul { padding: 0; margin: 8px 0; list-style: none; }
+.observation-details li { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid #edf0f4; overflow-wrap: anywhere; }
 .measurement-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-right: 14px; }
 .measurement-heading h2 { flex: 1; }
 .measurement-source { color: #64748b; font-size: 12px; margin: 0 12px 12px; }
@@ -350,4 +370,5 @@ function convertFactValue(factValue: string, factCode: string): string {
   height: 1em;
   white-space: nowrap;
 }
+.measurement-scope{margin:8px 12px;font-size:12px;color:#64748b;line-height:1.5;overflow-wrap:anywhere}
 </style>

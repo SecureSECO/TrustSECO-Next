@@ -1,0 +1,27 @@
+name: trustseco-validators
+services:
+  ledger3:
+    image: trustseco-next-dlt
+    platform: linux/amd64
+    command: ["sh", "-c", "npm run build && ./bin/run start --config /root/.klayr/validator-config.json"]
+    volumes:
+      - ledger3:/root/.klayr
+    networks: [existing]
+  ledger4:
+    image: trustseco-next-dlt
+    platform: linux/amd64
+    command: ["sh", "-c", "npm run build && ./bin/run start --config /root/.klayr/validator-config.json"]
+    volumes:
+      - ledger4:/root/.klayr
+    networks: [existing]
+networks:
+  existing:
+    external: true
+    name: trustseco-next_default
+volumes:
+  ledger3:
+    external: true
+    name: trustseco-validator3-ledger
+  ledger4:
+    external: true
+    name: trustseco-validator4-ledger

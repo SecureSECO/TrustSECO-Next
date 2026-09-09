@@ -9,6 +9,11 @@ export interface Package {
 }
 
 export interface TrustFact {
+  observations?: {uid: string; value: string; collectedAt?: string; status?: string}[];
+  assigned?: boolean;
+  confirmationCount?: number;
+  agreement?: boolean;
+  scope?: string;
   status?: string,
   source?: string,
   collectedAt?: string,

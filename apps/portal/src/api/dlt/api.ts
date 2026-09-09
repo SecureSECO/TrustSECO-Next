@@ -14,6 +14,11 @@ interface ApiPackage {
 }
 
 interface ApiTrustFact {
+  observations?: {uid: string; value: string; collectedAt?: string; status?: string}[];
+  assigned?: boolean;
+  confirmationCount?: number;
+  agreement?: boolean;
+  scope?: string;
   status?: string; source?: string; collectedAt?: string; transactionID?: string; observedHeight?: number; observedBlockID?: string; error?: string;
   jobID: number,
   version: string,
@@ -65,6 +70,7 @@ const parsePackage = (data: ApiPackage): Package => ({
 // Convert package data as received from the Dlt Api into the local Package interface
 const parseTrustFact = (data: ApiTrustFact): TrustFact => ({
   ...defaultPackage,
+  scope: data.scope, observations: data.observations, assigned: data.assigned, confirmationCount: data.confirmationCount, agreement: data.agreement,
   type: data.fact,
   value: data.factData,
   status: data.status, source: data.source, collectedAt: data.collectedAt,
@@ -103,14 +109,14 @@ export default class DltApi extends DltInterface {
   }
 
   async getPackage(name: string) {
-    const { data } = await axios.get(this.#getLink(`package/${name}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}`));
     if (!data.packageName) return null;
     return parsePackage(data);
   }
 
   // TODO: Trust Facts should be per name AND version, but the API doesn't support this
   async getTrustFacts(name: string, version: string) {
-    const { data } = await axios.get(this.#getLink(`measurements/${name}`));
+    const { data } = await axios.get(this.#getLink(`${import.meta.env.VITE_PILOT === 'true' ? 'fact-groups' : 'measurements'}/${encodeURIComponent(name)}`));
     if (!data.facts) {
       return [];
     }
@@ -148,12 +154,12 @@ export default class DltApi extends DltInterface {
   }
 
   async getTrustScore(name: string, version?: string) {
-    const { data } = await axios.get(this.#getLink(`package/${name}/trust-score/${version ?? ''}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}/trust-score/${encodeURIComponent(version ?? '')}`));
     return (typeof data === 'number' ? data : undefined);
   }
 
   async getTrustScoreCategories(name: string, version: string): Promise<Record<string, number>> {
-    const { data } = await axios.get(this.#getLink(`package/${name}/trust-score-categories/${version}`));
+    const { data } = await axios.get(this.#getLink(`package/${encodeURIComponent(name)}/trust-score-categories/${encodeURIComponent(version)}`));
     return data;
   }
 

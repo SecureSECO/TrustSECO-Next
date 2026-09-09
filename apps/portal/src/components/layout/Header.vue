@@ -3,7 +3,7 @@
     <va-navbar color="#ffffff" text-color="primary">
       <template v-slot:left>
         <va-navbar-item v-if="this.server_type===1">
-          <va-chip color="dark" flat @click="refreshUserTokens">User tokens: {{ usertokens }}</va-chip>
+          <va-chip color="dark" flat @click="refreshUserTokens">TrustCOIN: {{ usertokens }}</va-chip>
         </va-navbar-item>
       </template>
       <template v-slot:center>

@@ -71,3 +71,11 @@ See [migration notes](docs/migration.md) and [validation](docs/validation.md).
 The original licences and attribution remain with every imported component.
 Consult apps/coordinator/LICENSE, apps/portal/LICENSE, services/spider/LICENSE,
 and services/ledger/LICENSE. Importing them here does not relicense their code.
+
+### Experimental observer assignment
+
+The pilot has an opt-in, ledger-enforced three-operator assignment protocol.
+Its commit–reveal draw deliberately fails closed on missing entropy; it does not
+provide an always-available unbiased beacon. See the [protocol, threat model,
+activation plan and tests](docs/random-observer-assignment.md). Existing networks
+stay on legacy behavior until a coordinated upgrade and signed activation.

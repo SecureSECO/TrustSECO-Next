@@ -1,15 +1,17 @@
 <template>
   <va-input v-model="filter" class="filter" placeholder="Filter Jobs"/>
   <va-data-table :columns="columns" :filter="filter" :items="jobs" :loading="isLoading" allow-footer-sorting clickable
-                 hoverable sticky-header striped/>
+                 hoverable sticky-header striped><template #cell(bounty)="{ value }"><TrustCoinAmount :amount="String(value)" /></template></va-data-table>
 </template>
 
 <script lang="ts">
+import TrustCoinAmount from '@/components/TrustCoinAmount.vue';
 import { defineComponent } from 'vue';
 import { Job } from '@/api';
 
 export default defineComponent({
   name: 'jobs-table',
+  components: { TrustCoinAmount },
   data() {
     const columns = [
       {

@@ -13,6 +13,7 @@ import { DashboardPlugin } from '@klayr/dashboard-plugin';
 import { FaucetPlugin } from '@klayr/faucet-plugin';
 import { ChainConnectorPlugin } from '@klayr/chain-connector-plugin';
 import { join } from 'path';
+import { fixedPeers } from '../app/common/fixed-peers';
 import { getApplication } from '../app/app';
 
 interface Flags {
@@ -116,6 +117,8 @@ export class StartCommand extends BaseStartCommand {
 		const { flags } = await this.parse(StartCommand);
 		// Set Plugins Config
 		setPluginConfig(config as Types.ApplicationConfig, flags);
+		const trusted = await fixedPeers(process.env.TRUSTSECO_FIXED_PEERS, process.env.TRUSTSECO_NODE_ADDRESS);
+		if (trusted) config.network = {...config.network, fixedPeers:trusted};
 		const app = getApplication(config);
 
 		if (flags['enable-forger-plugin']) {

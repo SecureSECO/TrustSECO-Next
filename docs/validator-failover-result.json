@@ -1,0 +1,9 @@
+{
+  "startHeight": 297,
+  "startFinalized": 227,
+  "endHeight": 298,
+  "endFinalized": 233,
+  "head": "8b8afd3242049ae06c630d5c79a824637363654eacb19b8a92e5c38f0660ea10",
+  "newVersionIncluded": true,
+  "note": "Finality advanced during outage; this does not assert that the new transaction itself is finalized."
+}

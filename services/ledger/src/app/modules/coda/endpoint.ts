@@ -1,4 +1,5 @@
 import { Modules, codec, Types } from 'klayr-sdk';
+import { PayoutStore, readPayouts } from './stores/payouts';
 import { minimalCodaJobSchema, isMinimalCodaJob, validFacts, CodaJobListStore, jobListKey } from './stores/coda-schemas';
 import { CodaMethod } from './method'
 
@@ -16,6 +17,12 @@ export class CodaEndpoint extends Modules.BaseEndpoint {
         }
         params.bounty = BigInt(params.bounty as string | number);
         return codec.encode(minimalCodaJobSchema, params).toString('hex');
+    }
+    public async getRecentPayouts(ctx: Types.ModuleEndpointContext) {
+        const store = this.stores.get(PayoutStore);
+        const { before } = ctx.params;
+        if (before !== undefined && typeof before !== 'string') throw new Error('Invalid payout cursor');
+        return readPayouts(store, ctx, before);
     }
     public getAllFacts() {
         return validFacts;

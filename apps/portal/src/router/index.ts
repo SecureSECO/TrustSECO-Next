@@ -11,6 +11,9 @@ const routes: Array<RouteRecordRaw> = [
     path: '/',
     component: Layout,
     children: [
+      { path: 'payouts/', name: 'Most recent payouts', component: () => import('@/views/Payouts.vue') },
+      { path: 'community/', name: 'Community verification', component: () => import.meta.env.VITE_PILOT === 'true' ? import('@/views/Pilot.vue') : import('@/views/Community.vue') },
+      { path: 'about/', name: 'About', component: () => import('@/views/About.vue') },
       {
         path: '',
         name: 'Home',
@@ -49,12 +52,12 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'metrics/',
         name: 'Metrics',
-        component: () => import('@/views/Metrics.vue'),
+        redirect: '/jobs#node-details',
       },
       {
         path: 'user/settings/',
         name: 'Settings',
-        component: () => import('@/views/UserSettings.vue'),
+        component: () => import.meta.env.VITE_PILOT === 'true' ? import('@/views/PilotSettings.vue') : import('@/views/UserSettings.vue'),
         props: true,
       },
       {
@@ -87,6 +90,7 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to) { return to.hash ? { el: to.hash } : { top: 0 }; },
   // linkActiveClass: 'router-link-active',
   routes,
 });

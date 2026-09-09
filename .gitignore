@@ -9,3 +9,10 @@
 **/*.tsbuildinfo
 **/.coverage
 **/coverage/
+
+/deploy/replica-runtime/
+/deploy/validation-runtime/
+/deploy/community-runtime/
+
+/deploy/community-runtime-15s/
+/deploy/pilot-runtime/

@@ -91,7 +91,23 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.spiderToggleButton .va-switch__label {
-  max-width: 240px;
+.spiderToggleButton {
+  width: 100%;
+  min-width: 0;
+}
+.spiderToggleButton :deep(.va-switch__label) {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.spiderToggleButton :deep(.va-switch__container) {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+.spiderToggleButton :deep(.va-switch__inner) {
+  flex-shrink: 0;
 }
 </style>
