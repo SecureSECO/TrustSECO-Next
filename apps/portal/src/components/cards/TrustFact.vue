@@ -16,6 +16,7 @@ const statusFocused = ref(false);
 const statusPinned = ref(false);
 
 const rightAlignedFacts = new Set([
+  'security_advisories',
   'cve_count',
   'gh_average_resolution_time',
   'gh_contributor_count',
@@ -42,6 +43,7 @@ const rightAlignedFacts = new Set([
 ]);
 
 const codeToName: Record<string, string> = {
+  security_advisories: 'Applicable security advisories',
   cve_count: 'Cve count',
   cve_vulnerabilities: 'Cve vulnerabilities',
   gh_average_resolution_time: 'Average issue resolution time',
@@ -70,6 +72,7 @@ const codeToName: Record<string, string> = {
 };
 
 const codeToExplanation: Record<string, string> = {
+  security_advisories: 'Distinct advisories for this exact package version. Severity and known exploitation determine penalties; a count alone is not a safety assessment.',
   cve_count: 'Number of CVE vulnerabilities found for this package.',
   cve_vulnerabilities: '',
   gh_average_resolution_time:
@@ -103,7 +106,7 @@ const codeToExplanation: Record<string, string> = {
   lib_release_frequency: 'Average time elapsed per release.',
   lib_sourcerank:
     'A metric created by libraries.io that combines several factors such as number of stars and if it is still in beta. For more details visit the website: https://libraries.io/pypi/numpy/sourcerank . ',
-  so_popularity: 'Monthly stackoverflow popularity.', // TODO
+  so_popularity: 'Share of questions carrying the configured tag during the last 30 complete UTC days.',
   vs_virus_ratio:
     'Ratio of virus found to number of links scanned. Virus are scanned for using ClamAV.',
 };
@@ -189,6 +192,8 @@ function convertFactValue(factValue: string, factCode: string): string {
         break;
       }
     case 'so_popularity':
+      res = pilot ? `${(Number(factValue) / 1000000).toFixed(6)}%` : `${Number(factValue).toFixed(3)}%`;
+      break;
     case 'vs_virus_ration':
     case 'gh_issue_ratio':
       {

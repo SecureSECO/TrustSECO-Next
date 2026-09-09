@@ -1,6 +1,8 @@
 /* eslint-disable max-classes-per-file, @typescript-eslint/member-ordering, class-methods-use-this */
 import { Modules, StateMachine, Types } from 'klayr-sdk';
 import { applyPilot, freshPilot, pilotView, settlePilot, verifiedInputs } from './policy';
+import { projectScore } from '../scoring/projection';
+import { policy as scoringPolicy } from '../scoring/engine';
 import { initPilot, loadPilot, savePilot, recordedEvent, auditPage } from './storage';
 
 class PilotStore extends Modules.BaseStore<{ json: string }> {
@@ -49,6 +51,13 @@ class RecordCommand extends Modules.BaseCommand {
 	}
 }
 class PilotEndpoint extends Modules.BaseEndpoint {
+    public async scorePolicy() { return scoringPolicy; }
+    public async score(c: Types.ModuleEndpointContext) {
+        const {repository,version,finalizedHeight} = c.params;
+        if (typeof repository !== 'string' || typeof version !== 'string' || !Number.isSafeInteger(finalizedHeight) || Number(finalizedHeight)<0 || Number(finalizedHeight)>c.header.height) throw new Error('Invalid score request');
+        const state = await loadPilot(this.stores.get(PilotStore),c);
+        return {local:projectScore(state,repository,version,c.header.timestamp,Number(finalizedHeight),false),confirmed:projectScore(state,repository,version,c.header.timestamp,Number(finalizedHeight),true)};
+    }
 	public async audit(c: Types.ModuleEndpointContext) { return auditPage(this.stores.get(PilotStore), c, c.params.before === undefined ? undefined : Number(c.params.before)); }
 	public async event(c: Types.ModuleEndpointContext) { return {event: await recordedEvent(this.stores.get(PilotStore), c, c.params.id as string)}; }
 	public async snapshot(c: Types.ModuleEndpointContext) {
@@ -100,7 +109,7 @@ export class PilotModule extends Modules.BaseModule {
 	}
 	public metadata(): Modules.ModuleMetadata {
 		return {
-			endpoints: [{ name: 'audit' }, { name: 'event' }, { name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
+			endpoints: [{name:'score'}, {name:'scorePolicy'}, { name: 'audit' }, { name: 'event' }, { name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
 			commands: this.commands.map(c => ({ name: c.name, params: c.schema })),
 			events: [],
 			assets: [],

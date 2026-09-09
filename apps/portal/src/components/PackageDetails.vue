@@ -25,13 +25,21 @@
           <strong>{{ scorePair?.[kind]?.score != null ? scorePair[kind].score.toFixed(1) : 'Not available yet' }}</strong>
           <details class="score-explanation">
             <summary :aria-label="`About the ${kind} score`">ⓘ</summary>
-            <p>{{ kind === 'local' ? pilot ? 'Uses the latest reported observation for each metric. These observations can come from any contributor and may not have community agreement.' : 'Uses the latest available measurements, including those awaiting ledger confirmation.' : pilot ? 'Uses the latest closed, community-verified round for each metric, after finality. Disputed evidence is excluded.' : 'Uses only finalized measurements. New pending data does not replace older confirmed inputs.' }} Both use the same scoring formula. Finality does not prove source accuracy.</p>
+            <p>{{ kind === 'local' ? pilot ? 'Uses the latest reported observation for each metric. These observations can come from any contributor and may not have community agreement.' : 'Uses the latest available measurements, including those awaiting ledger confirmation.' : pilot ? 'Uses the latest closed, community-verified round for each metric, after finality. Missing, disputed or unfinalized updates can make the assessment unavailable.' : 'Uses only finalized measurements. New pending data does not replace older confirmed inputs.' }} Both use the same scoring formula. Finality does not prove source accuracy.</p>
             <p v-if="scorePair">Calculated: {{ new Date(scorePair.updatedAt).toLocaleString() }}</p>
           </details>
         </div>
         <p class="score-coverage" v-if="scorePair">{{ scorePair.local.measurementCount }} scoring measurements locally · {{ scorePair.confirmed.measurementCount }} finalized</p>
         <p class="score-coverage" v-if="scorePair">Coverage: {{ scorePair.local.factTypeCount }}/{{ scorePair.local.totalFactTypes }} scoring types locally · {{ scorePair.confirmed.factTypeCount }}/{{ scorePair.confirmed.totalFactTypes }} finalized</p>
-        <p class="score-coverage">Different coverage can explain a difference in scores.</p>
+        <div v-if="scorePair?.confirmed?.policyVersion" class="score-v2">
+          <p>Policy {{ scorePair.confirmed.policyVersion }} · {{ scorePair.confirmed.status }}</p>
+          <p>Baseline evidence range: {{ scorePair.confirmed.baselineLower?.toFixed(1) }}–{{ scorePair.confirmed.baselineUpper?.toFixed(1) }} · Security ceiling: {{ scorePair.confirmed.ceiling }}</p>
+          <p v-for="reason in scorePair.confirmed.reasons" :key="reason">{{ reason }}</p>
+          <p v-if="scorePair.confirmed.status === 'insufficient-history'">Fresh supported history: {{ (scorePair.confirmed.historySeconds / 86400).toFixed(1) }} / {{ scorePair.confirmed.historyRequiredSeconds / 86400 }} days.</p>
+          <p v-for="advisory in scorePair.confirmed.advisories" :key="advisory.id">Confirmed advisory: {{ advisory.id }} · {{ advisory.severity }}{{ advisory.kev ? ' · Known exploitation' : '' }}</p>
+          <p v-for="warning in scorePair.local.warnings" :key="warning" role="status">Advisory evidence (local, may await confirmation): {{ warning }}</p>
+          <router-link to="/score-calculation/">How this assessment is calculated</router-link>
+        </div>
         <p v-if="scoreError" role="status">{{ scoreError }}</p>
       </section>
       <div class="row" v-if="language">

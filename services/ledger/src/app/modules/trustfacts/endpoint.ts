@@ -16,7 +16,7 @@ export class TrustfactsEndpoint extends Modules.BaseEndpoint {
         const facts: unknown[] = input;
         if (!facts.every(isFact)) throw new Error('Every fact requires fact and factData strings');
         const relevant = facts.filter(f => scores.some(s => s.fact === f.fact) && Number.isFinite(parseFloat(f.factData)));
-        return { score: relevant.length ? this._calculateTrustScoreWithFacts(relevant as StoreTrustFact[]) : null,
+        return { policyVersion: 'legacy-v1', score: relevant.length ? this._calculateTrustScoreWithFacts(relevant as StoreTrustFact[]) : null,
             measurementCount: relevant.length, factTypeCount: new Set(relevant.map(f => f.fact)).size,
             totalFactTypes: scores.length };
     }

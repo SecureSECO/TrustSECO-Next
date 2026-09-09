@@ -1,0 +1,93 @@
+{
+	"version": "trust-v2.0.0",
+	"description": "Bounded evidence, non-compensable vulnerability penalties, and evidence-supported recovery. Policy settings, not a calibrated probability of safety.",
+	"freshnessSeconds": 86400,
+	"historySeconds": 604800,
+	"recoveryPointsPerDay": 1,
+	"minimumCoverage": 0.8,
+	"features": [
+		{
+			"id": "maintenance_activity",
+			"label": "Commit activity over the last year",
+			"metric": "gh_yearly_commit_count",
+			"weight": 0.35,
+			"reference": 50,
+			"direction": "higher",
+			"unit": "commits",
+			"category": "Maintenance"
+		},
+		{
+			"id": "release_recency",
+			"label": "Time since the latest release",
+			"metric": "lib_latest_release_date",
+			"weight": 0.25,
+			"reference": 15552000,
+			"direction": "age-lower",
+			"unit": "seconds",
+			"category": "Maintenance"
+		},
+		{
+			"id": "contributors",
+			"label": "Repository contributors",
+			"metric": "gh_contributor_count",
+			"weight": 0.2,
+			"reference": 100,
+			"direction": "higher",
+			"unit": "contributors",
+			"category": "Continuity"
+		},
+		{
+			"id": "project_age",
+			"label": "Time since the first release",
+			"metric": "lib_first_release_date",
+			"weight": 0.1,
+			"reference": 63072000,
+			"direction": "age-higher",
+			"unit": "seconds",
+			"category": "Continuity"
+		},
+		{
+			"id": "adoption",
+			"label": "Dependent packages",
+			"metric": "lib_dependent_count",
+			"weight": 0.05,
+			"reference": 5000,
+			"direction": "higher",
+			"unit": "packages",
+			"category": "Community support"
+		},
+		{
+			"id": "stackoverflow",
+			"label": "Stack Overflow question share",
+			"metric": "so_popularity",
+			"weight": 0.05,
+			"reference": 0.05,
+			"direction": "higher",
+			"scale": 1000000,
+			"unit": "percentage points",
+			"category": "Community support"
+		}
+	],
+	"severity": [
+		{ "name": "none", "min": 0, "max": 0, "multiplier": 1, "ceiling": 100 },
+		{ "name": "low", "min": 0.1, "max": 3.9, "multiplier": 0.95, "ceiling": 100 },
+		{ "name": "medium", "min": 4, "max": 6.9, "multiplier": 0.85, "ceiling": 100 },
+		{ "name": "high", "min": 7, "max": 8.9, "multiplier": 0.5, "ceiling": 49 },
+		{ "name": "critical", "min": 9, "max": 10, "multiplier": 0.25, "ceiling": 24 }
+	],
+	"knownExploitedCeiling": 9,
+	"securityMetric": "security_advisories",
+	"securityMethod": "osv-kev-v1",
+	"excludedMetrics": [
+		"cve_count",
+		"vs_virus_ratio",
+		"gh_owner_stargazer_count",
+		"gh_total_download_count",
+		"gh_open_issues_count",
+		"lib_dependency_count",
+		"lib_contributor_count",
+		"lib_sourcerank",
+		"lib_release_count",
+		"lib_release_frequency"
+	]
+}

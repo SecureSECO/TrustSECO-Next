@@ -16,9 +16,9 @@ WORKDIR /usr/app
 COPY apps/coordinator/package*.json ./
 RUN npm ci
 COPY apps/coordinator/src ./src
-COPY apps/coordinator/tsconfig.json ./
+COPY apps/coordinator/tsconfig.json apps/coordinator/prepare-cvss.cjs ./
 COPY apps/coordinator/test ./test
 COPY tools/pilot ./tools/pilot
 COPY --from=portal /portal/dist ./public
-RUN npx tsc
+RUN npm run build
 CMD ["node", "dist/app.js"]

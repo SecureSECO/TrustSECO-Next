@@ -39,9 +39,10 @@ export function measurements(state: any, repository: string, finalizedHeight: nu
         const confirmed = r.closed && supported && resultFinal;
         const unverified = r.closed && !supported;
         return { packageName: repository, version: r.escrow.version, jobID: index + 1, fact: r.metric, factData: String(o.value), account: { uid: o.member },
+            security: o.security,
             status: confirmed ? 'confirmed' : unverified ? 'unverified' : 'recorded', source: r.source,
             collectedAt: new Date(o.observedAt * 1000).toISOString(),
-            scope: r.method === 'libraries-project-v1' ? `${r.escrow.packagePlatform}/${r.escrow.packageName} · ${r.metric === 'lib_dependency_count' ? 'Dependencies for version ' + r.escrow.version : 'Current package metadata, not a historical snapshot'}` : undefined,
+            scope: r.metric === 'security_advisories' ? `Applicable advisories for ${r.escrow.packagePlatform}/${r.escrow.packageName}@${r.escrow.version}; inspect signed snapshots in the community round` : r.metric === 'so_popularity' ? `Millionths of one percentage point; tag ${r.escrow.stackOverflowTag}, last 30 complete UTC days` : r.method === 'libraries-project-v1' ? `${r.escrow.packagePlatform}/${r.escrow.packageName} · ${r.metric === 'lib_dependency_count' ? 'Dependencies for version ' + r.escrow.version : 'Current package metadata, not a historical snapshot'}` : undefined,
             error: unverified ? 'This observation is recorded, but is not supported by the closed round’s community agreement.' : undefined,
         };
     }));
@@ -65,12 +66,8 @@ export function factGroups(state: any, repository: string, finalizedHeight: numb
     });
 }
 export async function scores(client: any, state: any, repository: string, version: string, finalizedHeight: number) {
-    const latest = new Map<string, any>();
-    for (const f of measurements(state, repository, finalizedHeight).filter((f: any) => f.version === version).sort((a: any, b: any) => a.collectedAt.localeCompare(b.collectedAt))) latest.set(f.fact, { fact: f.fact, factData: f.factData });
-    const { facts } = await client.invoke('pilot_scoreInputs', { repository, version, finalizedHeight });
-    const local = await client.invoke('trustfacts_calculateScoreForFacts', { facts: [...latest.values()] });
-    const confirmed = await client.invoke('trustfacts_calculateScoreForFacts', { facts: facts.map(({ fact, factData }: any) => ({ fact, factData })) });
-    return { local, confirmed, ledgerAvailable: true, updatedAt: new Date().toISOString() };
+    const result = await client.invoke('pilot_score', {repository,version,finalizedHeight});
+    return {...result,ledgerAvailable:true,updatedAt:new Date().toISOString()};
 }
 export function portalRouter(connect: Connect) {
     const router = new Router({ prefix: '/api' });

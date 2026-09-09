@@ -70,6 +70,9 @@ The portal shows measurements immediately; blue checks require ledger finality.
 Local and Confirmed scores share the same formula but use different eligible
 inputs. Ledger finality does not prove that the collector or upstream source is
 correct. Current repository-wide measurements are not historical release snapshots.
+The [scoring policy](docs/scoring-v2.md) bounds positive evidence, applies
+severity-based vulnerability penalties and ceilings, and permits only gradual,
+evidence-supported recovery. Missing security evidence is shown as unavailable.
 
 This is a consolidation of working code, not a ledger replacement or a completed
 separation from SearchSECO. Existing SearchSECO navigation and coordinator hooks

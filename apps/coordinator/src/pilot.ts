@@ -57,14 +57,14 @@ router.get('/payouts', async ctx => {
         return { ...history, finalizedHeight: node.finalizedHeight };
     });
 });
+router.get('/score-policy', async ctx => { ctx.body = await withClient(c => c.invoke('pilot_scorePolicy')); });
 router.get('/score', async ctx => {
     const { repository, version } = ctx.query;
     if (typeof repository !== 'string' || typeof version !== 'string') ctx.throw(400, 'Repository and version required');
     ctx.body = await withClient(async c => {
         const node = await c.node.getNodeInfo();
-        const { facts } = await c.invoke('pilot_scoreInputs', { repository, version, finalizedHeight: node.finalizedHeight });
-        const score = await c.invoke('trustfacts_calculateScoreForFacts', { facts: facts.map(({ fact, factData }) => ({ fact, factData })) });
-        return { ...score, facts, finalizedHeight: node.finalizedHeight, scope: 'Current repository measurements, associated with the requested package version' };
+        const {confirmed} = await c.invoke('pilot_score', {repository,version,finalizedHeight:node.finalizedHeight});
+        return {...confirmed,facts:confirmed.contributions?.filter(f=>f.normalized!==null)||[],finalizedHeight:node.finalizedHeight,scope:'Version-specific vulnerabilities with project evidence and recovery history'};
     });
 });
 router.post('/event', async ctx => {

@@ -49,7 +49,7 @@ const categories = [
   },
   {
     name: 'Security',
-    fact_codes: ['cve_count', 'cve_vulnerabilities', 'vs_virus_ratio'],
+    fact_codes: ['security_advisories', 'cve_count', 'cve_vulnerabilities', 'vs_virus_ratio'],
   },
 ];
 

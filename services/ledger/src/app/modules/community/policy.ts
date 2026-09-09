@@ -2,7 +2,7 @@ import { verify, createPublicKey } from 'crypto';
 
 export const POLICY = { version: 'prototype-v1', contributors: 3, absolute: 5, relativeBps: 200, window: 30 * 86400, flag: 3, suspend: 5 };
 export interface Member { id: string; key: string; operator: string; githubId: string; suspended: boolean; reinstatedAt: number }
-export interface Observation { id: string; member: string; value: number; observedAt: number; receivedAt: number; eligible: boolean }
+export interface Observation { security?: import('../scoring/engine').SecuritySnapshot; id: string; member: string; value: number; observedAt: number; receivedAt: number; eligible: boolean }
 export interface Round { id: string; package: string; metric: string; source: string; method: string; openedAt: number; closesAt: number; closed: boolean; observations: Observation[]; result?: Result }
 export interface Result { status: 'pending' | 'verified' | 'disputed' | 'expired'; supporters: string[]; conflicts: string[]; value: number | null }
 export interface Incident { id: string; member: string; round: string; observation: string; cause: string; evidence: string; reason: string; at: number; overturned: boolean }
