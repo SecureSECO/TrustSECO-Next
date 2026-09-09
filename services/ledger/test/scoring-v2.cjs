@@ -206,3 +206,23 @@ test('new release retains low history; unfinalized evidence cannot produce confi
 	addFrame(s, frame(T + 8 * D + 2), '2', false);
 	assert.equal(projectScore(s, 'owner/pkg', '2', T + 8 * D + 2, 1, true).score, null);
 });
+
+test('confirmed malware blocks trust; a clean scan provides no positive bonus',()=>{
+ const f=frame(T);const target=assess(f).target;
+ f.malware={infected:1};assert.equal(assess(f).target,null);assert.match(assess(f).reasons.join(' '),/ClamAV/);
+ f.malware={infected:0};assert.equal(assess(f).target,target);
+});
+test('pending and failed malware refreshes cannot erase confirmed detections',()=>{
+ const s=ledger();for(const f of history())addFrame(s,f);
+ function scan(id,at,infected,closed=true,observations=true){
+  s.escrows[id]={repository:'owner/pkg',version:'1',closedAt:at,closedHeight:1};
+  s.community.rounds.push({id,metric:'vs_virus_ratio',openedAt:at-1,closesAt:at,closed,invalid:[],observations:observations?['a','b','c'].map(member=>({id:id+member,member,value:infected*1000000,eligible:true,observedAt:at,receivedAt:at,malware:{infected,manifestHash:id}})):[]});
+ }
+ const at=T+7*D;scan('detected',at+1,1);
+ assert.equal(projectScore(s,'owner/pkg','1',at+1,1,true).target,null);
+ scan('pending',at+2,0,false);assert.equal(projectScore(s,'owner/pkg','1',at+2,1,true).malware.infected,1);
+ s.community.rounds.at(-1).closed=true;s.community.rounds.at(-1).observations=[];
+ assert.equal(projectScore(s,'owner/pkg','1',at+3,1,true).malware.infected,1);
+ scan('clean',at+4,0);assert.equal(projectScore(s,'owner/pkg','1',at+4,1,true).malware.infected,0);
+ assert.notEqual(projectScore(s,'owner/pkg','1',at+4,1,true).target,null);
+});

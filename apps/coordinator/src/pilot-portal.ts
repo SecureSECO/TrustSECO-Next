@@ -39,10 +39,10 @@ export function measurements(state: any, repository: string, finalizedHeight: nu
         const confirmed = r.closed && supported && resultFinal;
         const unverified = r.closed && !supported;
         return { packageName: repository, version: r.escrow.version, jobID: index + 1, fact: r.metric, factData: String(o.value), account: { uid: o.member },
-            security: o.security,
+            security: o.security, malware: o.malware,
             status: confirmed ? 'confirmed' : unverified ? 'unverified' : 'recorded', source: r.source,
             collectedAt: new Date(o.observedAt * 1000).toISOString(),
-            scope: r.metric === 'security_advisories' ? `Applicable advisories for ${r.escrow.packagePlatform}/${r.escrow.packageName}@${r.escrow.version}; inspect signed snapshots in the community round` : r.metric === 'so_popularity' ? `Millionths of one percentage point; tag ${r.escrow.stackOverflowTag}, last 30 complete UTC days` : r.method === 'libraries-project-v1' ? `${r.escrow.packagePlatform}/${r.escrow.packageName} · ${r.metric === 'lib_dependency_count' ? 'Dependencies for version ' + r.escrow.version : 'Current package metadata, not a historical snapshot'}` : undefined,
+            scope: r.metric === 'vs_virus_ratio' ? `Exact PyPI release artifacts: ${o.malware?.infected}/${o.malware?.artifacts} with detections; ${o.malware?.engine}; manifest SHA-256 ${o.malware?.manifestHash}. No detections does not prove safety.` : r.metric === 'security_advisories' ? `Applicable advisories for ${r.escrow.packagePlatform}/${r.escrow.packageName}@${r.escrow.version}; inspect signed snapshots in the community round` : r.metric === 'so_popularity' ? `Millionths of one percentage point; tag ${r.escrow.stackOverflowTag}, last 30 complete UTC days` : r.method === 'libraries-project-v1' ? `${r.escrow.packagePlatform}/${r.escrow.packageName} · ${r.metric === 'lib_dependency_count' ? 'Dependencies for version ' + r.escrow.version : 'Current package metadata, not a historical snapshot'}` : undefined,
             error: unverified ? 'This observation is recorded, but is not supported by the closed round’s community agreement.' : undefined,
         };
     }));

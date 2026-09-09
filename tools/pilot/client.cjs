@@ -196,6 +196,7 @@ async function durableEvent(url, keyfile, body) {
   return id;
 }
 async function collect(repository, metric, target) {
+  if(metric === 'vs_virus_ratio') return require('./clamav.cjs').collectMalware(target,json);
   if(metric === 'security_advisories') return require('./security.cjs').collectSecurity(target,json);
   if(metric === 'so_popularity') return require('./security.cjs').collectStackOverflow(target,json);
   if (require("./libraries.cjs").metrics.includes(metric)) return require("./libraries.cjs").collectProject(repository, metric, target, credentials().libraries, json);

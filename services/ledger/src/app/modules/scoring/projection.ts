@@ -38,7 +38,7 @@ export function projectScore(
 				: b.observations.slice(-1)[0]?.receivedAt ?? b.openedAt),
 	)) {
 		const escrow = s.escrows[r.id];
-		if (!policy.features.some(f => f.metric === r.metric) && r.metric !== policy.securityMetric)
+		if (!policy.features.some(f => f.metric === r.metric) && r.metric !== policy.securityMetric && r.metric !== 'vs_virus_ratio')
 			continue;
 		const state = byVersion.get(escrow.version) ?? { at: r.openedAt, facts: [] };
 		const result = roundResult(s, r);
@@ -54,7 +54,10 @@ export function projectScore(
 			: observation?.receivedAt ?? r.openedAt;
 		if (timestamp > at) continue;
 		state.at = timestamp;
-		if (r.metric === policy.securityMetric) {
+		if (r.metric === 'vs_virus_ratio') {
+			// A pending, failed or stale refresh must never erase a known detection.
+			if (value !== null && observation?.malware) state.malware = observation.malware;
+		} else if (r.metric === policy.securityMetric) {
 			state.security = value !== null ? observation?.security : undefined;
 			state.securityAt = observation?.observedAt;
 		} else {
@@ -65,7 +68,7 @@ export function projectScore(
 		state.correction = false;
 		byVersion.set(escrow.version, state);
 		if (!confirmed || final) record({ ...state, facts: [...state.facts] }, escrow.version);
-		if (escrow.version === version && confirmed) latestFinal.set(r.metric, !!final);
+		if (escrow.version === version && confirmed && r.metric !== 'vs_virus_ratio') latestFinal.set(r.metric, !!final);
 		if (
 			final &&
 			escrow.scoreCorrection &&

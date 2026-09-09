@@ -73,6 +73,7 @@ export default defineComponent({
       refreshTimer: undefined as ReturnType<typeof setInterval> | undefined,
       socket: undefined as WebSocket | undefined,
       loadError: '',
+      platformNotices: [] as string[],
       refreshing: false,
       isLoading: true,
       categories,
@@ -135,6 +136,15 @@ export default defineComponent({
       /* eslint-disable-next-line no-nested-ternary */
       ).sort((a, b) => (a.type === b.type ? 0 : a.type > b.type ? 1 : -1));
       this.loadError = '';
+      if (import.meta.env.VITE_PILOT === 'true') {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_PROTOCOL === 'https' ? 'https' : 'http'}://${import.meta.env.VITE_HOST}/api/dlt/collection-queue`);
+          if (response.ok) {
+            const queue = await response.json();
+            this.platformNotices = (queue.entries || []).filter((entry: any) => entry.repository === this.name.toLowerCase() && entry.version === this.version && ['so_popularity', 'vs_virus_ratio'].includes(entry.metric) && entry.status !== 'verified').map((entry: any) => `${entry.metric === 'so_popularity' ? 'Stack Overflow' : 'ClamAV'}: ${entry.unavailableReason || (entry.status === 'queued' ? 'queued for collection' : entry.status === 'collecting' ? 'collection in progress' : 'collection unavailable; no clean or zero result inferred')}.`);
+          }
+        } catch { /* Keep the last collection status during transient network errors. */ }
+      }
       } catch { this.loadError = 'Unable to refresh measurements. Previously loaded values are shown.'; }
       finally { this.isLoading = false; this.refreshing = false; }
     },
@@ -159,6 +169,7 @@ export default defineComponent({
       <va-switch v-model="confirmedOnly" label="Confirmed only" />
     </div>
     <p class="summary-hint">One card per fact and verification round. Expand a card to inspect contributor observations.</p>
+    <p v-for="notice in platformNotices" :key="notice" class="summary-hint">{{ notice }}</p>
     <p v-if="loadError" role="alert">{{ loadError }}</p>
   </section>
   <va-card v-if="categoryTrustFacts.length === 0">

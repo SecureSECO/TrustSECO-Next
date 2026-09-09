@@ -1,5 +1,7 @@
 {
-	"version": "trust-v2.0.0",
+	"version": "trust-v2.0.1",
+	"malwareMetric": "vs_virus_ratio",
+	"malwareRule": "Confirmed detections block scoring until a complete confirmed rescan reports no detections; clean scans add no points.",
 	"description": "Bounded evidence, non-compensable vulnerability penalties, and evidence-supported recovery. Policy settings, not a calibrated probability of safety.",
 	"freshnessSeconds": 86400,
 	"historySeconds": 604800,

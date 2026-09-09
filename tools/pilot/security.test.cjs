@@ -143,3 +143,14 @@ test('collector accepts existing Pypi spelling and queries canonical OSV ecosyst
   if(!o)return kev;assert.equal(JSON.parse(o.body).package.ecosystem,'PyPI');return {vulns:[]};
  });assert.equal(result.security.ecosystem,'PyPI');
 });
+
+test('Stack Overflow reuses a per-observer denominator and honors provider backoff',async()=>{
+ let totals=0;
+ const request=async url=>url.includes('/info')?{items:[{name:url.includes('/numpy/')?'numpy':'pandas'}]}:url.includes('tagged=')?{total:1}:{total:++totals*100};
+ await collectStackOverflow({stackOverflowTag:'numpy'},request);
+ await collectStackOverflow({stackOverflowTag:'pandas'},request);
+ assert.equal(totals,1);
+ let calls=0;const limited=async()=>{calls++;return {backoff:120};};
+ for(let i=0;i<2;i++)await assert.rejects(collectStackOverflow({stackOverflowTag:'numpy'},limited),e=>e.rateLimited&&e.retryAfterMs>100000);
+ assert.equal(calls,1);
+});

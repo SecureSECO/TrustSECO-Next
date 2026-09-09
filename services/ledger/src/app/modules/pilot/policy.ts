@@ -1,4 +1,5 @@
 import { createPublicKey, verify } from 'crypto';
+import { validateMalware } from '../scoring/malware';
 import { validateSecurity, canonicalEcosystem } from '../scoring/engine';
 import { AVAILABILITY_VERSION, LEASE_SECONDS, Lease, BeaconAssignment, availableMembers, createBeaconAssignment, acceptBeacon, advanceReserves, canSubmit, assignmentPhase } from './availability';
 import { Assignment, ASSIGNMENT_VERSION, createAssignment, contribute } from './assignment';
@@ -14,6 +15,7 @@ import {
 // Additive collector support: existing GitHub round validation and outcomes are unchanged.
 export const METRICS: Record<string, { absolute: number; relativeBps: number }> = {
 	security_advisories: { absolute: 0, relativeBps: 0 },
+	vs_virus_ratio: { absolute: 0, relativeBps: 0 },
 	so_popularity: { absolute: 1000, relativeBps: 100 },
 	gh_owner_stargazer_count: { absolute: 5, relativeBps: 200 },
 	gh_contributor_count: { absolute: 1, relativeBps: 100 },
@@ -97,10 +99,10 @@ const money = (value: unknown): bigint => {
 export const roundResult = (s: PilotState, r: Round) => {
 	const assignment = s.escrows[r.id]?.assignment;
 	const evaluated = assignment ? { ...r, observations: r.observations.filter(o => assignment.committee.includes(o.member)) } : r;
-	if (r.metric === 'security_advisories') {
+	if (r.metric === 'security_advisories' || r.metric === 'vs_virus_ratio') {
         const groups = new Map<string, typeof r.observations>();
-        for (const o of evaluated.observations) if (o.security) {
-            const key = JSON.stringify(o.security);
+        for (const o of evaluated.observations) if (r.metric === 'vs_virus_ratio' ? o.malware : o.security) {
+            const key = JSON.stringify(r.metric === 'vs_virus_ratio' ? o.malware : o.security);
             groups.set(key, [...(groups.get(key) ?? []), o]);
         }
         const results = [...groups.values()].map(observations => evaluate({...r,observations},s.community,METRICS[r.metric]));
@@ -195,6 +197,7 @@ export function applyPilot(
 		refreshOf: string;
 		stackOverflowTag: string;
 		security: unknown;
+		malware: unknown;
 		value: number;
 		evidence: string;
 	};
@@ -235,7 +238,7 @@ export function applyPilot(
 		);
 		requireThat(
 			own(METRICS, e.metric) &&
-				((e.metric === 'security_advisories' && e.source === 'OSV + CISA KEV' && e.method === 'osv-kev-v1') ||
+				((e.metric === 'vs_virus_ratio' && e.source === 'ClamAV' && e.method === 'clamav-pypi-v1') || (e.metric === 'security_advisories' && e.source === 'OSV + CISA KEV' && e.method === 'osv-kev-v1') ||
                     (e.metric === 'so_popularity' && e.source === 'Stack Exchange API' && e.method === 'stackoverflow-share-ppm-v1') ||
                     (e.metric === 'lib_contributor_count' &&
 					e.source === 'Libraries.io REST' &&
@@ -259,7 +262,7 @@ export function applyPilot(
 			),
 			'Matching round already open',
 		);
-		if ((e.metric.startsWith('lib_') && e.metric !== 'lib_contributor_count') || e.metric === 'security_advisories') {
+		if ((e.metric.startsWith('lib_') && e.metric !== 'lib_contributor_count') || e.metric === 'security_advisories' || e.metric === 'vs_virus_ratio') {
 			requireThat(
 				typeof e.packagePlatform === 'string' &&
 					(/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(e.packagePlatform) || (e.metric === 'security_advisories' && e.packagePlatform === 'crates.io')) &&
@@ -282,6 +285,7 @@ export function applyPilot(
 				'Conflicting registry mapping for repository/version',
 			);
 		}
+		if (e.metric === 'vs_virus_ratio') requireThat(canonicalEcosystem(e.packagePlatform) === 'PyPI', 'ClamAV currently supports PyPI artifacts');
 		if (e.metric === 'so_popularity') requireThat(typeof e.stackOverflowTag === 'string' && /^[a-z0-9][a-z0-9.+#-]{0,59}$/.test(e.stackOverflowTag), 'Explicit Stack Overflow tag required');
 		if (s.assignmentVersion) {
 			const prior = s.community.rounds.filter(r => r.metric === e.metric && s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version).slice(-1)[0];
@@ -298,6 +302,13 @@ export function applyPilot(
 	}
 	if (e.kind === 'observe') {
         const round = s.community.rounds.find(r=>r.id === e.round);
+        if (round?.metric === 'vs_virus_ratio') {
+            const scan = validateMalware(e.malware);
+            const escrow = s.escrows[e.round];
+            requireThat(scan.name === escrow.packageName && scan.version === escrow.version, 'ClamAV target mismatch');
+            requireThat(e.value === Math.round(scan.infected / scan.artifacts * 1000000), 'ClamAV ratio mismatch');
+            requireThat(scan.signatureAt <= e.observedAt + 300 && e.observedAt - scan.signatureAt <= 7 * 86400, 'ClamAV signatures stale or future');
+        }
         if (round?.metric === 'security_advisories') {
             const security = validateSecurity(e.security);
             const escrow = s.escrows[e.round];
@@ -418,6 +429,11 @@ export function applyPilot(
             requireThat(observation, 'Observation missing');
             observation.security = validateSecurity(e.security);
         }
+		if (e.kind === 'observe' && s.community.rounds.find(r=>r.id === e.round)?.metric === 'vs_virus_ratio') {
+            const observation = s.community.rounds.find(r=>r.id === e.round)?.observations.find(o=>o.id === e.id);
+            requireThat(observation, 'Observation missing');
+            observation.malware = validateMalware(e.malware);
+        }
 		if (e.kind === 'enrol') s.balances[e.member] = '0';
 		if (e.kind === 'reinstate')
 			requireThat(!s.revoked.includes(e.member), 'Revoked keys cannot be reinstated');
@@ -441,7 +457,7 @@ export function applyPilot(
 				repository: e.repository.toLowerCase(),
 				version: e.version,
 				...(e.stackOverflowTag ? {stackOverflowTag:e.stackOverflowTag} : {}),
-				...(e.method === 'libraries-project-v1' || e.method === 'osv-kev-v1'
+				...(e.method === 'libraries-project-v1' || e.method === 'osv-kev-v1' || e.method === 'clamav-pypi-v1'
 					? { packagePlatform: e.packagePlatform, packageName: e.packageName }
 					: {}),
 				closedAt: null,

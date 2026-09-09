@@ -191,6 +191,26 @@ async function collectSecurity(target, request) {
       .digest("hex"),
   };
 }
+// Cache only per-observer public tag metadata and the common fixed-window denominator.
+// Separate request functions (including tests) never share a cache.
+const stackCaches = new WeakMap();
+async function stackRequest(request, url, ttl = 0) {
+  let state = stackCaches.get(request);
+  if (!state) {state = {cache:new Map(),until:0};stackCaches.set(request,state);}
+  const now = Date.now();
+  const limited = seconds => Object.assign(Error('Stack Overflow API rate limited'), {rateLimited:true,retryAfterMs:Math.max(1000,seconds*1000)});
+  if (state.until > now) throw limited((state.until-now)/1000);
+  const cached = state.cache.get(url);
+  if (cached && cached.until > now) return cached.data;
+  const data = await request(url);
+  if (data.backoff || data.quota_remaining === 0 || data.error_id === 502) {
+    const seconds = data.backoff || (data.quota_remaining === 0 ? 3600 : 60);
+    state.until=now+seconds*1000;throw limited(seconds);
+  }
+  if (data.error_id) throw Error('Stack Overflow API error '+data.error_id);
+  if (ttl) {if(state.cache.size>200)state.cache.clear();state.cache.set(url,{data,until:now+ttl});}
+  return data;
+}
 async function collectStackOverflow(target, request) {
   const tag = target.stackOverflowTag;
   if (typeof tag !== "string" || !/^[a-z0-9][a-z0-9.+#-]{0,59}$/.test(tag))
@@ -198,8 +218,8 @@ async function collectStackOverflow(target, request) {
   const now = Math.floor(Date.now() / 1000),
     end = Math.floor(now / 86400) * 86400;
   const root = "https://api.stackexchange.com/2.3";
-  const info = await request(
-    root + "/tags/" + encodeURIComponent(tag) + "/info?site=stackoverflow"
+  const info = await stackRequest(request,
+    root + "/tags/" + encodeURIComponent(tag) + "/info?site=stackoverflow", 86400000
   );
   if (
     !Array.isArray(info?.items) ||
@@ -214,8 +234,8 @@ async function collectStackOverflow(target, request) {
     (end - 30 * 86400) +
     "&todate=" +
     (end - 1);
-  const total = await request(base),
-    matched = await request(base + "&tagged=" + encodeURIComponent(tag));
+  const total = await stackRequest(request, base, 3600000),
+    matched = await stackRequest(request, base + "&tagged=" + encodeURIComponent(tag));
   if (
     total.error_id ||
     matched.error_id ||

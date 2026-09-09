@@ -3,14 +3,14 @@ const {targets,next,summary,METRICS}=require('./collection-plan.cjs');
 const packages=[{repository:'Pallets/Flask',version:'3.1.1',platform:'PyPI',name:'Flask',stackOverflowTag:'flask'}];
 const state=()=>({network:'n',at:100,policy:{collection:'scheduled-v1'},ledger:{height:10,finalizedHeight:8},rounds:[],members:['a','b','c'].map(id=>({id})),availability:Object.fromEntries(['a','b','c'].map(id=>[id,{until:1000,height:8}])),availableContributors:3,treasury:'1000000'});
 const round=(event,extra={})=>({id:event.round,openedAt:100,closed:true,result:{status:'verified'},metric:event.metric,escrow:{repository:event.repository,version:event.version},...extra});
-test('forty packages expand to 560 unique metric targets with correct collector routes',()=>{
+test('forty packages expand to 600 unique metric targets with correct collector routes',()=>{
  const ps=Array.from({length:40},(_,i)=>({...packages[0],repository:'owner/pkg'+i}));const tasks=targets('n',ps,[],100);
- assert.equal(tasks.length,560);assert.equal(new Set(tasks.map(t=>t.event.round)).size,560);assert.equal(METRICS.filter(m=>m.startsWith('gh_')).length,4);
+ assert.equal(tasks.length,600);assert.equal(new Set(tasks.map(t=>t.event.round)).size,600);assert.equal(METRICS.filter(m=>m.startsWith('gh_')).length,4);
  assert.equal(tasks.find(t=>t.metric==='lib_contributor_count').event.method,'libraries-repository-v1');assert.equal(tasks.find(t=>t.metric==='lib_dependency_count').event.packageName,'Flask');
 });
 test('restart preserves IDs, existing facts are skipped by identity rather than old queue IDs',()=>{
  const s=state(),e=next(s,packages).event;assert.deepEqual(next(s,packages).event,e);s.rounds=[round({...e,round:'old-source-rank'})];assert.notEqual(next(s,packages).event.metric,e.metric);
- assert.equal(summary(s,packages).verified,1);assert.equal(summary(s,packages).queued,13);
+ assert.equal(summary(s,packages).verified,1);assert.equal(summary(s,packages).queued,14);
 });
 test('concurrency, finalized availability, lag and treasury bound publication',()=>{
  const s=state();s.rounds=targets('n',packages,[],100).slice(0,4).map(t=>round(t.event,{closed:false}));assert.match(next(s,packages).reason,/slots/);
@@ -18,10 +18,10 @@ test('concurrency, finalized availability, lag and treasury bound publication',(
 });
 test('refresh and failed retries wait equally, link previous rounds, preserve old attempts',()=>{
  const s=state();s.rounds=targets('n',packages,[],100).map(t=>round(t.event,{result:{status:'expired'}}));assert.match(next(s,packages).reason,/daily/);s.at=86500;for(const l of Object.values(s.availability))l.until=s.at+1000;
- const e=next(s,packages).event;assert.equal(e.refreshOf,s.rounds[0].id);assert.notEqual(e.round,e.refreshOf);assert.equal(summary(s,packages).insufficient,14);
+ const e=next(s,packages).event;assert.equal(e.refreshOf,s.rounds[0].id);assert.notEqual(e.round,e.refreshOf);assert.equal(summary(s,packages).insufficient,15);
 });
 test('unknown registry mappings and reported source failures stay visible without invented zero facts',()=>{
- const s=state();assert.equal(summary(s,[{repository:'x/y',version:'1'}]).unavailable,9);
+ const s=state();assert.equal(summary(s,[{repository:'x/y',version:'1'}]).unavailable,10);
  const e=next(s,packages).event;s.rounds=[round(e,{result:{status:'expired'},escrow:{repository:e.repository,version:e.version,failures:{a:{reason:'credentials-missing'}}}})];assert.equal(summary(s,packages).unavailable,1);assert.equal(summary(s,packages).verified,0);
 });
 test('slow provider and metric rounds cannot monopolize all four slots',()=>{

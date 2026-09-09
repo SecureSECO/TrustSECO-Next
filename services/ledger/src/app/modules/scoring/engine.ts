@@ -29,6 +29,7 @@ export interface Fact {
 	at: number;
 }
 export interface Frame {
+	malware?: import('./malware').MalwareSnapshot;
 	at: number;
 	facts: Fact[];
 	security?: SecuritySnapshot;
@@ -206,6 +207,7 @@ export function assess(frame: Frame) {
 		if (v.kev) ceiling = Math.min(ceiling, policy.knownExploitedCeiling);
 	}
 	const reasons: string[] = [];
+	if (frame.malware && frame.malware.infected > 0) reasons.push('ClamAV detected malware in this release; a complete confirmed rescan is required');
 	if (!security) reasons.push('Security evidence missing or stale');
 	if (unknown) reasons.push('An applicable advisory has unknown severity');
 	if (coverage + 1e-9 < policy.minimumCoverage)
@@ -224,6 +226,7 @@ export function assess(frame: Frame) {
 		contributions,
 		reasons,
 		advisories: security?.advisories ?? [],
+		malware: frame.malware,
 		securityFresh: !!security,
 		factTypeCount: contributions.filter(f => f.normalized !== null).length,
 		totalFactTypes: policy.features.length,

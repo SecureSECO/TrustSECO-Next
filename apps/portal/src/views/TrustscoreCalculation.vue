@@ -113,7 +113,7 @@
         <p>
           Remediation must be evidenced; time alone does not remove a
           vulnerability. A governor can record an auditable factual correction
-          against a corroborated security round, with a reason and evidence.
+          against a corroborated security round, with a reason and evidence. A confirmed ClamAV malware detection makes the score unavailable until a complete confirmed rescan reports no detections; a clean scan adds no positive points.
           This can restore the assessment promptly but cannot bypass current
           vulnerability ceilings.
         </p>

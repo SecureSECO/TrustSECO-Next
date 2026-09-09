@@ -60,3 +60,8 @@ test('collection queue exposes insufficient available contributors without claim
  assert.equal(queueStatus(s).waitingForContributors,true);assert.equal(queueStatus(s).queued,1);assert.equal(queueStatus(s).collecting,0);
  s.availableContributors=3;assert.equal(queueStatus(s).waitingForContributors,false);
 });
+test('ClamAV artifact scope and signed report reach package facts',()=>{
+ const r=round();r.metric='vs_virus_ratio';r.source='ClamAV';
+ r.observations.forEach(o=>o.malware={infected:0,artifacts:2,engine:'ClamAV test',manifestHash:'a'.repeat(64)});
+ const f=measurements({rounds:[r],audit:[]},'owner/pkg',10)[0];assert.equal(f.malware.artifacts,2);assert.match(f.scope,/0\/2/);assert.match(f.scope,/does not prove safety/);
+});
