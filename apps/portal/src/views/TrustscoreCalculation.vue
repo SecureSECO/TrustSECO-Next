@@ -1,124 +1,223 @@
 <template>
-  <va-card>
-    <va-card-title>Trustscore calculation</va-card-title>
-    <va-card-content>
-      <p> The trustscore is calculated as follows: </p>
-      <ul class="va-unordered">
-        <li>
-          First for certain facts that grow quickly, such as the amount of stars of a project, we apply the logarithm
-          function. This is done because otherwise these attributes could take over the entire trustscore very quickly.
-        </li>
-        <li>
-          Then we multiply this value by a "weight" value that was defined for each trustfact, these weights were based
-          on a study where developers where surveyed on how important they thought certain information was when
-          selecting software packages.
-        </li>
-        <li>
-          Then we divide every trustfact by the average value for that fact, these averages were obtained by running the
-          spider on PyPi packages. For the facts were a logarithm is applied the average also first has a logarithm
-          applied.
-        </li>
-      </ul>
+  <main class="methodology">
+    <h1>How TrustSECO scores software</h1>
+    <p class="lead">“Trust comes on foot, and leaves by horse.”</p>
+    <p>
+      Positive evidence builds confidence. Serious vulnerabilities impose
+      penalties that popularity cannot cancel. A score supports a decision; it
+      is not a probability that software is safe.
+    </p>
+    <p v-if="error" role="alert">{{ error }}</p>
+    <template v-if="policy">
       <p>
-        Then the values are combined:
+        Policy <strong>{{ policy.version }}</strong> · These weights, ceilings
+        and recovery settings are explicit policy choices requiring empirical
+        evaluation.
       </p>
-      <ul class="va-unordered">
-        <li>
-          All these values are summed together, if there are multiple occurrences for the same fact type, the average
-          value of these occurrences is taken.
-        </li>
-        <li>
-          After the values are summed together there are put into a logistic function to squash the values between 0 and
-          100, the parameters of the logistic function were chosen so that an average package would fall around a
-          trustscore of 60.
-        </li>
-      </ul>
+      <section>
+        <h2>1. A bounded evidence baseline</h2>
+        <p>
+          For more-is-better indicators, z = x / (x + a). For less-is-better
+          indicators, z = a / (x + a). Here a is the reference value. The
+          baseline is B = 100 × Σ(w × z).
+        </p>
+        <p>
+          Community support has a fixed 10% budget. Raw issue counts, dependency
+          counts and an owner’s total stars do not automatically earn trust.
+          Contributor counts are not counted twice across providers.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Indicator</th>
+                <th>Budget</th>
+                <th>Reference</th>
+                <th>Confirmed freshness</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="f in policy.features" :key="f.id">
+                <td>{{ f.label }}</td>
+                <td>{{ f.weight * 100 }}%</td>
+                <td>
+                  {{
+                    f.unit === 'seconds' ? f.reference / 86400 : f.reference
+                  }}
+                  {{ f.unit === 'seconds' ? 'days' : f.unit }}
+                </td>
+                <td>{{ f.freshnessSeconds / 86400 }} days</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Stack Overflow uses the share of questions in percentage points: 0.05%
+          is stored as 50,000 millionths of a percentage point. At the reference
+          of 0.05%, its normalized value is 0.5. Zero stays zero and a growing
+          share never reverses its contribution. Collection uses an explicit tag
+          and the last 30 complete UTC days.
+        </p>
+      </section>
+      <section>
+        <h2>2. Vulnerabilities cannot be outweighed by popularity</h2>
+        <p>
+          Q = min(B × Π(severity multipliers), strictest applicable ceiling).
+        </p>
+        <p>
+          Only distinct, non-withdrawn advisories returned for the assessed
+          ecosystem, package and exact version are included. CVE/GHSA aliases
+          count once. CVSS describes severity; these multipliers are not
+          probabilities.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>CVSS</th>
+                <th>Multiplier</th>
+                <th>Ceiling</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="band in policy.severity" :key="band.name">
+                <td>{{ band.name }}</td>
+                <td>{{ band.min }}–{{ band.max }}</td>
+                <td>×{{ band.multiplier }}</td>
+                <td>{{ band.ceiling }}</td>
+              </tr>
+              <tr>
+                <td>Known exploitation</td>
+                <td>CISA KEV</td>
+                <td>Severity still applies</td>
+                <td>{{ policy.knownExploitedCeiling }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          A baseline of 80 becomes 40 with one high-severity vulnerability, 20
+          with one critical vulnerability, and at most 9 for an applicable
+          known-exploited vulnerability. Fixed advisories leave the current
+          target; recovery history still carries across versions.
+        </p>
+      </section>
+      <section>
+        <h2>Local estimates and SourceRank</h2>
+        <p>A provisional estimate is available as soon as there is a usable scoring input. It uses B / C, where C is the combined weight of available inputs, including older observations. Known vulnerability penalties and ceilings still apply, even when that evidence is old; a known malware detection gives a local estimate of zero until a confirmed clean rescan. Missing or old security checks are explicitly flagged.</p>
+        <p>Always read the estimate with its coverage, missing inputs and evidence age. It does not require community agreement or recovery history. With no usable inputs, no estimate is shown. Libraries.io SourceRank remains in the Community and Popularity fact cards as an external reference; it is not included in the score formula.</p>
+      </section>
+      <section>
+        <h2>3. Fast deterioration, gradual recovery</h2>
+        <p>
+          For community-confirmed scores, accepted negative evidence lowers the assessment immediately. Upward
+          movement is limited to {{ policy.recoveryPointsPerDay }} point per day
+          supported by fresh evidence. Publishing another version does not reset
+          the project’s history. The first score appears as soon as enough fresh
+          evidence and a complete security assessment are available; confirmed
+          scores additionally require community agreement and ledger finality.
+          Each score shows its accumulated evidence-supported history separately.
+          There is no minimum waiting period.
+        </p>
+        <p>
+          Remediation must be evidenced; time alone does not remove a
+          vulnerability. A governor can record an auditable factual correction
+          against a corroborated security round, with a reason and evidence. A confirmed ClamAV malware detection makes the score unavailable until a complete confirmed rescan reports no detections; a clean scan adds no positive points.
+          This can restore the assessment promptly but cannot bypass current
+          vulnerability ceilings.
+        </p>
+      </section>
+      <section>
+        <h2>4. Uncertainty stays visible</h2>
+        <p>
+          For confirmed scores, each indicator has the freshness limit listed above; security checks expire after {{ policy.freshnessSeconds / 3600 }} hours. At
+          least {{ policy.minimumCoverage * 100 }}% of the fixed evidence budget
+          and a fresh, complete security snapshot with known severities are
+          required. Missing positive inputs produce a baseline range, not an
+          inflated average; the numeric target uses the conservative lower
+          bound.
+        </p>
+        <p>
+          Failed queries, unknown severity and disputed or unfinalized updates
+          cannot silently become zero risk. Local assessments are provisional;
+          confirmed assessments require community agreement and ledger finality.
+          Signed agreement does not prove the upstream source is correct.
+        </p>
+      </section>
       <p>
-        Or expressed as a formula:
+        Severity:
+        <a href="https://www.first.org/cvss/v4.0/specification-document"
+          >FIRST CVSS</a
+        >
+        · Version matching:
+        <a href="https://google.github.io/osv.dev/api/">OSV</a> · Exploitation:
+        <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+          >CISA KEV</a
+        >
       </p>
-      <div class="center">
-        <img src="/equation-1.svg"></img>
-      </div>
-      <div class="center">
-        <img src="/equation-2.svg"></img>
-      </div>
-      <br/>
-      <p>
-        The category score calculation is done in an identical way,
-        just with adjusted growth rate and midpoint for the logistic function.
-      </p>
-      <br/>
-      <p>
-        These are the averages, weights and log for each of the fact types:
-      </p>
-      <br/>
-      <div class="va-table-responsive center">
-        <table class="va-table">
-          <thead>
-            <tr>
-              <th>Fact name</th>
-              <th>Fact average</th>
-              <th>Fact weight</th>
-              <th>Logaritmic?</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="fact in facts" :key="fact.fact">
-              <td>{{ fact.fact }}</td>
-              <td>{{ fact.average }}</td>
-              <td>{{ fact.weight }}</td>
-              <td>{{ fact.log ? "Yes" : "No" }}</td>
-              <td>{{ fact.category }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </va-card-content>
-  </va-card>
+    </template>
+  </main>
 </template>
-
 <script setup lang="ts">
-import { ref } from 'vue';
-
-let facts = ref([
-  { fact: "Number of downloads", weight: 63, average: 2E4, log: true, category: "Community and Popularity" },
-  { fact: "Star count of owner", weight: 24.21, average: 5000, log: true, category: "Community and Popularity" },
-  { fact: "Cve count", weight: -16.47, average: 2, log: false, category: "Security" },
-  { fact: "Virus ratio", weight: -16.47, average: 0.1, log: false, category: "Security" },
-  { fact: "Dependecy count", weight: 8.04, average: 20, log: false, category: "Dependencies and Ecosystem" },
-  { fact: "GitHub contributor count", weight: 4.41, average: 100, log: true, category: "Community and Popularity" },
-  { fact: "Average time per release", weight: -2.32, average: 1E7, log: false, category: "Project Health and Maintenance" },
-  { fact: "Used count", weight: 60, average: 1E5, log: true, category: "Dependencies and Ecosystem" },
-  { fact: "Release download count", weight: 1, average: 300, log: true, category: "Community and Popularity" },
-  { fact: "Yearly commit count", weight: 15, average: 50, log: true, category: "Project Health and Maintenance" },
-  { fact: "Average issue resolution time", weight: -4, average: 4E4, log: false, category: "Project Health and Maintenance" },
-  { fact: "GitHub star ranking", weight: 1, average: 600, log: false, category: "Community and Popularity" },
-  { fact: "Issue count for specific release", weight: 1, average: 20, log: false, category: "Project Health and Maintenance" },
-  { fact: "Open issues", weight: 2, average: 50, log: false, category: "Project Health and Maintenance" },
-  { fact: "Issues without responses", weight: -7, average: 70, log: false, category: "Project Health and Maintenance" },
-  { fact: "Open/Closed issue ratio", weight: -15, average: 0.29, log: false, category: "Project Health and Maintenance" },
-  { fact: "libraries.io Contributor count", weight: 6, average: 100, log: true, category: "Community and Popularity" },
-  { fact: "Dependant packages count", weight: -1, average: 5000, log: false, category: "Dependencies and Ecosystem" },
-  { fact: "Number of releases", weight: 2, average: 70, log: true, category: "Project Health and Maintenance" },
-  { fact: "Sourcerank metric", weight: 8, average: 20, log: false, category: "Project Health and Maintenance" },
-  { fact: "StackOverflow popularity", weight: 18, average: 0.05, log: true, category: "Community and Popularity" },
-]);
+import { ref, onMounted } from 'vue';
+const policy = ref<any>(null),
+  error = ref('');
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/pilot/score-policy', {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw Error();
+    policy.value = await response.json();
+  } catch {
+    error.value =
+      'The active scoring policy is unavailable. Reconnect to the ledger to see its versioned methodology.';
+  }
+});
 </script>
-
 <style scoped>
-p,
-li {
-  font-size: 1.1em;
+.methodology {
+  max-width: 1050px;
+  margin: auto;
+  padding: 32px;
+  color: #172b4d;
 }
-
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.methodology h1 {
+  font-size: 30px;
 }
-
-img {
-  margin-top: 2em;
+.lead {
+  font-size: 22px;
+  margin: 18px 0;
+}
+.methodology p {
+  line-height: 1.65;
+  margin: 16px 0;
+}
+.methodology section {
+  background: white;
+  padding: 24px;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  margin: 24px 0;
+}
+.methodology h2 {
+  font-size: 21px;
+}
+.scroll {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+td,
+th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #dce4ec;
+}
+a {
+  color: #1769bb;
 }
 </style>

@@ -1,4 +1,6 @@
 import { createPublicKey, verify } from 'crypto';
+import { validateMalware } from '../scoring/malware';
+import { validateSecurity, canonicalEcosystem } from '../scoring/engine';
 import { AVAILABILITY_VERSION, LEASE_SECONDS, Lease, BeaconAssignment, availableMembers, createBeaconAssignment, acceptBeacon, advanceReserves, canSubmit, assignmentPhase } from './availability';
 import { Assignment, ASSIGNMENT_VERSION, createAssignment, contribute } from './assignment';
 import {
@@ -12,6 +14,9 @@ import {
 
 // Additive collector support: existing GitHub round validation and outcomes are unchanged.
 export const METRICS: Record<string, { absolute: number; relativeBps: number }> = {
+	security_advisories: { absolute: 0, relativeBps: 0 },
+	vs_virus_ratio: { absolute: 0, relativeBps: 0 },
+	so_popularity: { absolute: 1000, relativeBps: 100 },
 	gh_owner_stargazer_count: { absolute: 5, relativeBps: 200 },
 	gh_contributor_count: { absolute: 1, relativeBps: 100 },
 	lib_contributor_count: { absolute: 1, relativeBps: 100 },
@@ -27,6 +32,8 @@ export const METRICS: Record<string, { absolute: number; relativeBps: number }> 
 };
 export const DELAY = 86400;
 export interface Escrow {
+	stackOverflowTag?: string;
+	scoreCorrection?: {height: number; at: number; reason: string; evidence: string};
 	refreshOf?: string;
 	failures?: Record<string, {reason: string; at: number}>;
 	assignment?: Assignment | BeaconAssignment;
@@ -92,7 +99,20 @@ const money = (value: unknown): bigint => {
 export const roundResult = (s: PilotState, r: Round) => {
 	const assignment = s.escrows[r.id]?.assignment;
 	const evaluated = assignment ? { ...r, observations: r.observations.filter(o => assignment.committee.includes(o.member)) } : r;
-	return evaluate(evaluated, s.community, METRICS[r.metric]);
+	if (r.metric === 'security_advisories' || r.metric === 'vs_virus_ratio') {
+        const groups = new Map<string, typeof r.observations>();
+        for (const o of evaluated.observations) if (r.metric === 'vs_virus_ratio' ? o.malware : o.security) {
+            const key = JSON.stringify(r.metric === 'vs_virus_ratio' ? o.malware : o.security);
+            groups.set(key, [...(groups.get(key) ?? []), o]);
+        }
+        const results = [...groups.values()].map(observations => evaluate({...r,observations},s.community,METRICS[r.metric]));
+        const winners = results.filter(result => result.status === 'verified');
+        if (winners.length === 1) return winners[0];
+        let status: 'disputed' | 'expired' | 'pending' = r.closed ? 'expired' : 'pending';
+        if (evaluated.observations.length >= 3) status = 'disputed';
+        return {status, supporters:[],conflicts:evaluated.observations.map(o=>o.id),value:null};
+    }
+    return evaluate(evaluated, s.community, METRICS[r.metric]);
 };
 export function joinProof(
 	payload: string,
@@ -175,6 +195,11 @@ export function applyPilot(
 		beaconSignature: string;
 		duration: number;
 		refreshOf: string;
+		stackOverflowTag: string;
+		security: unknown;
+		malware: unknown;
+		value: number;
+		evidence: string;
 	};
 	requireThat(e && typeof e === 'object' && e.network === previous.network, 'Wrong network');
 	requireThat(!previous.revoked.includes(e.actor), 'Signing key revoked');
@@ -213,14 +238,16 @@ export function applyPilot(
 		);
 		requireThat(
 			own(METRICS, e.metric) &&
-				((e.metric === 'lib_contributor_count' &&
+				((e.metric === 'vs_virus_ratio' && e.source === 'ClamAV' && e.method === 'clamav-pypi-v1') || (e.metric === 'security_advisories' && e.source === 'OSV + CISA KEV' && e.method === 'osv-kev-v1') ||
+                    (e.metric === 'so_popularity' && e.source === 'Stack Exchange API' && e.method === 'stackoverflow-share-ppm-v1') ||
+                    (e.metric === 'lib_contributor_count' &&
 					e.source === 'Libraries.io REST' &&
 					e.method === 'libraries-repository-v1') ||
 					(e.metric.startsWith('lib_') &&
 						e.metric !== 'lib_contributor_count' &&
 						e.source === 'Libraries.io REST' &&
 						e.method === 'libraries-project-v1') ||
-					(!e.metric.startsWith('lib_') &&
+					(e.metric.startsWith('gh_') &&
 						e.source === 'GitHub REST' &&
 						e.method === 'github-rest-v1')),
 			'Unsupported live collector',
@@ -235,10 +262,10 @@ export function applyPilot(
 			),
 			'Matching round already open',
 		);
-		if (e.metric.startsWith('lib_') && e.metric !== 'lib_contributor_count') {
+		if ((e.metric.startsWith('lib_') && e.metric !== 'lib_contributor_count') || e.metric === 'security_advisories' || e.metric === 'vs_virus_ratio') {
 			requireThat(
 				typeof e.packagePlatform === 'string' &&
-					/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(e.packagePlatform) &&
+					(/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(e.packagePlatform) || (e.metric === 'security_advisories' && e.packagePlatform === 'crates.io')) &&
 					typeof e.packageName === 'string' &&
 					e.packageName.length > 0 &&
 					e.packageName.length <= 200 &&
@@ -253,11 +280,13 @@ export function applyPilot(
 						x.repository === e.repository.toLowerCase() &&
 						x.version === e.version &&
 						x.packagePlatform &&
-						(x.packagePlatform !== e.packagePlatform || x.packageName !== e.packageName),
+						(canonicalEcosystem(x.packagePlatform) !== canonicalEcosystem(e.packagePlatform) || x.packageName !== e.packageName),
 				),
 				'Conflicting registry mapping for repository/version',
 			);
 		}
+		if (e.metric === 'vs_virus_ratio') requireThat(canonicalEcosystem(e.packagePlatform) === 'PyPI', 'ClamAV currently supports PyPI artifacts');
+		if (e.metric === 'so_popularity') requireThat(typeof e.stackOverflowTag === 'string' && /^[a-z0-9][a-z0-9.+#-]{0,59}$/.test(e.stackOverflowTag), 'Explicit Stack Overflow tag required');
 		if (s.assignmentVersion) {
 			const prior = s.community.rounds.filter(r => r.metric === e.metric && s.escrows[r.id]?.repository === e.repository.toLowerCase() && s.escrows[r.id]?.version === e.version).slice(-1)[0];
 			if (s.collectionVersion) {
@@ -272,6 +301,21 @@ export function applyPilot(
 		requireThat(BigInt(s.balances[e.actor] ?? '0') >= bounty, 'Insufficient TrustCOIN balance');
 	}
 	if (e.kind === 'observe') {
+        const round = s.community.rounds.find(r=>r.id === e.round);
+        if (round?.metric === 'vs_virus_ratio') {
+            const scan = validateMalware(e.malware);
+            const escrow = s.escrows[e.round];
+            requireThat(scan.name === escrow.packageName && scan.version === escrow.version, 'ClamAV target mismatch');
+            requireThat(e.value === Math.round(scan.infected / scan.artifacts * 1000000), 'ClamAV ratio mismatch');
+            requireThat(scan.signatureAt <= e.observedAt + 300 && e.observedAt - scan.signatureAt <= 7 * 86400, 'ClamAV signatures stale or future');
+        }
+        if (round?.metric === 'security_advisories') {
+            const security = validateSecurity(e.security);
+            const escrow = s.escrows[e.round];
+            requireThat(security.ecosystem === canonicalEcosystem(escrow.packagePlatform ?? '') && security.name === escrow.packageName && security.version === escrow.version, 'Security snapshot target mismatch');
+            requireThat(e.value === security.advisories.length, 'Security count mismatch');
+        }
+
 		const assignment = s.escrows[e.round]?.assignment;
 		if (assignment) {
 			requireThat(assignment.committee.includes(e.actor), 'Observer is not assigned to this round');
@@ -280,7 +324,7 @@ export function applyPilot(
 			requireThat(!s.community.members.find(m => m.id === e.actor)?.suspended, 'Assigned observer is suspended');
 		}
 	}
-	if (['transfer', 'revoke', 'activate-assignment', 'activate-availability', 'activate-collection', 'unavailable', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
+	if (['score-correction', 'transfer', 'revoke', 'activate-assignment', 'activate-availability', 'activate-collection', 'unavailable', 'availability', 'assignment-beacon', 'entropy-commit', 'entropy-reveal'].includes(e.kind)) {
 		const key =
 			e.actor === 'governor'
 				? s.community.governor
@@ -303,7 +347,15 @@ export function applyPilot(
 			'Invalid signature',
 		);
 		requireThat(e.kind === 'activate-collection' || s.community.audit.length < 10000, 'Event capacity reached');
-		if (e.kind === 'activate-collection') {
+        if (e.kind === 'score-correction') {
+            const round = s.community.rounds.find(r=>r.id === e.round);
+            requireThat(e.actor === 'governor' && round?.closed && round.metric === 'security_advisories' && roundResult(s,round).status === 'verified', 'Governor and closed corroborated security round required');
+            requireThat(typeof e.reason === 'string' && e.reason.trim().length > 0 && typeof e.evidence === 'string' && e.evidence.trim().length > 0, 'Correction reason and evidence required');
+            requireThat(!s.escrows[e.round].scoreCorrection, 'Correction already recorded');
+            const latestSecurity = s.community.rounds.filter(r => r.metric === 'security_advisories' && s.escrows[r.id].repository === s.escrows[e.round].repository).slice(-1)[0];
+            requireThat(latestSecurity?.id === e.round, 'Correction must reference the latest security round for the project');
+            s.escrows[e.round].scoreCorrection = {height,at,reason:e.reason,evidence:e.evidence};
+        } else if (e.kind === 'activate-collection') {
 			requireThat(e.actor === 'governor' && s.assignmentVersion === AVAILABILITY_VERSION && !s.collectionVersion, 'Governor may activate collection once after availability');
 			requireThat(s.community.rounds.every(r => r.closed), 'Close existing rounds before activation');
 			s.collectionVersion = 'scheduled-v1';
@@ -372,6 +424,16 @@ export function applyPilot(
 	} else {
 		// The legacy signature and admission checks remain shared; this chain explicitly permits these collector metrics.
 		s.community = applyEvent(s.community, payload, signature, at, height, Object.keys(METRICS));
+		if (e.kind === 'observe' && s.community.rounds.find(r=>r.id === e.round)?.metric === 'security_advisories') {
+            const observation = s.community.rounds.find(r=>r.id === e.round)?.observations.find(o=>o.id === e.id);
+            requireThat(observation, 'Observation missing');
+            observation.security = validateSecurity(e.security);
+        }
+		if (e.kind === 'observe' && s.community.rounds.find(r=>r.id === e.round)?.metric === 'vs_virus_ratio') {
+            const observation = s.community.rounds.find(r=>r.id === e.round)?.observations.find(o=>o.id === e.id);
+            requireThat(observation, 'Observation missing');
+            observation.malware = validateMalware(e.malware);
+        }
 		if (e.kind === 'enrol') s.balances[e.member] = '0';
 		if (e.kind === 'reinstate')
 			requireThat(!s.revoked.includes(e.member), 'Revoked keys cannot be reinstated');
@@ -394,7 +456,8 @@ export function applyPilot(
 				bounty: e.bounty,
 				repository: e.repository.toLowerCase(),
 				version: e.version,
-				...(e.method === 'libraries-project-v1'
+				...(e.stackOverflowTag ? {stackOverflowTag:e.stackOverflowTag} : {}),
+				...(e.method === 'libraries-project-v1' || e.method === 'osv-kev-v1' || e.method === 'clamav-pypi-v1'
 					? { packagePlatform: e.packagePlatform, packageName: e.packageName }
 					: {}),
 				closedAt: null,
@@ -496,7 +559,7 @@ function memberReviewHeights(s: PilotState): Map<string, number> {
 	}
 	return heights;
 }
-function confirmationHeight(s: PilotState, r: Round, reviews: Map<string, number>): number | null {
+export function confirmationHeight(s: PilotState, r: Round, reviews: Map<string, number> = memberReviewHeights(s)): number | null {
 	const closedHeight = s.escrows[r.id]?.closedHeight;
 	if (!r.closed || closedHeight == null) return null;
 	// Include every observer: reinstating a former non-supporter can change agreement.

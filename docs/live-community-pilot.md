@@ -1,3 +1,5 @@
+> Scoring update: [asymmetric trust scoring](scoring-v2.md) supersedes the scoring descriptions below and adds OSV/CISA security snapshots plus explicitly mapped Stack Overflow collection. Earlier numeric results and 480-target counts are historical; the expanded plan contains 14 possible metric types per package.
+
 > Collection extension: [full collection and daily refresh](collection-and-refresh.md) documents the expanded publisher and audit-capacity upgrade. Earlier operational limits below describe the pre-extension implementation.
 
 > Current upgrade: [availability-aware assignment](availability-aware-assignment.md) adds expiring availability, a verified future beacon and fixed reserves. The commit/reveal description below remains relevant to historical rounds.

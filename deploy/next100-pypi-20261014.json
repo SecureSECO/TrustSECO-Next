@@ -1,0 +1,755 @@
+{
+  "network": "trustseco-8b7bb864",
+  "rankingSource": "https://hugovk.dev/top-pypi-packages/top-pypi-packages.min.json",
+  "rankingUpdated": "2026-10-01 12:40:51",
+  "selection": "Next 100 representable PyPI packages after the first 50, by October 2026 download ranking; exact versions resolved 2026-10-14",
+  "skipped": [
+    {
+      "name": "grpcio-status",
+      "downloadRank": 85,
+      "reason": "No GitHub repository in PyPI project links"
+    },
+    {
+      "name": "beautifulsoup4",
+      "downloadRank": 99,
+      "reason": "No GitHub repository in PyPI project links"
+    },
+    {
+      "name": "openpyxl",
+      "downloadRank": 105,
+      "reason": "No GitHub repository in PyPI project links"
+    },
+    {
+      "name": "et-xmlfile",
+      "downloadRank": 106,
+      "reason": "No GitHub repository in PyPI project links"
+    },
+    {
+      "name": "opentelemetry-sdk",
+      "downloadRank": 109,
+      "reason": "Repository/version already represents opentelemetry-api"
+    },
+    {
+      "name": "httpcore2",
+      "downloadRank": 130,
+      "reason": "Repository/version already represents httpx2"
+    },
+    {
+      "name": "opentelemetry-proto",
+      "downloadRank": 133,
+      "reason": "Repository/version already represents opentelemetry-api"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-common",
+      "downloadRank": 142,
+      "reason": "Repository/version already represents opentelemetry-api"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-http",
+      "downloadRank": 157,
+      "reason": "Repository/version already represents opentelemetry-api"
+    }
+  ],
+  "packages": [
+    {
+      "repository": "aio-libs/aiohttp",
+      "name": "aiohttp",
+      "platform": "Pypi",
+      "version": "3.14.5",
+      "downloadRank": 51
+    },
+    {
+      "repository": "textualize/rich",
+      "name": "rich",
+      "platform": "Pypi",
+      "version": "15.0.0",
+      "downloadRank": 52
+    },
+    {
+      "repository": "python-poetry/tomlkit",
+      "name": "tomlkit",
+      "platform": "Pypi",
+      "version": "0.15.1",
+      "downloadRank": 53
+    },
+    {
+      "repository": "executablebooks/markdown-it-py",
+      "name": "markdown-it-py",
+      "platform": "Pypi",
+      "version": "4.2.0",
+      "downloadRank": 54
+    },
+    {
+      "repository": "aio-libs/propcache",
+      "name": "propcache",
+      "platform": "Pypi",
+      "version": "0.5.4",
+      "downloadRank": 55
+    },
+    {
+      "repository": "python-jsonschema/referencing",
+      "name": "referencing",
+      "platform": "Pypi",
+      "version": "0.37.0",
+      "downloadRank": 56
+    },
+    {
+      "repository": "python-jsonschema/jsonschema-specifications",
+      "name": "jsonschema-specifications",
+      "platform": "Pypi",
+      "version": "2025.9.1",
+      "downloadRank": 57
+    },
+    {
+      "repository": "executablebooks/mdurl",
+      "name": "mdurl",
+      "platform": "Pypi",
+      "version": "0.1.2",
+      "downloadRank": 58
+    },
+    {
+      "repository": "python-pillow/pillow",
+      "name": "pillow",
+      "platform": "Pypi",
+      "version": "12.3.0",
+      "downloadRank": 59
+    },
+    {
+      "repository": "open-telemetry/opentelemetry-python",
+      "name": "opentelemetry-api",
+      "platform": "Pypi",
+      "version": "1.45.1",
+      "downloadRank": 60
+    },
+    {
+      "repository": "aio-libs/frozenlist",
+      "name": "frozenlist",
+      "platform": "Pypi",
+      "version": "1.8.0",
+      "downloadRank": 61
+    },
+    {
+      "repository": "tqdm/tqdm",
+      "name": "tqdm",
+      "platform": "Pypi",
+      "version": "4.70.1",
+      "downloadRank": 62
+    },
+    {
+      "repository": "pypa/pip",
+      "name": "pip",
+      "platform": "Pypi",
+      "version": "26.2.1",
+      "downloadRank": 63
+    },
+    {
+      "repository": "googleapis/google-cloud-python",
+      "name": "googleapis-common-protos",
+      "platform": "Pypi",
+      "version": "1.75.5",
+      "downloadRank": 64
+    },
+    {
+      "repository": "pyasn1/pyasn1",
+      "name": "pyasn1",
+      "platform": "Pypi",
+      "version": "0.6.4",
+      "downloadRank": 65
+    },
+    {
+      "repository": "aio-libs/aiosignal",
+      "name": "aiosignal",
+      "platform": "Pypi",
+      "version": "1.4.0",
+      "downloadRank": 66
+    },
+    {
+      "repository": "aio-libs/aiohappyeyeballs",
+      "name": "aiohappyeyeballs",
+      "platform": "Pypi",
+      "version": "2.7.1",
+      "downloadRank": 67
+    },
+    {
+      "repository": "python-websockets/websockets",
+      "name": "websockets",
+      "platform": "Pypi",
+      "version": "17.2",
+      "downloadRank": 68
+    },
+    {
+      "repository": "fastapi/annotated-doc",
+      "name": "annotated-doc",
+      "platform": "Pypi",
+      "version": "0.0.5",
+      "downloadRank": 69
+    },
+    {
+      "repository": "grahamdumpleton/wrapt",
+      "name": "wrapt",
+      "platform": "Pypi",
+      "version": "2.5.1",
+      "downloadRank": 70
+    },
+    {
+      "repository": "stub42/pytz",
+      "name": "pytz",
+      "platform": "Pypi",
+      "version": "2026.5",
+      "downloadRank": 71
+    },
+    {
+      "repository": "python-trio/sniffio",
+      "name": "sniffio",
+      "platform": "Pypi",
+      "version": "1.3.1",
+      "downloadRank": 72
+    },
+    {
+      "repository": "python/tzdata",
+      "name": "tzdata",
+      "platform": "Pypi",
+      "version": "2026.5",
+      "downloadRank": 73
+    },
+    {
+      "repository": "fastapi/fastapi",
+      "name": "fastapi",
+      "platform": "Pypi",
+      "version": "0.143.0",
+      "downloadRank": 74
+    },
+    {
+      "repository": "googleapis/google-cloud-python",
+      "name": "google-auth",
+      "platform": "Pypi",
+      "version": "2.62.0",
+      "downloadRank": 75
+    },
+    {
+      "repository": "jaraco/zipp",
+      "name": "zipp",
+      "platform": "Pypi",
+      "version": "4.1.1",
+      "downloadRank": 76
+    },
+    {
+      "repository": "python-greenlet/greenlet",
+      "name": "greenlet",
+      "platform": "Pypi",
+      "version": "3.5.6",
+      "downloadRank": 77
+    },
+    {
+      "repository": "python/importlib_metadata",
+      "name": "importlib-metadata",
+      "platform": "Pypi",
+      "version": "9.0.1",
+      "downloadRank": 78
+    },
+    {
+      "repository": "pydantic/pydantic-settings",
+      "name": "pydantic-settings",
+      "platform": "Pypi",
+      "version": "2.15.0",
+      "downloadRank": 79
+    },
+    {
+      "repository": "pypa/wheel",
+      "name": "wheel",
+      "platform": "Pypi",
+      "version": "0.48.0",
+      "downloadRank": 80
+    },
+    {
+      "repository": "jd/tenacity",
+      "name": "tenacity",
+      "platform": "Pypi",
+      "version": "9.2.1",
+      "downloadRank": 81
+    },
+    {
+      "repository": "pypa/trove-classifiers",
+      "name": "trove-classifiers",
+      "platform": "Pypi",
+      "version": "2026.9.21.13",
+      "downloadRank": 82
+    },
+    {
+      "repository": "kludex/python-multipart",
+      "name": "python-multipart",
+      "platform": "Pypi",
+      "version": "0.0.32",
+      "downloadRank": 83
+    },
+    {
+      "repository": "pyasn1/pyasn1-modules",
+      "name": "pyasn1-modules",
+      "platform": "Pypi",
+      "version": "0.4.2",
+      "downloadRank": 84
+    },
+    {
+      "repository": "apache/arrow",
+      "name": "pyarrow",
+      "platform": "Pypi",
+      "version": "26.0.0",
+      "downloadRank": 86
+    },
+    {
+      "repository": "sqlalchemy/sqlalchemy",
+      "name": "SQLAlchemy",
+      "platform": "Pypi",
+      "version": "2.1.4",
+      "downloadRank": 87
+    },
+    {
+      "repository": "pypa/hatch",
+      "name": "hatchling",
+      "platform": "Pypi",
+      "version": "1.32.4",
+      "downloadRank": 88
+    },
+    {
+      "repository": "grpc/grpc",
+      "name": "grpcio",
+      "platform": "Pypi",
+      "version": "1.84.0",
+      "downloadRank": 89
+    },
+    {
+      "repository": "pyparsing/pyparsing",
+      "name": "pyparsing",
+      "platform": "Pypi",
+      "version": "3.3.3",
+      "downloadRank": 90
+    },
+    {
+      "repository": "lxml/lxml",
+      "name": "lxml",
+      "platform": "Pypi",
+      "version": "6.1.3",
+      "downloadRank": 91
+    },
+    {
+      "repository": "pydantic/jiter",
+      "name": "jiter",
+      "platform": "Pypi",
+      "version": "0.17.0",
+      "downloadRank": 92
+    },
+    {
+      "repository": "mrabarnett/mrab-regex",
+      "name": "regex",
+      "platform": "Pypi",
+      "version": "2026.9.29",
+      "downloadRank": 93
+    },
+    {
+      "repository": "samuelcolvin/watchfiles",
+      "name": "watchfiles",
+      "platform": "Pypi",
+      "version": "1.3.0",
+      "downloadRank": 94
+    },
+    {
+      "repository": "fsspec/s3fs",
+      "name": "s3fs",
+      "platform": "Pypi",
+      "version": "2026.9.0",
+      "downloadRank": 95
+    },
+    {
+      "repository": "astral-sh/ruff",
+      "name": "ruff",
+      "platform": "Pypi",
+      "version": "0.17.0",
+      "downloadRank": 96
+    },
+    {
+      "repository": "scipy/scipy",
+      "name": "scipy",
+      "platform": "Pypi",
+      "version": "1.18.1",
+      "downloadRank": 97
+    },
+    {
+      "repository": "facelessuser/soupsieve",
+      "name": "soupsieve",
+      "platform": "Pypi",
+      "version": "3.0.3",
+      "downloadRank": 98
+    },
+    {
+      "repository": "openai/openai-python",
+      "name": "openai",
+      "platform": "Pypi",
+      "version": "3.31.0",
+      "downloadRank": 100
+    },
+    {
+      "repository": "googleapis/google-cloud-python",
+      "name": "google-api-core",
+      "platform": "Pypi",
+      "version": "2.42.0",
+      "downloadRank": 101
+    },
+    {
+      "repository": "open-telemetry/opentelemetry-python",
+      "name": "opentelemetry-semantic-conventions",
+      "platform": "Pypi",
+      "version": "0.66b1",
+      "downloadRank": 102
+    },
+    {
+      "repository": "giampaolo/psutil",
+      "name": "psutil",
+      "platform": "Pypi",
+      "version": "7.2.2",
+      "downloadRank": 103
+    },
+    {
+      "repository": "coveragepy/coveragepy",
+      "name": "coverage",
+      "platform": "Pypi",
+      "version": "7.16.2",
+      "downloadRank": 104
+    },
+    {
+      "repository": "hukkin/tomli",
+      "name": "tomli",
+      "platform": "Pypi",
+      "version": "2.5.0",
+      "downloadRank": 107
+    },
+    {
+      "repository": "python-distro/distro",
+      "name": "distro",
+      "platform": "Pypi",
+      "version": "1.9.0",
+      "downloadRank": 108
+    },
+    {
+      "repository": "sarugaku/shellingham",
+      "name": "shellingham",
+      "platform": "Pypi",
+      "version": "1.5.4",
+      "downloadRank": 110
+    },
+    {
+      "repository": "python/mypy_extensions",
+      "name": "mypy-extensions",
+      "platform": "Pypi",
+      "version": "1.1.0",
+      "downloadRank": 111
+    },
+    {
+      "repository": "tartley/colorama",
+      "name": "colorama",
+      "platform": "Pypi",
+      "version": "0.4.6",
+      "downloadRank": 112
+    },
+    {
+      "repository": "googleapis/google-cloud-python",
+      "name": "proto-plus",
+      "platform": "Pypi",
+      "version": "1.29.0",
+      "downloadRank": 113
+    },
+    {
+      "repository": "fastapi/typer",
+      "name": "typer",
+      "platform": "Pypi",
+      "version": "0.27.3",
+      "downloadRank": 114
+    },
+    {
+      "repository": "requests/requests-oauthlib",
+      "name": "requests-oauthlib",
+      "platform": "Pypi",
+      "version": "2.0.0",
+      "downloadRank": 115
+    },
+    {
+      "repository": "pypa/virtualenv",
+      "name": "virtualenv",
+      "platform": "Pypi",
+      "version": "21.14.7",
+      "downloadRank": 116
+    },
+    {
+      "repository": "fastai/ghapi",
+      "name": "ghapi",
+      "platform": "Pypi",
+      "version": "2.1.4",
+      "downloadRank": 117
+    },
+    {
+      "repository": "jquast/wcwidth",
+      "name": "wcwidth",
+      "platform": "Pypi",
+      "version": "0.9.2",
+      "downloadRank": 118
+    },
+    {
+      "repository": "tkem/cachetools",
+      "name": "cachetools",
+      "platform": "Pypi",
+      "version": "7.2.1",
+      "downloadRank": 119
+    },
+    {
+      "repository": "agronholm/exceptiongroup",
+      "name": "exceptiongroup",
+      "platform": "Pypi",
+      "version": "1.3.1",
+      "downloadRank": 120
+    },
+    {
+      "repository": "modelcontextprotocol/python-sdk",
+      "name": "mcp",
+      "platform": "Pypi",
+      "version": "2.3.0",
+      "downloadRank": 121
+    },
+    {
+      "repository": "huggingface/huggingface_hub",
+      "name": "huggingface-hub",
+      "platform": "Pypi",
+      "version": "2.2.0",
+      "downloadRank": 122
+    },
+    {
+      "repository": "sysid/sse-starlette",
+      "name": "sse-starlette",
+      "platform": "Pypi",
+      "version": "3.5.0",
+      "downloadRank": 123
+    },
+    {
+      "repository": "sethmlarson/truststore",
+      "name": "truststore",
+      "platform": "Pypi",
+      "version": "0.10.5",
+      "downloadRank": 124
+    },
+    {
+      "repository": "more-itertools/more-itertools",
+      "name": "more-itertools",
+      "platform": "Pypi",
+      "version": "11.2.0",
+      "downloadRank": 125
+    },
+    {
+      "repository": "rthalley/dnspython",
+      "name": "dnspython",
+      "platform": "Pypi",
+      "version": "2.9.0",
+      "downloadRank": 126
+    },
+    {
+      "repository": "oauthlib/oauthlib",
+      "name": "oauthlib",
+      "platform": "Pypi",
+      "version": "4.0.0",
+      "downloadRank": 127
+    },
+    {
+      "repository": "pytest-dev/pytest-asyncio",
+      "name": "pytest-asyncio",
+      "platform": "Pypi",
+      "version": "1.4.0",
+      "downloadRank": 128
+    },
+    {
+      "repository": "pydantic/httpx2",
+      "name": "httpx2",
+      "platform": "Pypi",
+      "version": "2.13.1",
+      "downloadRank": 129
+    },
+    {
+      "repository": "pypa/distlib",
+      "name": "distlib",
+      "platform": "Pypi",
+      "version": "0.4.3",
+      "downloadRank": 131
+    },
+    {
+      "repository": "pfmoore/editables",
+      "name": "editables",
+      "platform": "Pypi",
+      "version": "0.6",
+      "downloadRank": 132
+    },
+    {
+      "repository": "magicstack/httptools",
+      "name": "httptools",
+      "platform": "Pypi",
+      "version": "0.9.0",
+      "downloadRank": 134
+    },
+    {
+      "repository": "grantjenks/python-sortedcontainers",
+      "name": "sortedcontainers",
+      "platform": "Pypi",
+      "version": "2.4.0",
+      "downloadRank": 135
+    },
+    {
+      "repository": "magicstack/uvloop",
+      "name": "uvloop",
+      "platform": "Pypi",
+      "version": "0.23.0",
+      "downloadRank": 136
+    },
+    {
+      "repository": "rr-/docstring_parser",
+      "name": "docstring-parser",
+      "platform": "Pypi",
+      "version": "0.18.0",
+      "downloadRank": 137
+    },
+    {
+      "repository": "psycopg/psycopg2",
+      "name": "psycopg2-binary",
+      "platform": "Pypi",
+      "version": "2.9.13",
+      "downloadRank": 138
+    },
+    {
+      "repository": "pytest-dev/pytest-cov",
+      "name": "pytest-cov",
+      "platform": "Pypi",
+      "version": "7.1.0",
+      "downloadRank": 139
+    },
+    {
+      "repository": "redis/redis-py",
+      "name": "redis",
+      "platform": "Pypi",
+      "version": "8.1.0",
+      "downloadRank": 140
+    },
+    {
+      "repository": "networkx/networkx",
+      "name": "networkx",
+      "platform": "Pypi",
+      "version": "3.7",
+      "downloadRank": 141
+    },
+    {
+      "repository": "tiran/defusedxml",
+      "name": "defusedxml",
+      "platform": "Pypi",
+      "version": "0.7.1",
+      "downloadRank": 143
+    },
+    {
+      "repository": "requests/toolbelt",
+      "name": "requests-toolbelt",
+      "platform": "Pypi",
+      "version": "1.0.0",
+      "downloadRank": 144
+    },
+    {
+      "repository": "msgpack/msgpack-python",
+      "name": "msgpack",
+      "platform": "Pypi",
+      "version": "1.2.3",
+      "downloadRank": 145
+    },
+    {
+      "repository": "fonttools/fonttools",
+      "name": "fonttools",
+      "platform": "Pypi",
+      "version": "4.66.1",
+      "downloadRank": 146
+    },
+    {
+      "repository": "sybrenstuvel/python-rsa",
+      "name": "rsa",
+      "platform": "Pypi",
+      "version": "4.9.1",
+      "downloadRank": 147
+    },
+    {
+      "repository": "huggingface/xet-core",
+      "name": "hf-xet",
+      "platform": "Pypi",
+      "version": "1.7.0",
+      "downloadRank": 148
+    },
+    {
+      "repository": "pallets/werkzeug",
+      "name": "Werkzeug",
+      "platform": "Pypi",
+      "version": "3.1.9",
+      "downloadRank": 149
+    },
+    {
+      "repository": "scikit-learn/scikit-learn",
+      "name": "scikit-learn",
+      "platform": "Pypi",
+      "version": "1.9.1",
+      "downloadRank": 150
+    },
+    {
+      "repository": "prompt-toolkit/python-prompt-toolkit",
+      "name": "prompt_toolkit",
+      "platform": "Pypi",
+      "version": "3.0.53",
+      "downloadRank": 151
+    },
+    {
+      "repository": "sqlalchemy/mako",
+      "name": "Mako",
+      "platform": "Pypi",
+      "version": "1.4.3",
+      "downloadRank": 152
+    },
+    {
+      "repository": "ijl/orjson",
+      "name": "orjson",
+      "platform": "Pypi",
+      "version": "3.13.0",
+      "downloadRank": 153
+    },
+    {
+      "repository": "sqlalchemy/alembic",
+      "name": "alembic",
+      "platform": "Pypi",
+      "version": "1.20.0",
+      "downloadRank": 154
+    },
+    {
+      "repository": "openai/tiktoken",
+      "name": "tiktoken",
+      "platform": "Pypi",
+      "version": "0.14.0",
+      "downloadRank": 155
+    },
+    {
+      "repository": "pyca/pyopenssl",
+      "name": "pyOpenSSL",
+      "platform": "Pypi",
+      "version": "26.4.0",
+      "downloadRank": 156
+    },
+    {
+      "repository": "ekalinin/nodeenv",
+      "name": "nodeenv",
+      "platform": "Pypi",
+      "version": "1.11.0",
+      "downloadRank": 158
+    },
+    {
+      "repository": "joblib/threadpoolctl",
+      "name": "threadpoolctl",
+      "platform": "Pypi",
+      "version": "3.7.0",
+      "downloadRank": 159
+    }
+  ]
+}

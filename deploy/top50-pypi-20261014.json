@@ -1,0 +1,359 @@
+{
+  "network": "trustseco-8b7bb864",
+  "demo": false,
+  "selection": "Top 50 PyPI projects by downloads, October 2026 ranking; current exact PyPI versions resolved 2026-10-14",
+  "rankingSource": "https://hugovk.dev/top-pypi-packages/top-pypi-packages.min.json",
+  "rankingUpdated": "2026-10-01 12:40:51",
+  "packages": [
+    {
+      "repository": "boto/boto3",
+      "name": "boto3",
+      "platform": "Pypi",
+      "version": "1.43.113",
+      "downloadRank": 1
+    },
+    {
+      "repository": "pypa/packaging",
+      "name": "packaging",
+      "platform": "Pypi",
+      "version": "26.3",
+      "downloadRank": 2
+    },
+    {
+      "repository": "python/typing_extensions",
+      "name": "typing-extensions",
+      "platform": "Pypi",
+      "version": "4.16.0",
+      "downloadRank": 3
+    },
+    {
+      "repository": "kjd/idna",
+      "name": "idna",
+      "platform": "Pypi",
+      "version": "3.20",
+      "downloadRank": 4
+    },
+    {
+      "repository": "urllib3/urllib3",
+      "name": "urllib3",
+      "platform": "Pypi",
+      "version": "2.8.0",
+      "downloadRank": 5
+    },
+    {
+      "repository": "certifi/python-certifi",
+      "name": "certifi",
+      "platform": "Pypi",
+      "version": "2026.7.22",
+      "downloadRank": 6
+    },
+    {
+      "repository": "psf/requests",
+      "name": "requests",
+      "platform": "Pypi",
+      "version": "2.34.2",
+      "downloadRank": 7
+    },
+    {
+      "repository": "jawah/charset_normalizer",
+      "name": "charset-normalizer",
+      "platform": "Pypi",
+      "version": "3.5.2",
+      "downloadRank": 8
+    },
+    {
+      "repository": "pyca/cryptography",
+      "name": "cryptography",
+      "platform": "Pypi",
+      "version": "50.0.2",
+      "downloadRank": 9
+    },
+    {
+      "repository": "pypa/setuptools",
+      "name": "setuptools",
+      "platform": "Pypi",
+      "version": "84.0.0",
+      "downloadRank": 10
+    },
+    {
+      "repository": "python-cffi/cffi",
+      "name": "cffi",
+      "platform": "Pypi",
+      "version": "2.1.1",
+      "downloadRank": 11
+    },
+    {
+      "repository": "pygments/pygments",
+      "name": "Pygments",
+      "platform": "Pypi",
+      "version": "2.21.0",
+      "downloadRank": 12
+    },
+    {
+      "repository": "yaml/pyyaml",
+      "name": "PyYAML",
+      "platform": "Pypi",
+      "version": "6.0.3",
+      "downloadRank": 13
+    },
+    {
+      "repository": "dateutil/dateutil",
+      "name": "python-dateutil",
+      "platform": "Pypi",
+      "version": "2.9.0.post0",
+      "downloadRank": 14
+    },
+    {
+      "repository": "benjaminp/six",
+      "name": "six",
+      "platform": "Pypi",
+      "version": "1.17.0",
+      "downloadRank": 15
+    },
+    {
+      "repository": "pytest-dev/pluggy",
+      "name": "pluggy",
+      "platform": "Pypi",
+      "version": "1.6.0",
+      "downloadRank": 16
+    },
+    {
+      "repository": "boto/botocore",
+      "name": "botocore",
+      "platform": "Pypi",
+      "version": "1.43.113",
+      "downloadRank": 17
+    },
+    {
+      "repository": "pydantic/pydantic",
+      "name": "pydantic",
+      "platform": "Pypi",
+      "version": "2.14.1",
+      "downloadRank": 18
+    },
+    {
+      "repository": "eliben/pycparser",
+      "name": "pycparser",
+      "platform": "Pypi",
+      "version": "3.11",
+      "downloadRank": 19
+    },
+    {
+      "repository": "pallets/click",
+      "name": "click",
+      "platform": "Pypi",
+      "version": "8.5.0",
+      "downloadRank": 20
+    },
+    {
+      "repository": "pydantic/pydantic",
+      "name": "pydantic_core",
+      "platform": "Pypi",
+      "version": "2.50.1",
+      "downloadRank": 21
+    },
+    {
+      "repository": "agronholm/anyio",
+      "name": "anyio",
+      "platform": "Pypi",
+      "version": "4.15.1",
+      "downloadRank": 22
+    },
+    {
+      "repository": "numpy/numpy",
+      "name": "numpy",
+      "platform": "Pypi",
+      "version": "2.5.4",
+      "downloadRank": 23
+    },
+    {
+      "repository": "pytest-dev/pytest",
+      "name": "pytest",
+      "platform": "Pypi",
+      "version": "9.1.1",
+      "downloadRank": 24
+    },
+    {
+      "repository": "pytest-dev/iniconfig",
+      "name": "iniconfig",
+      "platform": "Pypi",
+      "version": "2.3.1",
+      "downloadRank": 25
+    },
+    {
+      "repository": "annotated-types/annotated-types",
+      "name": "annotated-types",
+      "platform": "Pypi",
+      "version": "0.8.0",
+      "downloadRank": 26
+    },
+    {
+      "repository": "python-hyper/h11",
+      "name": "h11",
+      "platform": "Pypi",
+      "version": "0.16.0",
+      "downloadRank": 27
+    },
+    {
+      "repository": "pydantic/typing-inspection",
+      "name": "typing-inspection",
+      "platform": "Pypi",
+      "version": "0.4.4",
+      "downloadRank": 28
+    },
+    {
+      "repository": "python-attrs/attrs",
+      "name": "attrs",
+      "platform": "Pypi",
+      "version": "26.1.0",
+      "downloadRank": 29
+    },
+    {
+      "repository": "boto/s3transfer",
+      "name": "s3transfer",
+      "platform": "Pypi",
+      "version": "0.19.2",
+      "downloadRank": 30
+    },
+    {
+      "repository": "aio-libs/aiobotocore",
+      "name": "aiobotocore",
+      "platform": "Pypi",
+      "version": "3.9.2",
+      "downloadRank": 31
+    },
+    {
+      "repository": "protocolbuffers/protobuf",
+      "name": "protobuf",
+      "platform": "Pypi",
+      "version": "7.36.2",
+      "downloadRank": 32
+    },
+    {
+      "repository": "encode/httpx",
+      "name": "httpx",
+      "platform": "Pypi",
+      "version": "0.28.1",
+      "downloadRank": 33
+    },
+    {
+      "repository": "pallets/markupsafe",
+      "name": "MarkupSafe",
+      "platform": "Pypi",
+      "version": "3.0.4",
+      "downloadRank": 34
+    },
+    {
+      "repository": "encode/httpcore",
+      "name": "httpcore",
+      "platform": "Pypi",
+      "version": "1.0.9",
+      "downloadRank": 35
+    },
+    {
+      "repository": "theskumar/python-dotenv",
+      "name": "python-dotenv",
+      "platform": "Pypi",
+      "version": "1.2.4",
+      "downloadRank": 36
+    },
+    {
+      "repository": "jpadilla/pyjwt",
+      "name": "PyJWT",
+      "platform": "Pypi",
+      "version": "2.15.1",
+      "downloadRank": 37
+    },
+    {
+      "repository": "tox-dev/platformdirs",
+      "name": "platformdirs",
+      "platform": "Pypi",
+      "version": "4.13.0",
+      "downloadRank": 38
+    },
+    {
+      "repository": "fsspec/filesystem_spec",
+      "name": "fsspec",
+      "platform": "Pypi",
+      "version": "2026.9.0",
+      "downloadRank": 39
+    },
+    {
+      "repository": "pandas-dev/pandas",
+      "name": "pandas",
+      "platform": "Pypi",
+      "version": "3.0.6",
+      "downloadRank": 40
+    },
+    {
+      "repository": "pallets/jinja",
+      "name": "Jinja2",
+      "platform": "Pypi",
+      "version": "3.1.6",
+      "downloadRank": 41
+    },
+    {
+      "repository": "jmespath/jmespath.py",
+      "name": "jmespath",
+      "platform": "Pypi",
+      "version": "1.1.0",
+      "downloadRank": 42
+    },
+    {
+      "repository": "cpburnz/python-pathspec",
+      "name": "pathspec",
+      "platform": "Pypi",
+      "version": "1.1.1",
+      "downloadRank": 43
+    },
+    {
+      "repository": "tox-dev/py-filelock",
+      "name": "filelock",
+      "platform": "Pypi",
+      "version": "4.1.1",
+      "downloadRank": 44
+    },
+    {
+      "repository": "kludex/starlette",
+      "name": "starlette",
+      "platform": "Pypi",
+      "version": "1.8.0",
+      "downloadRank": 45
+    },
+    {
+      "repository": "kludex/uvicorn",
+      "name": "uvicorn",
+      "platform": "Pypi",
+      "version": "0.54.0",
+      "downloadRank": 46
+    },
+    {
+      "repository": "aio-libs/multidict",
+      "name": "multidict",
+      "platform": "Pypi",
+      "version": "7.1.0",
+      "downloadRank": 47
+    },
+    {
+      "repository": "python-jsonschema/jsonschema",
+      "name": "jsonschema",
+      "platform": "Pypi",
+      "version": "4.26.0",
+      "downloadRank": 48
+    },
+    {
+      "repository": "crate-py/rpds",
+      "name": "rpds-py",
+      "platform": "Pypi",
+      "version": "2026.9.1",
+      "downloadRank": 49
+    },
+    {
+      "repository": "aio-libs/yarl",
+      "name": "yarl",
+      "platform": "Pypi",
+      "version": "1.25.1",
+      "downloadRank": 50
+    }
+  ]
+}

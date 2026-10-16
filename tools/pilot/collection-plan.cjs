@@ -1,19 +1,26 @@
 // Shared scheduling/read projection. No credentials, network calls or writes.
 const {createHash}=require('node:crypto');
-const METRICS=['lib_sourcerank','lib_release_count','gh_open_issues_count','lib_dependent_count','lib_dependency_count','gh_contributor_count','lib_contributor_count','lib_first_release_date','lib_latest_release_date','lib_release_frequency','gh_yearly_commit_count','gh_owner_stargazer_count'];
+const {canonicalEcosystem}=require('./security.cjs');
+const {stackOverflowTag}=require('./stackoverflow-tags.cjs');
+const METRICS=['security_advisories','vs_virus_ratio','so_popularity','lib_sourcerank','lib_release_count','gh_open_issues_count','lib_dependent_count','lib_dependency_count','gh_contributor_count','lib_contributor_count','lib_first_release_date','lib_latest_release_date','lib_release_frequency','gh_yearly_commit_count','gh_owner_stargazer_count'];
 const REFRESH_SECONDS=86400, MAX_CONCURRENT=4;
 function targets(network,packages,rounds,at){
  const byFact=new Map();
  for(const r of rounds){const k=JSON.stringify([r.escrow.repository.toLowerCase(),r.escrow.version,r.metric]);byFact.set(k,r);}
- return METRICS.flatMap(metric=>packages.map(p=>{
+ return METRICS.flatMap(metric=>packages.map(original=>{
+  const p={...original,stackOverflowTag:stackOverflowTag(original)};
   const repository=p.repository.toLowerCase(),previous=byFact.get(JSON.stringify([repository,p.version,metric]));
-  const registry=metric.startsWith('lib_')&&metric!=='lib_contributor_count';
+  const registry=(metric.startsWith('lib_')&&metric!=='lib_contributor_count')||metric==='security_advisories'||metric==='vs_virus_ratio';
   let applicable=/^[\w.-]+\/[\w.-]+$/.test(repository)&&typeof p.version==='string'&&!!p.version;
-  if(registry)try{require('./libraries.cjs').targetPath({packagePlatform:p.platform,packageName:p.name,version:p.version});}catch{applicable=false;}
+  if(registry&&metric!=='security_advisories')try{require('./libraries.cjs').targetPath({packagePlatform:p.platform,packageName:p.name,version:p.version});}catch{applicable=false;}
+  if(metric==='so_popularity'&&!/^[a-z0-9][a-z0-9.+#-]{0,59}$/.test(p.stackOverflowTag||''))applicable=false;
+  if(metric==='security_advisories'&&(typeof p.name!=='string'||!p.name||p.version==='latest'))applicable=false;
+  if(metric==='vs_virus_ratio'&&canonicalEcosystem(p.platform)!=='PyPI')applicable=false;
+  if(metric==='security_advisories'&&!['PyPI','npm','Go','crates.io','Maven','NuGet','RubyGems','Packagist','Hex','Pub'].includes(canonicalEcosystem(p.platform)))applicable=false;
   const dueAt=previous?previous.openedAt+REFRESH_SECONDS:0;
   const id='collect-'+createHash('sha256').update(JSON.stringify([network,repository,p.version,metric,previous?.id||'initial'])).digest('hex').slice(0,40);
   const status=!applicable?'unavailable':!previous?'queued':!previous.closed?'collecting':previous.result.status==='verified'?'verified':previous.result.status==='disputed'?'disputed':previous.escrow.failures&&Object.keys(previous.escrow.failures).length?'source-unavailable':'insufficient-contributors';
-  return {repository,version:p.version,metric,status,dueAt,previous,applicable,ready:applicable&&(!previous||(previous.closed&&at>=dueAt)),event:{kind:'open',round:id,package:repository,repository,version:p.version,metric,source:metric.startsWith('lib_')?'Libraries.io REST':'GitHub REST',method:registry?'libraries-project-v1':metric.startsWith('lib_')?'libraries-repository-v1':'github-rest-v1',...(registry?{packagePlatform:p.platform,packageName:p.name}:{}),...(previous?{refreshOf:previous.id}:{}),duration:900,bounty:'300'}};
+  return {repository,version:p.version,metric,status,...(!applicable?{unavailableReason:metric==='so_popularity'?'No reviewed package-specific Stack Overflow tag; broad topic tags are not substituted':'Unsupported or incomplete collection target'}:{}),dueAt,previous,applicable,ready:applicable&&(!previous||(previous.closed&&at>=dueAt)),event:{kind:'open',round:id,package:repository,repository,version:p.version,metric,source:metric==='vs_virus_ratio'?'ClamAV':metric==='security_advisories'?'OSV + CISA KEV':metric==='so_popularity'?'Stack Exchange API':metric.startsWith('lib_')?'Libraries.io REST':'GitHub REST',method:metric==='vs_virus_ratio'?'clamav-pypi-v1':metric==='security_advisories'?'osv-kev-v1':metric==='so_popularity'?'stackoverflow-share-ppm-v1':registry?'libraries-project-v1':metric.startsWith('lib_')?'libraries-repository-v1':'github-rest-v1',...(registry?{packagePlatform:metric==='security_advisories'?canonicalEcosystem(p.platform):p.platform,packageName:p.name}:{}),...(p.stackOverflowTag&&metric==='so_popularity'?{stackOverflowTag:p.stackOverflowTag}:{}),...(previous?{refreshOf:previous.id}:{}),duration:900,bounty:'300'}};
  }));
 }
 function summary(state,packages){
@@ -21,7 +28,7 @@ function summary(state,packages){
  const count=status=>items.filter(t=>t.status===status).length;
  return {entries:items.map(({previous,event,...t})=>({...t,round:previous?.id,failures:previous?.escrow.failures||{}})),total:items.length,queued:count('queued'),collecting:count('collecting'),verified:count('verified'),disputed:count('disputed'),unavailable:count('unavailable')+count('source-unavailable'),insufficient:count('insufficient-contributors'),maxConcurrent:MAX_CONCURRENT,refreshSeconds:REFRESH_SECONDS,availableContributors:state.availableContributors,waitingForContributors:state.availableContributors<3};
 }
-function next(state,packages){
+function next(state,packages,options={}){
  if(state.policy.collection!=='scheduled-v1')return {reason:'Waiting for coordinated collection-policy activation'};
  const ready=state.members.filter(m=>!m.revoked&&!m.suspended&&state.availability?.[m.id]?.until>state.at+60&&state.availability[m.id].height<=state.ledger.finalizedHeight);
  if(ready.length<3)return {reason:'Waiting for three available contributors'};
@@ -32,7 +39,13 @@ function next(state,packages){
  const open=state.rounds.filter(r=>!r.closed);
  const attempts=Object.fromEntries(METRICS.map(metric=>[metric,planned.filter(t=>t.metric===metric&&t.previous).length]));
  const candidates=planned.filter(t=>t.ready&&!open.some(r=>r.metric===t.metric)&&open.filter(r=>r.source===t.event.source).length<2);
- candidates.sort((a,b)=>Number(!!a.previous)-Number(!!b.previous)||attempts[a.metric]-attempts[b.metric]);
+ // Demo mode finishes score evidence for the selected packages before auxiliary metrics.
+ // Due refreshes retain priority over untouched auxiliary facts so scores stay fresh.
+ const scoring=['security_advisories','gh_yearly_commit_count','lib_latest_release_date','gh_contributor_count','lib_first_release_date','lib_dependent_count','so_popularity'];
+ if(options.demo===true){
+  const index=t=>packages.findIndex(p=>p.repository.toLowerCase()===t.repository&&p.version===t.version);
+  candidates.sort((a,b)=>Number(!scoring.includes(a.metric))-Number(!scoring.includes(b.metric))||index(a)-index(b)||scoring.indexOf(a.metric)-scoring.indexOf(b.metric));
+ }else candidates.sort((a,b)=>Number(!!a.previous)-Number(!!b.previous)||attempts[a.metric]-attempts[b.metric]);
  const task=candidates[0];
  if(!task)return {reason:planned.some(t=>t.ready)?'Waiting for a provider or metric collection slot':'Waiting for the next daily collection window'};
  if(BigInt(state.treasury)<300n)return {reason:'Waiting for funded TrustCOIN budget'};

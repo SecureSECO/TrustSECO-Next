@@ -16,6 +16,7 @@ const statusFocused = ref(false);
 const statusPinned = ref(false);
 
 const rightAlignedFacts = new Set([
+  'security_advisories',
   'cve_count',
   'gh_average_resolution_time',
   'gh_contributor_count',
@@ -42,6 +43,7 @@ const rightAlignedFacts = new Set([
 ]);
 
 const codeToName: Record<string, string> = {
+  security_advisories: 'Applicable security advisories',
   cve_count: 'Cve count',
   cve_vulnerabilities: 'Cve vulnerabilities',
   gh_average_resolution_time: 'Average issue resolution time',
@@ -66,10 +68,11 @@ const codeToName: Record<string, string> = {
   lib_release_frequency: 'Average time per release',
   lib_sourcerank: 'Sourcerank metric',
   so_popularity: 'StackOverflow popularity',
-  vs_virus_ratio: 'Virus ratio',
+  vs_virus_ratio: 'Release artifacts with malware detections',
 };
 
 const codeToExplanation: Record<string, string> = {
+  security_advisories: 'Distinct advisories for this exact package version. Severity and known exploitation determine penalties; a count alone is not a safety assessment.',
   cve_count: 'Number of CVE vulnerabilities found for this package.',
   cve_vulnerabilities: '',
   gh_average_resolution_time:
@@ -103,9 +106,9 @@ const codeToExplanation: Record<string, string> = {
   lib_release_frequency: 'Average time elapsed per release.',
   lib_sourcerank:
     'A metric created by libraries.io that combines several factors such as number of stars and if it is still in beta. For more details visit the website: https://libraries.io/pypi/numpy/sourcerank . ',
-  so_popularity: 'Monthly stackoverflow popularity.', // TODO
+  so_popularity: 'Share of questions carrying the configured tag during the last 30 complete UTC days.',
   vs_virus_ratio:
-    'Ratio of virus found to number of links scanned. Virus are scanned for using ClamAV.',
+    'Percentage of exact-release distribution artifacts with ClamAV detections. All listed artifacts must be scanned successfully; zero detections does not prove safety.',
 };
 
 // Time intervals to be usid in displaying time durations
@@ -189,7 +192,11 @@ function convertFactValue(factValue: string, factCode: string): string {
         break;
       }
     case 'so_popularity':
-    case 'vs_virus_ration':
+      res = pilot ? `${(Number(factValue) / 1000000).toFixed(6)}%` : `${Number(factValue).toFixed(3)}%`;
+      break;
+    case 'vs_virus_ratio':
+      res = pilot ? `${(Number(factValue) / 10000).toFixed(3)}%` : `${(Number(factValue) * 100).toFixed(3)}%`;
+      break;
     case 'gh_issue_ratio':
       {
         const num = parseFloat(factValue);

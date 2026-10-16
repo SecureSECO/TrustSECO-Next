@@ -13,17 +13,20 @@ test('package identity keeps repository owners separate and versions together',(
  const s={rounds:[round(),round('owner/pkg','2.0'),round('other/pkg')]};
  const result=packages(s);assert.equal(result.length,2);assert.deepEqual(result.find(p=>p.packageName==='owner/pkg').packageReleases,['2.0','1.0']);
 });
-test('confirmed scores use authoritative verified inputs, local estimates are version-specific and deduplicated',async()=>{
- const s={rounds:[round(),round('owner/pkg','2.0')],audit:[]},calls=[];
- const c={invoke:async(name,args)=>{calls.push({name,args});return name==='pilot_scoreInputs'?{facts:[{fact:'stars',factData:'10'}]}:{score:args.facts[0]?.factData}}};
+test('both score views come from the versioned ledger projection',async()=>{
+ const s={rounds:[round()],audit:[]},calls=[];
+ const response={local:{score:20,policyVersion:'trust-v2.0.0'},confirmed:{score:null,status:'insufficient-history'}};
+ const c={invoke:async(name,args)=>{calls.push({name,args});return response}};
  const pair=await scores(c,s,'owner/pkg','1.0',10);
- assert.equal(pair.local.score,'999');assert.equal(pair.confirmed.score,'10');assert.equal(calls[0].args.version,'1.0');assert.equal(calls[1].args.facts.length,1);
+ assert.deepEqual(pair.local,response.local);assert.deepEqual(pair.confirmed,response.confirmed);
+ assert.deepEqual(calls,[{name:'pilot_score',args:{repository:'owner/pkg',version:'1.0',finalizedHeight:10}}]);
 });
+
 test('restored browser API exposes no unsigned write routes',()=>{assert.ok(portalRouter(async()=>{}).stack.every(r=>r.methods.every(m=>['GET','HEAD'].includes(m))))});
 
 test('package browsing routes accept encoded repository names and reject legacy writes',async()=>{
  const Koa=require('koa'),s={rounds:[round()],audit:[]};
- const c={node:{getNodeInfo:async()=>({height:10,finalizedHeight:10})},invoke:async(name)=>name==='pilot_snapshot'?s:name==='pilot_scoreInputs'?{facts:[]}:{score:null}};
+ const c={node:{getNodeInfo:async()=>({height:10,finalizedHeight:10})},invoke:async(name)=>name==='pilot_snapshot'?s:name==='pilot_score'?{local:{score:null},confirmed:{score:null}}:{score:null}};
  const app=new Koa(),router=portalRouter(async work=>work(c));app.use(router.routes());const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
  try{for(const path of ['/api/dlt/package/owner%2Fpkg','/api/dlt/package/owner%2Fpkg/trust-score/','/api/dlt/package/owner%2Fpkg/trust-score/1.0','/api/dlt/measurements/owner%2Fpkg']){const response=await fetch(base+path);assert.ok([200,204].includes(response.status),path)}assert.equal((await fetch(base+'/api/dlt/add-job',{method:'POST'})).status,404);assert.equal((await(await fetch(base+'/api/dlt/packages?query=missing')).json()).total,0)}finally{await new Promise(r=>server.close(r))}
 });
@@ -56,4 +59,43 @@ test('collection queue exposes insufficient available contributors without claim
  const {queueStatus}=require('../dist/package-queue');const s={policy:{assignment:'availability-beacon-v1'},availableContributors:2,rounds:[],catalog:[{repository:'a/b',version:'1',roundID:'r'}]};
  assert.equal(queueStatus(s).waitingForContributors,true);assert.equal(queueStatus(s).queued,1);assert.equal(queueStatus(s).collecting,0);
  s.availableContributors=3;assert.equal(queueStatus(s).waitingForContributors,false);
+});
+test('ClamAV artifact scope and signed report reach package facts',()=>{
+ const r=round();r.metric='vs_virus_ratio';r.source='ClamAV';
+ r.observations.forEach(o=>o.malware={infected:0,artifacts:2,engine:'ClamAV test',manifestHash:'a'.repeat(64)});
+ const f=measurements({rounds:[r],audit:[]},'owner/pkg',10)[0];assert.equal(f.malware.artifacts,2);assert.match(f.scope,/0\/2/);assert.match(f.scope,/does not prove safety/);
+});
+
+test('registry comes from collection targets, with catalogue fallback, never repository host',()=>{
+ const a=round('python-babel/babel');a.escrow.packagePlatform='Pypi';
+ const b=round('python-babel/babel','2'); // newest GitHub-only measurement
+ const result=packages({rounds:[a,b],catalog:[]});assert.equal(result[0].packagePlatform,'PyPI');
+ assert.equal(packages({rounds:[round()],catalog:[{repository:'owner/pkg',version:'1.0',platform:'NPM'}]})[0].packagePlatform,'npm');
+ assert.equal(packages({rounds:[round()]})[0].packagePlatform,'Unknown');
+});
+
+test('overview shares one ledger snapshot across visitors and isolates search results',async()=>{
+ const Koa=require('koa');const s={network:'test',rounds:[round('owner/pkg','1.0'),round('other/pkg','2.0')],audit:[]};let reads=0;
+ const score={local:{score:42},confirmed:{score:null,lastConfirmed:{score:39,assessedAt:100,policyVersion:'test'}},ledgerAvailable:true};
+ const c={node:{getNodeInfo:async()=>({height:12,finalizedHeight:10})},invoke:async(name,args)=>{
+  assert.equal(name,'pilot_overview');assert.equal(args.finalizedHeight,10);reads++;
+  await new Promise(r=>setTimeout(r,20));return {snapshot:s,height:12,finalizedHeight:10,scorePairs:{'["owner/pkg","1.0"]':score}};
+ }};
+ const app=new Koa();app.use(portalRouter(async work=>work(c)).routes());const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
+ try {
+  const [all,filtered]=await Promise.all(['','?query=owner'].map(q=>fetch(base+'/api/dlt/overview'+q).then(r=>r.json())));
+  assert.equal(all.packages[0].packageName,'owner/pkg');
+  assert.equal(reads,1);assert.equal(all.total,2);assert.equal(filtered.total,1);assert.deepEqual(filtered.packages[0].scores['1.0'],score);
+  assert.deepEqual(filtered.lastConfirmed,[{packageName:'owner/pkg',version:'1.0',...score.confirmed.lastConfirmed}]);
+  assert.equal(filtered.packages[0].facts.filter(f=>f.status==='confirmed').length,3);
+  const first=await(await fetch(base+'/api/dlt/overview?count=1&sort=name')).json();
+  const second=await(await fetch(base+'/api/dlt/overview?count=1&from=1&sort=name')).json();
+  assert.equal(first.total,2);assert.equal(first.packages.length,1);assert.equal(first.packages[0].packageName,'other/pkg');
+  assert.equal(second.packages[0].packageName,'owner/pkg');
+  const history=await(await fetch(base+'/api/dlt/overview?evidence=history')).json();
+  assert.equal(history.total,1);assert.equal(history.packages[0].packageName,'owner/pkg');
+  const past=await(await fetch(base+'/api/dlt/overview?from=100')).json();assert.equal(past.packages.length,0);
+  assert.equal(reads,1);
+  const empty=await(await fetch(base+'/api/dlt/overview?query=absent')).json();assert.equal(empty.total,0);assert.deepEqual(empty.packages,[]);assert.deepEqual(empty.lastConfirmed,[]);
+ }finally{await new Promise(r=>server.close(r))}
 });

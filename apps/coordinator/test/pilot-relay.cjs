@@ -2,9 +2,9 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const crypto=require('node:crypto'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),Module=require('node:module');
 test('HTTP relay accepts signed assignment events and still rejects invalid signatures and unknown events',async()=>{
  const keys=crypto.generateKeyPairSync('ed25519'),sent=[],archived=new Map();
- const state={network:'relay-test',policy:{collection:'scheduled-v1'},members:[],audit:[],governorKey:keys.publicKey.export({type:'spki',format:'pem'}).toString()};
+ const state={height:10,at:100,network:'relay-test',policy:{collection:'scheduled-v1'},members:[],audit:[],governorKey:keys.publicKey.export({type:'spki',format:'pem'}).toString()};
  let disconnects=0;
- const client={invoke:async(method,params)=>method==='pilot_event'?{event:archived.get(params.id)||null}:state,disconnect:async()=>{if(disconnects++<3)throw Error("Simulated SDK disconnect timeout");},transaction:{
+ const client={node:{getNodeInfo:async()=>({height:12,finalizedHeight:11,chainID:'test-chain'})},invoke:async(method,params)=>{assert(['pilot_status','pilot_work','pilot_event','githubVoting_event'].includes(method),'Relay and worker routes must not fetch full snapshots');return method==='githubVoting_event'?{event:null}:method==='pilot_event'?{event:archived.get(params.id)||state.audit.find(a=>a.id===params.id)||null}:state;},disconnect:async()=>{if(disconnects++<3)throw Error("Simulated SDK disconnect timeout");},transaction:{
   computeMinFee:()=>1n,create:async tx=>({...tx,id:'test-transaction'}),
   send:async tx=>{const e=JSON.parse(tx.params.payload);sent.push(e.kind);state.audit.push({id:e.id,payload:tx.params.payload,signature:tx.params.signature});}
  }};
@@ -33,6 +33,12 @@ test('HTTP relay accepts signed assignment events and still rejects invalid sign
   const collision=JSON.stringify({...JSON.parse(payload),amount:'999'}),collisionSignature=crypto.sign(null,Buffer.from('TrustSECO-community-v1\n'+collision),keys.privateKey).toString('base64');
   assert.equal((await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:collision,signature:collisionSignature})})).status,409);
   assert.equal(sent.length,5);
+  const base=url.slice(0,-6);
+  const work=await fetch(base+'/work?member=alice');assert.equal(work.status,200);assert.equal(work.headers.get('cache-control'),'no-store');
+  const projection=await work.json();assert.equal(projection.ledger.height,10);assert.equal(projection.ledger.finalizedHeight,10);
+  assert.equal((await fetch(base+'/work')).status,400);
+  assert.equal((await fetch(base+'/work?member=alice&since=invalid')).status,400);
+  assert.equal((await fetch(base+'/status')).status,200);
  } finally {
   Module._load=originalLoad;Koa.prototype.listen=originalListen;
   if(server)await new Promise(r=>server.close(r));

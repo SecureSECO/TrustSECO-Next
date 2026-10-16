@@ -1,4 +1,5 @@
 import Router from 'koa-router';
+import {networkSnapshot} from '../network-web';
 import { scoreInputs } from '../services/score-inputs';
 import { getMeasurements } from '../services/measurement-service';
 import {
@@ -135,14 +136,7 @@ router.get('/metrics', async (ctx, next) => {
 router.get('/network', async ctx => {
     try {
         const client = await getClient();
-        const [node, peers] = await Promise.all([
-            client.node.getNodeInfo(), client.node.getConnectedPeers(),
-        ]);
-        ctx.body = {
-            observedAt: new Date().toISOString(),
-            local: { height: node.height, finalizedHeight: node.finalizedHeight, syncing: node.syncing },
-            peers: peers.map(peer => ({ address: peer.ipAddress, port: peer.port })),
-        };
+        ctx.body = await networkSnapshot(client, await client.node.getNodeInfo());
     } catch {
         ctx.status = 503;
         ctx.body = { error: 'Node information is currently unavailable.' };

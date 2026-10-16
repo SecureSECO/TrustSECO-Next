@@ -9,6 +9,7 @@
       <router-link v-if="communityDemo" to="/community/" active-class="selected">Community</router-link>
     </nav>
     <div class="account-area">
+      <a v-if="pilot" class="help-link" href="https://trustseco1.science.uu.nl/reviewer/">Join the network</a>
       <router-link v-if="pilot" class="help-link" to="/user/settings/">Settings</router-link>
       <router-link class="help-link" to="/about/">About</router-link>
       <details v-if="privateServer" class="account-menu" @keydown.esc="closeMenu">

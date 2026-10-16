@@ -20,24 +20,42 @@
     </div>
     <p v-if="error" class="load-error" role="alert">{{ error }} <button @click="refresh">Try again</button></p>
 
+    <section v-if="lastConfirmed.length && !error" class="panel history-panel" aria-label="Last confirmed assessments">
+      <div class="panel-heading"><div><h2>Last confirmed assessments</h2><p>Historical scores for the versions shown. Current confirmation is unavailable; open a package for current evidence and warnings.</p></div></div>
+      <div class="history-grid">
+        <router-link v-for="item in lastConfirmed" :key="item.packageName + item.version" :to="packageLink(item.packageName,item.version)" class="history-card">
+          <strong>{{ item.packageName }}</strong><span>Version {{ item.version }}</span>
+          <b>{{ scoreText(item.score) }} <small>/ 100</small></b>
+          <span>Last confirmed · {{ new Date(item.assessedAt * 1000).toLocaleString() }}</span>
+        </router-link>
+      </div>
+    </section>
+
     <section class="panel packages-panel">
-      <div class="panel-heading"><div><h2>Tracked packages</h2><p>Ordered by latest known collection time.</p></div><router-link to="/packages/">Browse all →</router-link></div>
+      <div class="panel-heading"><div><h2>Tracked packages</h2><p>Scored packages first, then latest collection activity.</p></div><router-link to="/packages/">Browse all →</router-link></div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Package</th><th>Version</th><th>Local estimate</th><th>Confirmed</th><th>Last collected</th></tr></thead>
+          <thead><tr><th>Package</th><th>Version</th><th>Local estimate</th><th>Confirmation</th><th>Last collected</th></tr></thead>
           <tbody>
             <tr v-for="row in sortedRows" :key="row.pack.name">
               <td><router-link class="package-name" :to="packageLink(row.pack.name,row.version)">{{ row.pack.name }}</router-link><small>{{ row.pack.owner }} · {{ row.pack.platform }}</small></td>
               <td><span class="version-tag">{{ row.version || '—' }}</span></td>
-              <td>{{ scoreText(row.scores?.local?.score) }} <span v-if="row.scores?.local?.score != null" class="pending-dot" aria-label="Local estimate includes pending measurements"></span></td>
-              <td><span v-if="row.scores?.confirmed?.score != null" class="confirmed-mark" aria-label="Based on finalized measurements">✓</span> {{ scoreText(row.scores?.confirmed?.score) }}</td>
+              <td>
+                <template v-if="row.scores?.local?.score != null"><strong>≈ {{ scoreText(row.scores.local.score) }}</strong><small>Provisional · {{ Math.round((row.scores.local.coverage || 0) * 100) }}% evidence coverage</small><progress class="coverage-bar" max="100" :value="Math.round((row.scores.local.coverage || 0) * 100)" :aria-label="`Evidence coverage for ${row.pack.name}`"></progress></template>
+                <template v-else><span>Awaiting scoring evidence</span><small>{{ row.facts.filter(f => f.version === row.version).length }} observations for this version</small></template>
+              </td>
+              <td>
+                <template v-if="row.scores?.confirmed?.score != null"><span class="confirmed-mark" aria-label="Based on finalized measurements">✓</span> {{ scoreText(row.scores.confirmed.score) }}</template>
+                <template v-else-if="row.history"><router-link :to="packageLink(row.pack.name,row.history.version)"><strong>{{ scoreText(row.history.score) }}</strong> · Last confirmed</router-link><small>Version {{ row.history.version }} · {{ new Date(row.history.assessedAt * 1000).toLocaleDateString() }}</small><small>{{ confirmationReason(row) }}</small></template>
+                <template v-else><span>Not yet confirmed</span><small>{{ confirmationReason(row) }}</small></template>
+              </td>
               <td class="time-cell">{{ row.failed ? 'Temporarily unavailable' : timeText(row.updated) }}</td>
             </tr>
             <tr v-if="!rows.length"><td colspan="5" class="empty-state">{{ !loaded ? 'Loading your packages…' : query ? 'No tracked packages match your search.' : 'No packages yet. Add a package to start collecting measurements.' }}</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="table-note">Showing up to 12 packages. Counts cover all versions of these packages; scores show the version listed.</p>
+      <p class="table-note">Showing up to 12 packages. Counts cover all versions of these packages; local estimates show the listed version. Historical confirmations identify their own version.</p>
     </section>
 
     <div class="lower-grid">
@@ -59,10 +77,12 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import { sortVersions } from '@/api/dlt/api';
 import { dltApi, api, ServerType } from '@/api';
 const base = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_HOST}/api/dlt`;
 const query = ref('');
 const rows = ref<any[]>([]);
+const lastConfirmed = ref<any[]>([]);
 const total = ref(0);
 const loaded = ref(false);
 const busy = ref(false);
@@ -74,9 +94,18 @@ const allFacts = computed(() => rows.value.flatMap(r => r.facts));
 const complete = computed(() => loaded.value && !error.value && rows.value.every(r => !r.failed));
 const confirmedCount = computed(() => allFacts.value.filter(f => f.status === 'confirmed').length);
 const pendingCount = computed(() => allFacts.value.filter(f => ['collected','submitted','recorded'].includes(f.status)).length);
-const sortedRows = computed(() => [...rows.value].sort((a,b) => Date.parse(b.updated || '1970-01-01') - Date.parse(a.updated || '1970-01-01')));
+const sortedRows = computed(() => rows.value);
 const recentFacts = computed(() => [...allFacts.value].sort((a,b) => Date.parse(b.collectedAt || '1970-01-01') - Date.parse(a.collectedAt || '1970-01-01') || b.jobID-a.jobID).slice(0,6));
 const packageLink = (name: string, version: string) => `/package/${encodeURIComponent(name)}/version/${encodeURIComponent(version)}/`;
+const confirmationReason = (row: any) => {
+  const reasons = row.scores?.confirmed?.reasons || [];
+  if (reasons.some((r: string) => r.includes('malware'))) return 'Security finding requires attention';
+  if (reasons.some((r: string) => r.includes('unknown severity'))) return 'Security severity needs review';
+  if (reasons.some((r: string) => r.includes('Insufficient fresh'))) return 'More fresh scoring evidence needed';
+  if (reasons.some((r: string) => r.includes('Security evidence missing or stale'))) return 'Fresh security evidence needed';
+  if (reasons.some((r: string) => r.includes('pending'))) return 'New evidence awaiting confirmation';
+  return 'Current confirmation unavailable';
+};
 const scoreText = (score: unknown) => typeof score === 'number' ? score.toFixed(1) : '—';
 const timeText = (date?: string) => date ? new Date(date).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Time not recorded';
 const factLabel = (fact: string) => fact.replace(/^(gh|lib|cve|so|vs)_/, '').replaceAll('_',' ');
@@ -85,6 +114,22 @@ async function refresh() {
   if (busy.value) return;
   busy.value = true;
   try {
+    if (import.meta.env.VITE_PILOT === 'true') {
+      const {data} = await axios.get(`${base}/overview`, {params:{query:query.value},timeout:20000});
+      if (disposed) return;
+      rows.value = data.packages.map(p => {
+        const versions = sortVersions(p.packageReleases), version = versions[0] || '';
+        const dates = p.facts.map(f => f.collectedAt).filter(Boolean).sort();
+        const historical = versions.flatMap(v => p.scores[v]?.confirmed?.lastConfirmed ? [{...p.scores[v].confirmed.lastConfirmed,version:v}] : []).sort((a,b) => b.assessedAt-a.assessedAt);
+        const history = p.scores[version]?.confirmed?.lastConfirmed ? {...p.scores[version].confirmed.lastConfirmed,version} : historical[0];
+        return {pack:{name:p.packageName,owner:p.packageOwner,platform:p.packagePlatform,versions},
+          version,history,facts:p.facts,scores:p.scores[version],updated:dates.at(-1),failed:false};
+      });
+      lastConfirmed.value = data.lastConfirmed || [];
+      total.value = data.total;
+      error.value = '';
+      return;
+    }
     const page = await dltApi.getPackages(0,12,query.value);
     const next = [];
     // Bound concurrent ledger reads: one package at a time, two requests per package.
@@ -108,7 +153,7 @@ async function refresh() {
   finally { loaded.value = true; busy.value = false; }
 }
 onMounted(async () => {
-  try { privateServer.value = await api.getServerType() === ServerType.Private; } catch { /* Keep browsing available. */ }
+  void api.getServerType().then(type => { if (!disposed) privateServer.value = type === ServerType.Private; }).catch(() => {});
   await refresh();
   if (!disposed) timer = setInterval(refresh,30000);
 });
@@ -116,6 +161,13 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
 </script>
 
 <style scoped>
+.coverage-bar { display:block; width:110px; height:5px; margin-top:8px; accent-color:#b77912; }
+.history-panel { margin-bottom:28px; }
+.history-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; padding:0 24px 24px; }
+.history-card { display:flex; flex-direction:column; gap:8px; padding:18px; border:1px solid #e5eaf0; border-radius:10px; color:#172b4d; text-decoration:none; overflow-wrap:anywhere; }
+.history-card:hover { border-color:#1769bb; }
+.history-card span,.history-card small { font-size:12px; color:#64748b; font-weight:400; }
+.history-card b { font-size:28px; }
 .overview { max-width:1180px; margin:0 auto; padding:36px 24px 56px; color:#172b4d; }
 .hero { padding:12px 0 28px; }
 h1 { font-size:clamp(30px,4vw,46px); font-weight:700; line-height:1.15; letter-spacing:-1.3px; margin:0 0 16px; }

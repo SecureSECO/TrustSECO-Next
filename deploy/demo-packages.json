@@ -1,0 +1,37 @@
+{
+  "demo": true,
+  "description": "Single-operator demonstration; exact versions from the existing catalogue. Live evidence, never synthetic scores.",
+  "packages": [
+    {
+      "repository": "psf/requests",
+      "name": "requests",
+      "platform": "Pypi",
+      "version": "2.34.2"
+    },
+    {
+      "repository": "pandas-dev/pandas",
+      "name": "pandas",
+      "platform": "Pypi",
+      "version": "3.0.5"
+    },
+    {
+      "repository": "numpy/numpy",
+      "name": "numpy",
+      "platform": "Pypi",
+      "version": "2.5.3",
+      "stackOverflowTag": "numpy"
+    },
+    {
+      "repository": "encode/httpx",
+      "name": "httpx",
+      "platform": "Pypi",
+      "version": "0.28.1"
+    },
+    {
+      "repository": "pyca/cryptography",
+      "name": "cryptography",
+      "platform": "Pypi",
+      "version": "50.0.1"
+    }
+  ]
+}

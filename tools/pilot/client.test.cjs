@@ -33,7 +33,7 @@ test("uncertain transfer retries retain the exact signed event and reject replac
       }
       return {
         ok: true,
-        json: async () => ({
+        json: async () => url.includes("/event?") ? {event:included ? {id:JSON.parse(record.payload).id,...record} : null} : ({
           network: "n",
           audit: included
             ? [{ id: JSON.parse(record.payload).id, ...record }]

@@ -1,3 +1,5 @@
+> Scoring update: [asymmetric trust scoring](scoring-v2.md) supersedes the scoring descriptions below and adds OSV/CISA security snapshots plus explicitly mapped Stack Overflow collection. Earlier numeric results and 480-target counts are historical; the expanded plan contains 14 possible metric types per package.
+
 # Full collection, refresh and audit capacity
 
 The `scheduled-v1` collection extension activates through a signed governor event after all existing rounds close. All validators and relays must upgrade together. Historical rounds, signatures, balances and validator signing history remain intact.

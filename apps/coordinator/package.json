@@ -4,10 +4,11 @@
   "description": "The coordination system for the TrustSECO project.",
   "main": "dist/app.js",
   "scripts": {
-    "start": "tsc && node dist/app.js",
+    "start": "npm run build && node dist/app.js",
     "dev": "tsc-watch --noClear -p tsconfig.json --onSuccess \"node ./dist/app.js\"",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node prepare-cvss.cjs && tsc"
   },
   "repository": {
     "type": "git",
@@ -32,9 +33,10 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@koa/cors": "^5.0.0",
     "@klayr/api-client": "^6.0.2",
     "@klayr/client": "^6.0.2",
+    "@koa/cors": "^5.0.0",
+    "@pandatix/js-cvss": "0.4.4",
     "axios": "^1.9.0",
     "dotenv": "^16.0.0",
     "heap-js": "^2.2.0",

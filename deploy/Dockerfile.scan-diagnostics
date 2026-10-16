@@ -1,0 +1,3 @@
+ARG WORKER_BASE_IMAGE
+FROM ${WORKER_BASE_IMAGE}
+COPY tools/pilot/client.cjs tools/pilot/clamav.cjs /tools/

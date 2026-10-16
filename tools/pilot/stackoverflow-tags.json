@@ -1,0 +1,282 @@
+[
+  {
+    "repository": "psf/black",
+    "packageName": "black",
+    "tag": "python-black",
+    "source": "https://stackoverflow.com/tags/python-black/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Black is the uncompromising Python code formatter. "
+  },
+  {
+    "repository": "pandas-dev/pandas",
+    "packageName": "pandas",
+    "tag": "pandas",
+    "source": "https://stackoverflow.com/tags/pandas/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Pandas is a Python library for data manipulation and analysis, e.g. dataframes, multidimensional time series and cross-sectional datasets commonly found in statistics, experimental science results, econometrics, or finance. Pandas is one of the main data science libraries in Python."
+  },
+  {
+    "repository": "delgan/loguru",
+    "packageName": "loguru",
+    "tag": "loguru",
+    "source": "https://stackoverflow.com/tags/loguru/info",
+    "reviewedAt": "2026-09-09",
+    "description": "For questions related to the logging library for Python. It can be combined with the tag [python]."
+  },
+  {
+    "repository": "numpy/numpy",
+    "packageName": "numpy",
+    "tag": "numpy",
+    "source": "https://stackoverflow.com/tags/numpy/info",
+    "reviewedAt": "2026-09-09",
+    "description": "NumPy is one of the many modules in Python that adds support of large multidimensional arrays and matrixes, along with a large library of high-level mathematical functions for operations with these arrays."
+  },
+  {
+    "repository": "boto/boto3",
+    "packageName": "boto3",
+    "tag": "boto3",
+    "source": "https://stackoverflow.com/tags/boto3/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Boto 3 - The Amazon Web Services (AWS) SDK for Python"
+  },
+  {
+    "repository": "networkx/networkx",
+    "packageName": "networkx",
+    "tag": "networkx",
+    "source": "https://stackoverflow.com/tags/networkx/info",
+    "reviewedAt": "2026-09-09",
+    "description": "NetworkX is a Python package for the creation, manipulation, and study of the structure, dynamics, and functions of complex networks. Use this tag for questions about how to install or use the package, for clarification on any of its methods, or for help with algorithms written with it.  Do not use this tag for questions related to troubleshooting computer network connectivity."
+  },
+  {
+    "repository": "scikit-learn/scikit-learn",
+    "packageName": "scikit-learn",
+    "tag": "scikit-learn",
+    "source": "https://stackoverflow.com/tags/scikit-learn/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Scikit-learn is a machine-learning library for Python that provides simple and efficient tools for data analysis and data mining, with a focus on machine learning. It is accessible to everybody and reusable in various contexts. It is built on NumPy and SciPy. The project is open source and commercially usable (BSD license)."
+  },
+  {
+    "repository": "wntrblm/nox",
+    "packageName": "nox",
+    "tag": "nox",
+    "source": "https://stackoverflow.com/tags/nox/info",
+    "reviewedAt": "2026-09-09",
+    "description": "nox is a command-line tool that automates testing in multiple Python environments, similar to tox. Unlike tox, Nox uses a standard Python file for configuration"
+  },
+  {
+    "repository": "sqlalchemy/alembic",
+    "packageName": "alembic",
+    "tag": "alembic",
+    "source": "https://stackoverflow.com/tags/alembic/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Alembic is a lightweight database migration tool for use with the SQLAlchemy Database Toolkit for Python."
+  },
+  {
+    "repository": "psf/requests",
+    "packageName": "requests",
+    "tag": "python-requests",
+    "source": "https://stackoverflow.com/tags/python-requests/info",
+    "reviewedAt": "2026-09-09",
+    "description": "USE ONLY FOR THE PYTHON &#39;REQUESTS&#39; LIBRARY. Requests is a full-featured Python HTTP library with an easy-to-use, logical API. DO NOT USE THIS FOR ANY GENERIC QUESTION ABOUT PYTHON."
+  },
+  {
+    "repository": "python-babel/babel",
+    "packageName": "babel",
+    "tag": "python-babel",
+    "source": "https://stackoverflow.com/tags/python-babel/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Python internationalization library with an emphasis on web-based applications. Use with the [python] tag and any relevant version tags."
+  },
+  {
+    "repository": "pypa/hatch",
+    "packageName": "hatch",
+    "tag": "hatch",
+    "source": "https://stackoverflow.com/tags/hatch/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Hatch is a Python project manager. Use this tag for the Hatchling Python build back-end as well."
+  },
+  {
+    "repository": "redis/redis-py",
+    "packageName": "redis",
+    "tag": "redis-py",
+    "source": "https://stackoverflow.com/tags/redis-py/info",
+    "reviewedAt": "2026-09-09",
+    "description": "A Python interface to the Redis key-value store."
+  },
+  {
+    "repository": "fastapi/typer",
+    "packageName": "typer",
+    "tag": "typer",
+    "source": "https://stackoverflow.com/tags/typer/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Typer is a library for building CLI applications. Based on Python 3.6+ type hints. "
+  },
+  {
+    "repository": "dask/distributed",
+    "packageName": "distributed",
+    "tag": "dask-distributed",
+    "source": "https://stackoverflow.com/tags/dask-distributed/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Dask.distributed is a lightweight library for distributed computing in Python. It extends both the concurrent.futures and dask APIs to moderate sized clusters."
+  },
+  {
+    "repository": "pycqa/isort",
+    "packageName": "isort",
+    "tag": "isort",
+    "source": "https://stackoverflow.com/tags/isort/info",
+    "reviewedAt": "2026-09-09",
+    "description": "isort is a Python utility / library to sort imports alphabetically, and automatically separated into sections and by type."
+  },
+  {
+    "repository": "zarr-developers/zarr-python",
+    "packageName": "zarr",
+    "tag": "zarr",
+    "source": "https://stackoverflow.com/tags/zarr/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Zarr is a Python package providing an implementation of compressed, chunked, N-dimensional arrays, designed for use in parallel computing."
+  },
+  {
+    "repository": "coveragepy/coveragepy",
+    "packageName": "coverage",
+    "tag": "python-coverage",
+    "source": "https://stackoverflow.com/tags/python-coverage/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Coverage.py is a tool for measuring code coverage of Python programs."
+  },
+  {
+    "repository": "python-attrs/attrs",
+    "packageName": "attrs",
+    "tag": "python-attrs",
+    "source": "https://stackoverflow.com/tags/python-attrs/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Use for questions about the third-party Python library for data classes"
+  },
+  {
+    "repository": "astral-sh/uv",
+    "packageName": "uv",
+    "tag": "uv",
+    "source": "https://stackoverflow.com/tags/uv/info",
+    "reviewedAt": "2026-09-09",
+    "description": "A Python package installer and resolver written in Rust and created by Astral, uv is designed as a drop-in replacement for pip, pip-tools (pip-compile and pip-sync), and virtualenv."
+  },
+  {
+    "repository": "aio-libs/aiohttp",
+    "packageName": "aiohttp",
+    "tag": "aiohttp",
+    "source": "https://stackoverflow.com/tags/aiohttp/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Use this tag for questions about AIOHTTP \u2013 a client/server framework for asyncio Python."
+  },
+  {
+    "repository": "pypa/virtualenv",
+    "packageName": "virtualenv",
+    "tag": "virtualenv",
+    "source": "https://stackoverflow.com/tags/virtualenv/info",
+    "reviewedAt": "2026-09-09",
+    "description": "virtualenv is a tool that creates sandboxed Python environments."
+  },
+  {
+    "repository": "kludex/uvicorn",
+    "packageName": "uvicorn",
+    "tag": "uvicorn",
+    "source": "https://stackoverflow.com/tags/uvicorn/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Uvicorn is an ASGI server implementation for Python, using uvloop and httptools. Uvicorn currently supports HTTP/1.1 and WebSockets. Support for HTTP/2 is planned."
+  },
+  {
+    "repository": "celery/celery",
+    "packageName": "celery",
+    "tag": "celery",
+    "source": "https://stackoverflow.com/tags/celery/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Celery is a distributed task queue framework for Python, used for asynchronous and parallel execution."
+  },
+  {
+    "repository": "python-openxml/python-docx",
+    "packageName": "python-docx",
+    "tag": "python-docx",
+    "source": "https://stackoverflow.com/tags/python-docx/info",
+    "reviewedAt": "2026-09-09",
+    "description": "A python library to create, read and write Microsoft Office Word 2007 docx files."
+  },
+  {
+    "repository": "rq/rq",
+    "packageName": "rq",
+    "tag": "python-rq",
+    "source": "https://stackoverflow.com/tags/python-rq/info",
+    "reviewedAt": "2026-09-09",
+    "description": "RQ is a simple, lightweight, Python library for creating background jobs, and processing them."
+  },
+  {
+    "repository": "textualize/rich",
+    "packageName": "rich",
+    "tag": "rich",
+    "source": "https://stackoverflow.com/tags/rich/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Rich is a Python library for rich text and beautiful formatting in the terminal."
+  },
+  {
+    "repository": "paramiko/paramiko",
+    "packageName": "paramiko",
+    "tag": "paramiko",
+    "source": "https://stackoverflow.com/tags/paramiko/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Paramiko is a Python module that implements the SSH2 protocol."
+  },
+  {
+    "repository": "python-poetry/poetry",
+    "packageName": "poetry",
+    "tag": "python-poetry",
+    "source": "https://stackoverflow.com/tags/python-poetry/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Poetry is a Python tool to handle dependency installation, as well as the building and packaging of Python packages. Do NOT use this tag for poems written in the Python language, since this is off-topic on Stack Overflow."
+  },
+  {
+    "repository": "sympy/sympy",
+    "packageName": "sympy",
+    "tag": "sympy",
+    "source": "https://stackoverflow.com/tags/sympy/info",
+    "reviewedAt": "2026-09-09",
+    "description": "SymPy is an open source Python library for symbolic mathematics."
+  },
+  {
+    "repository": "pylint-dev/pylint",
+    "packageName": "pylint",
+    "tag": "pylint",
+    "source": "https://stackoverflow.com/tags/pylint/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Pylint is a Python source code analyzer looking for bugs and signs of poor quality.\r\n"
+  },
+  {
+    "repository": "pyca/cryptography",
+    "packageName": "cryptography",
+    "tag": "python-cryptography",
+    "source": "https://stackoverflow.com/tags/python-cryptography/info",
+    "reviewedAt": "2026-09-09",
+    "description": "python-cryptography is a python library for secure cryptographic services. The module includes both high level recipes and low level interfaces to common cryptographic algorithms such as symmetric ciphers, message digests, and key derivation functions."
+  },
+  {
+    "repository": "pallets/click",
+    "packageName": "click",
+    "tag": "python-click",
+    "source": "https://stackoverflow.com/tags/python-click/info",
+    "reviewedAt": "2026-09-09",
+    "description": "Click is a Python library for creating command line interfaces."
+  },
+  {
+    "repository": "boto/botocore",
+    "packageName": "botocore",
+    "tag": "botocore",
+    "source": "https://stackoverflow.com/tags/botocore/info",
+    "reviewedAt": "2026-09-09",
+    "description": "A low-level interface to a growing number of Amazon Web Services. The botocore package is the foundation for AWS-CLI and Boto 3."
+  },
+  {
+    "repository": "encode/httpx",
+    "packageName": "httpx",
+    "tag": "httpx",
+    "source": "https://stackoverflow.com/tags/httpx/info",
+    "reviewedAt": "2026-09-09",
+    "description": "HTTPX is a fully featured HTTP client for Python 3, which provides sync and async APIs, and support for both HTTP/1.1 and HTTP/2."
+  }
+]

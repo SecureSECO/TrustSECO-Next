@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Join the TrustSECO network</title>
+<style>body{font:18px/1.6 system-ui,sans-serif;color:#172b4d;max-width:780px;margin:50px auto;padding:0 24px}a{color:#1769bb}pre{background:#eff5fa;padding:20px;overflow:auto;font-size:14px;border-radius:8px}h1{line-height:1.15}small{color:#52647c}.note{border-left:4px solid #1769bb;padding-left:18px}</style>
+<a href="/">← TrustSECO</a><h1>Join as a voting validator</h1>
+<p>Run a node on your own computer and join the voting rotation with your GitHub identity. No administrator approval or API token is needed.</p>
+<h2>1. Start your node</h2><p>Install and start Docker, then run these commands in a terminal. Replace <code>YOUR_GITHUB_USERNAME</code> with your lowercase personal GitHub username.</p>
+<pre>curl -fsSLo install-reviewer.sh https://trustseco1.science.uu.nl/reviewer/install-reviewer.sh
+sh install-reviewer.sh YOUR_GITHUB_USERNAME
+docker logs -f trustseco-reviewer</pre>
+<p>The installer downloads an approximately 560 MB image and checks its SHA-256 checksum. It uses an AMD64 Linux container; Docker Desktop can run it on an Apple Silicon Mac using emulation.</p>
+<h2>2. Link your public signing key</h2><p>Your node prints a public key beginning with <code>ssh-ed25519</code>. Add it in <a href="https://github.com/settings/ssh/new">GitHub’s SSH key settings</a>, selecting <strong>Signing Key</strong>. Your account must be at least 180 days old. Private keys stay in your local Docker volume.</p>
+<h2>3. Let it synchronize</h2><p>Your node downloads and validates the ledger, then requests admission automatically. Its logs report when it is waiting for a turn or actively voting. Four validators vote at a time, with equal weight. A normal rotation changes one seat every 16 blocks—about four minutes.</p>
+<h2>Stop and return</h2><pre>docker stop trustseco-reviewer
+docker start trustseco-reviewer</pre>
+<p>A normal stop waits for your departure to finalize. Keep the <code>trustseco-reviewer</code> volume and never run two copies of the same signing identity. Abrupt disconnection may leave a validator scheduled; the four-seat committee tolerates one unavailable voter.</p>
+<p class="note">This research demo includes six clearly labelled operator-controlled test contributors. Their agreement exercises the protocol and does not establish independent verification. GitHub admission verifies account age and key ownership, not one person per account. Data collection and its optional API credentials are separate from voting.</p>
+<p><a href="reviewer.sha256">Image checksum</a> · <a href="install-reviewer.sh">Read the installer</a> · <a href="/api/pilot/voting">Current voting status</a></p>
+<small>Release: uu-20261014. TrustSECO1 currently hosts the four bootstrap identities; Server 2 has not yet joined this deployment.</small></html>

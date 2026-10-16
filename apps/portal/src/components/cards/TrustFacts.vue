@@ -49,7 +49,7 @@ const categories = [
   },
   {
     name: 'Security',
-    fact_codes: ['cve_count', 'cve_vulnerabilities', 'vs_virus_ratio'],
+    fact_codes: ['security_advisories', 'cve_count', 'cve_vulnerabilities', 'vs_virus_ratio'],
   },
 ];
 
@@ -70,9 +70,11 @@ export default defineComponent({
       trustFacts: [] as TrustFact[],
       filter: '',
       confirmedOnly: false,
+      showHistory: false,
       refreshTimer: undefined as ReturnType<typeof setInterval> | undefined,
       socket: undefined as WebSocket | undefined,
       loadError: '',
+      platformNotices: [] as string[],
       refreshing: false,
       isLoading: true,
       categories,
@@ -96,11 +98,22 @@ export default defineComponent({
   },
   beforeUnmount() { clearInterval(this.refreshTimer); this.socket?.close(); },
   computed: {
+    currentFacts(): TrustFact[] {
+      const latest = new Map<string, TrustFact>();
+      for (const fact of this.trustFacts) {
+        const previous = latest.get(fact.type);
+        const time = (value: TrustFact) => Date.parse(value.collectedAt || '') || 0;
+        if (!previous || time(fact) >= time(previous)) latest.set(fact.type, fact);
+      }
+      return [...latest.values()];
+    },
+    displayedFacts(): TrustFact[] { return this.showHistory ? this.trustFacts : this.currentFacts; },
+    earlierRoundCount(): number { return this.trustFacts.length - this.currentFacts.length; },
     measurementSummary() {
-      const confirmed = this.trustFacts.filter(f => f.status === 'confirmed').length;
-      const unverified = this.trustFacts.filter(f => f.status === 'unverified').length;
-      const failed = this.trustFacts.filter(f => f.status === 'failed').length;
-      return { observations: this.trustFacts.reduce((n, f) => n + (f.observations?.length || 1), 0), total: this.trustFacts.length, confirmed, failed, unverified, pending: this.trustFacts.length - confirmed - failed - unverified };
+      const confirmed = this.displayedFacts.filter(f => f.status === 'confirmed').length;
+      const unverified = this.displayedFacts.filter(f => f.status === 'unverified').length;
+      const failed = this.displayedFacts.filter(f => f.status === 'failed').length;
+      return { observations: this.displayedFacts.reduce((n, f) => n + (f.observations?.length || 1), 0), total: this.displayedFacts.length, confirmed, failed, unverified, pending: this.displayedFacts.length - confirmed - failed - unverified };
     },
     /** Filters out the correct facts for each category, and filters out any
     categories that do not contain any trustfacts */
@@ -109,7 +122,7 @@ export default defineComponent({
       /* eslint-disable-next-line no-restricted-syntax */
       for (const category of categories) {
         // Filter only the facts the belong to this category
-        const categoryFacts = this.trustFacts.filter((fact: TrustFact) => category.fact_codes.includes(fact.type) && (!this.confirmedOnly || fact.status === 'confirmed'));
+        const categoryFacts = this.displayedFacts.filter((fact: TrustFact) => category.fact_codes.includes(fact.type) && (!this.confirmedOnly || fact.status === 'confirmed'));
         if (categoryFacts.length > 0) {
           categorys.push({ name: category.name, trustfacts: categoryFacts, score: this.scoreCategories[category.name] });
         }
@@ -135,6 +148,15 @@ export default defineComponent({
       /* eslint-disable-next-line no-nested-ternary */
       ).sort((a, b) => (a.type === b.type ? 0 : a.type > b.type ? 1 : -1));
       this.loadError = '';
+      if (import.meta.env.VITE_PILOT === 'true') {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_PROTOCOL === 'https' ? 'https' : 'http'}://${import.meta.env.VITE_HOST}/api/dlt/collection-queue`);
+          if (response.ok) {
+            const queue = await response.json();
+            this.platformNotices = (queue.entries || []).filter((entry: any) => entry.repository === this.name.toLowerCase() && entry.version === this.version && ['so_popularity', 'vs_virus_ratio'].includes(entry.metric) && entry.status !== 'verified').map((entry: any) => `${entry.metric === 'so_popularity' ? 'Stack Overflow' : 'ClamAV'}: ${entry.unavailableReason || (entry.status === 'queued' ? 'queued for collection' : entry.status === 'collecting' ? 'collection in progress' : 'collection unavailable; no clean or zero result inferred')}.`);
+          }
+        } catch { /* Keep the last collection status during transient network errors. */ }
+      }
       } catch { this.loadError = 'Unable to refresh measurements. Previously loaded values are shown.'; }
       finally { this.isLoading = false; this.refreshing = false; }
     },
@@ -149,16 +171,20 @@ export default defineComponent({
   <section class="measurement-summary" aria-label="Measurement summary">
     <div class="summary-row">
       <div class="summary-counts" v-if="!isLoading">
-        <strong>{{ measurementSummary.total }} {{ measurementSummary.total === 1 ? 'fact' : 'facts' }} · {{ measurementSummary.observations }} {{ measurementSummary.observations === 1 ? 'observation' : 'observations' }}</strong>
+        <strong>{{ measurementSummary.total }} {{ showHistory ? 'rounds' : measurementSummary.total === 1 ? 'fact' : 'facts' }} · {{ measurementSummary.observations }} {{ measurementSummary.observations === 1 ? 'observation' : 'observations' }}</strong>
         <span class="summary-confirmed">✓ {{ measurementSummary.confirmed }} confirmed</span>
         <span><span class="summary-pending-dot" aria-hidden="true"></span>{{ measurementSummary.pending }} pending</span>
         <span v-if="measurementSummary.unverified">{{ measurementSummary.unverified }} unverified</span>
         <span v-if="measurementSummary.failed">ⓘ {{ measurementSummary.failed }} need attention</span>
       </div>
       <span v-else>Loading measurements…</span>
-      <va-switch v-model="confirmedOnly" label="Confirmed only" />
+      <div class="summary-controls">
+        <va-switch v-if="earlierRoundCount" v-model="showHistory" :label="`Show earlier rounds (${earlierRoundCount})`" />
+        <va-switch v-model="confirmedOnly" label="Confirmed only" />
+      </div>
     </div>
-    <p class="summary-hint">One card per fact and verification round. Expand a card to inspect contributor observations.</p>
+    <p class="summary-hint">{{ showHistory ? 'Showing current and earlier verification rounds.' : 'Latest observed round per fact. Pending results keep their own status; earlier confirmations are available in the history.' }} Expand a card to inspect contributor observations.</p>
+    <p v-for="notice in platformNotices" :key="notice" class="summary-hint">{{ notice }}</p>
     <p v-if="loadError" role="alert">{{ loadError }}</p>
   </section>
   <va-card v-if="categoryTrustFacts.length === 0">
@@ -182,7 +208,7 @@ export default defineComponent({
 
 <style scoped>
 .measurement-summary { margin: 20px 0; padding: 18px 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
-.summary-row, .summary-counts { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+.summary-row, .summary-counts, .summary-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
 .summary-row { justify-content: space-between; }
 .summary-counts { color: #64748b; font-size: 14px; }
 .summary-counts strong { color: #1e293b; }
