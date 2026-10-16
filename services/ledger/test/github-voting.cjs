@@ -25,7 +25,7 @@ test('verified identity binds both generator and BLS ownership; duplicate numeri
  assert.throws(()=>f.run({...f.event,joinPayload:altered,joinSignature:sign(altered,f.member.privateKey,'TrustSECO-join-v1')}),/generator ownership/);
 });
 test('admission rejects malformed validator bundles before signing governor events',async()=>{
- const f=await fixture(),{validateValidatorRequest}=require('/tools/auto-admission.cjs');
+ const f=await fixture(),{validateValidatorRequest}=require('../../../tools/pilot/auto-admission.cjs');
  const request={payload:f.event.joinPayload};
  assert.doesNotThrow(()=>validateValidatorRequest(request));
  const join=JSON.parse(request.payload);join.validatorSignature=Buffer.alloc(64).toString('base64');

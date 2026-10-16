@@ -87,7 +87,7 @@ class PilotEndpoint extends Modules.BaseEndpoint {
     public async work(c: Types.ModuleEndpointContext) {
         const {member,round,since} = c.params;
         if (typeof member !== 'string' || !/^[a-z0-9][a-z0-9-]{0,38}$/.test(member) || (round !== undefined && (typeof round !== 'string' || !round.length || round.length>2000)) || (since !== undefined && (typeof since !== 'string' || !/^[a-f0-9]{64}$/.test(since)))) throw new Error('Invalid work request');
-        const {at,...work} = await miningWork(this.stores.get(PilotStore),c,member,c.header.timestamp,round as string | undefined);
+        const {at,...work} = await miningWork(this.stores.get(PilotStore),c,member,c.header.timestamp,round );
         // Hash the actual projection rather than height: forks at the same height
         // and contributor/assignment changes must invalidate cached work.
         const revision = createHash('sha256').update(JSON.stringify(work)).digest('hex');

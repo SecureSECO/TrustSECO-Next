@@ -119,7 +119,7 @@ export function projectScore(
         if (releases.get(frame) === version) lastConfirmed = {score, assessedAt: frame.at, policyVersion: policy.version};
     }) : {score:assessment.target,status:assessment.target===null?'no-evidence':'provisional'};
     const sourceRanks = rounds.filter(r=>r.metric==='lib_sourcerank' && s.escrows[r.id].version===version).flatMap(r=>{
-        const agreement = roundResult(s,r), height = confirmationHeight(s,r);
+        const agreement = roundResult(s,r); const height = confirmationHeight(s,r);
         const final = r.closed && agreement.status==='verified' && height!==null && height<=finalizedHeight;
         if (confirmed && !final) return [];
         const observations = r.observations.filter(o=>o.observedAt<=at && o.receivedAt<=at && (!confirmed || agreement.supporters.includes(o.id)));

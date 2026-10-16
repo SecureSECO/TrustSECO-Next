@@ -106,11 +106,11 @@ export async function miningStatus<C>(store: JsonStore<C>, ctx: C, member?: stri
     if (member !== undefined && (typeof member !== 'string' || !/^[a-z0-9][a-z0-9-]{0,38}$/.test(member))) throw new Error('Invalid contributor');
     const read = async <T>(id: string) => JSON.parse((await store.get(ctx, Buffer.from(id))).json) as T;
     const meta = await read<Meta>('pilot:meta');
-    const layout = await read<{version:number; governor:string; members:number; rounds:number}>('layout:v1');
+    const layout = await read<{version: number; governor: string; members: number; rounds: number}>('layout:v1');
     if (layout.version !== 1) throw new Error('Unsupported community storage layout');
     if (meta.collectionVersion !== undefined && meta.collectionVersion !== 'scheduled-v1') throw new Error('Unsupported collection policy');
     if (meta.assignmentVersion !== undefined && ![ASSIGNMENT_VERSION, AVAILABILITY_VERSION].includes(meta.assignmentVersion)) throw new Error('Unsupported assignment policy');
-    const members: Array<Pick<Member, 'id'|'key'|'suspended'> & {revoked:boolean}> = [];
+    const members: Array<Pick<Member, 'id'|'key'|'suspended'> & {revoked: boolean}> = [];
     if (member !== undefined) for (let i=0;i<layout.members;i+=1) {
         const m = await read<Member>(`member:${i}`);
         if (m.id === member) { members.push({id:m.id,key:m.key,suspended:m.suspended,revoked:meta.revoked.includes(m.id)}); break; }
@@ -125,19 +125,19 @@ export async function miningWork<C>(store: JsonStore<C>, ctx: C, member: string,
     if (pendingRound !== undefined && (typeof pendingRound !== 'string' || !pendingRound.length || pendingRound.length > 2000)) throw new Error('Invalid pending round');
     const status = await miningStatus(store,ctx,member);
     const read = async <T>(id: string) => JSON.parse((await store.get(ctx, Buffer.from(id))).json) as T;
-    const layout = await read<{rounds:number}>('layout:v1');
-    const rounds: Array<Omit<Round,'observations'> & {observations:Array<{member:string}>; assignment:Escrow['assignment']; escrow:Partial<Escrow>}> = [];
+    const layout = await read<{rounds: number}>('layout:v1');
+    const rounds: Array<Omit<Round,'observations'> & {observations: Array<{member: string}>; assignment: Escrow['assignment']; escrow: Partial<Escrow>}> = [];
     const admitted = status.members.some(m=>!m.suspended && !m.revoked);
     for(let i=0;i<layout.rounds;i+=1) {
-        const {observationCount,...r} = await read<Omit<Round,'observations'> & {observationCount:number}>(`round:${i}`);
+        const {observationCount,...r} = await read<Omit<Round,'observations'> & {observationCount: number}>(`round:${i}`);
         const pending = r.id === pendingRound;
         if (!pending && (!admitted || r.closed || r.closesAt <= at)) continue;
-        const e = await read<Escrow>(`pilot:escrow:${r.id}`), a=e.assignment;
+        const e = await read<Escrow>(`pilot:escrow:${r.id}`); const a=e.assignment;
         const relevant = !a || (a.version === AVAILABILITY_VERSION
             ? !a.seed || a.slots.some(slot=>slot.member===member && !slot.replaced)
             : a.pool.some(m=>m.id===member));
         if (!pending && !relevant) continue;
-        const observations: Array<{member:string}> = [];
+        const observations: Array<{member: string}> = [];
         for(let j=0;j<observationCount;j+=1) {
             const o = await read<Observation>(`observation:${i}:${j}`);
             if(o.member === member) observations.push({member:o.member});

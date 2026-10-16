@@ -6,7 +6,7 @@ const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
 function validateValidatorRequest(request) {
   const join=JSON.parse(request.payload),bundle=join.validator;
   if(!bundle)return;
-  const {address,bls}=require('@klayr/cryptography');
+  const {address,bls}=require(require.resolve('@klayr/cryptography',{paths:[__dirname,process.cwd()]}));
   if(!/^[a-f0-9]{64}$/.test(bundle.generatorKey)||!/^[a-f0-9]{96}$/.test(bundle.blsKey)||!/^[a-f0-9]{192}$/.test(bundle.proofOfPossession))throw Error('Invalid validator bundle');
   if(address.getKlayr32AddressFromPublicKey(Buffer.from(bundle.generatorKey,'hex'))!==bundle.address||!bls.popVerify(Buffer.from(bundle.blsKey,'hex'),Buffer.from(bundle.proofOfPossession,'hex')))throw Error('Invalid validator ownership');
   const key=crypto.createPublicKey({key:{kty:'OKP',crv:'Ed25519',x:Buffer.from(bundle.generatorKey,'hex').toString('base64url')},format:'jwk'});

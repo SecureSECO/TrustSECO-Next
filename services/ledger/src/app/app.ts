@@ -1,9 +1,9 @@
 import { Application, Types } from 'klayr-sdk';
+import { readFileSync } from 'fs';
+import { PoSModule } from 'klayr-framework/dist-node/modules/pos';
 import { registerModules } from './modules';
 import { registerPlugins } from './plugins';
 import { seedPeers } from './common/seed-peers';
-import { readFileSync } from 'fs';
-import { PoSModule } from 'klayr-framework/dist-node/modules/pos';
 import { GithubVotingModule } from './modules/github_voting/module';
 
 export const getApplication = (config: Types.PartialApplicationConfig): Application => {

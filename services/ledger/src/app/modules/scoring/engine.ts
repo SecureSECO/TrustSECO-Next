@@ -220,9 +220,14 @@ export function assess(frame: Frame, provisional = false) {
 	if (frame.blocked) reasons.push('Newer evidence is pending, disputed or unfinalized');
 	// A partial baseline is a lower bound, never renormalized into a complete score.
 	const estimateBaseline = coverage > 0 ? baselineLower / coverage : null;
-	const target = provisional
-		? estimateBaseline === null ? null : frame.malware && frame.malware.infected > 0 ? 0 : Math.min(estimateBaseline * multiplier, ceiling)
-		: reasons.length ? null : Math.min(baselineLower * multiplier, ceiling);
+	let target: number | null = null;
+	if (provisional) {
+		if (estimateBaseline !== null) {
+			target = frame.malware && frame.malware.infected > 0 ? 0 : Math.min(estimateBaseline * multiplier, ceiling);
+		}
+	} else if (!reasons.length) {
+		target = Math.min(baselineLower * multiplier, ceiling);
+	}
 	return {
 		policyVersion: policy.version,
 		target,
