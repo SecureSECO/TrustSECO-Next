@@ -101,6 +101,7 @@ test('real miner client obtains leases and a pinned beacon, then handles an offl
    if(url.startsWith('https://api.drand.sh/'))return {ok:true,json:async()=>beacon};
    if(url.startsWith('https://api.github.com/')){collections++;return {ok:true,json:async()=>({incomplete_results:false,total_count:100})};}
    if(options?.method==='POST'){const e=JSON.parse(options.body);s=applyPilot(s,e.payload,e.signature,at,height);return {ok:true,json:async()=>({status:'recorded'})};}
+   if(new URL(url).pathname==='/api/pilot/event') {const id=new URL(url).searchParams.get('id');return {ok:true,json:async()=>({event:s.community.audit.find(e=>e.id===id) ?? null})};}
    return {ok:true,json:async()=>({...pilotView(s,at),ledger:{height,finalizedHeight:height}})};
   };
   Date.now=()=>at*1000;

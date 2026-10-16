@@ -1,8 +1,6 @@
 import { createPublicKey, verify } from 'crypto';
-import { cryptography } from 'klayr-sdk';
+import { address, bls } from '@klayr/cryptography';
 import { joinProof } from '../pilot/policy';
-
-const { address, bls } = cryptography;
 
 export interface Voter {
     enabled?: boolean;

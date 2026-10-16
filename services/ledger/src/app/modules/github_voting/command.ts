@@ -63,4 +63,3 @@ export class RecordCommand extends Modules.BaseCommand {
         await store.set(c,key,{json:JSON.stringify(state)});
     }
 }
-

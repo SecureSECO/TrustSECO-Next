@@ -104,6 +104,7 @@
 		"/docs"
 	],
 	"dependencies": {
+		"@klayr/cryptography": "4.1.1",
 		"@klayr/chain-connector-plugin": "^0.2.2",
 		"@klayr/dashboard-plugin": "^0.4.2",
 		"@klayr/faucet-plugin": "^0.4.2",

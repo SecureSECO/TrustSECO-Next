@@ -160,6 +160,7 @@ test('standard miners complete signed entropy, collect only assigned work and se
    if(url.startsWith('https://api.github.com/')) {collections++;return {ok:true,json:async()=>({incomplete_results:false,total_count:100})};}
    assert.ok(url.startsWith('http://localhost/api/pilot/'));
    if(options?.method==='POST') {const e=JSON.parse(options.body);s=applyPilot(s,e.payload,e.signature,at,height);return {ok:true,json:async()=>({status:'recorded'})};}
+   if(new URL(url).pathname==='/api/pilot/event') {const id=new URL(url).searchParams.get('id');return {ok:true,json:async()=>({event:s.community.audit.find(e=>e.id===id) ?? null})};}
    return {ok:true,json:async()=>({...pilotView(s,at),ledger:{height,finalizedHeight:height}})};
   };
   for(const id of ids)assert.equal(await mineOnce('http://localhost',path.join(dir,id+'.json')),true);
