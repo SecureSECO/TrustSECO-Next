@@ -1,0 +1,4 @@
+# Small worker-only overlay; does not alter validator code or restart the ledger.
+ARG WORKER_BASE_IMAGE
+FROM ${WORKER_BASE_IMAGE}
+COPY tools/pilot/clamav.cjs tools/pilot/client.cjs tools/pilot/libraries.cjs tools/pilot/libraries-request.cjs /tools/

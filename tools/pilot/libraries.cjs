@@ -36,6 +36,6 @@ async function collectProject(repository,metric,target,key,request){
   value=unique.size;raw={project,dependencies:data};scope='Dependencies for exact version '+target.version;
  }
  count(value);
- return {value,observedAt:Math.floor(Date.now()/1000),evidence,evidenceHash:crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex'),scope};
+ return {value,observedAt:require("./libraries-request.cjs").observedAt(project),evidence,evidenceHash:crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex'),scope};
 }
 module.exports={collectProject,metrics,targetPath};

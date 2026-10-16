@@ -24,9 +24,8 @@ export default {
 
 <template>
   <va-card>
-    <va-card-title>View Package</va-card-title>
     <va-card-content>
-      <PackageDetailsComponent ref="packageDetails" :name="name" :version="version" />
+      <PackageDetailsComponent ref="packageDetails" :key="name" :name="name" :version="version" />
     </va-card-content>
   </va-card>
   <TrustFacts :name="name" :version="version"/>

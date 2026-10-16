@@ -37,3 +37,16 @@ test('existing Pypi queue spelling maps to OSV PyPI without rewriting Libraries.
  assert.equal(planned.find(t=>t.metric==='lib_sourcerank').event.packagePlatform,'Pypi');
  assert.equal(targets('n',[{...packages[0],platform:'UnknownPythonRegistry'}],[],100).find(t=>t.metric==='security_advisories').applicable,false);
 });
+
+ test('demo prioritizes essential evidence and due refreshes over auxiliary breadth',()=>{
+ const s=state(), ps=[...packages,{...packages[0],repository:'other/package'}];
+ let e=next(s,ps,{demo:true}).event;
+ assert.equal(e.repository,'pallets/flask');assert.equal(e.metric,'security_advisories');
+ s.rounds=[round(e)];
+ assert.equal(next(s,ps,{demo:true}).event.metric,'gh_yearly_commit_count');
+ s.at=86500;for(const lease of Object.values(s.availability))lease.until=s.at+1000;
+ const refresh=next(s,ps,{demo:true}).event;
+ assert.equal(refresh.metric,'security_advisories');assert.equal(refresh.refreshOf,e.round);
+ // The demo option does not bypass availability, budget or concurrency gates.
+ s.availability={};assert.match(next(s,ps,{demo:true}).reason,/contributors/);
+ });

@@ -2,18 +2,20 @@
   <va-card>
     <va-card-title>Add new package</va-card-title>
     <va-card-content>
-      <add-package-component/>
+      <pilot-add-package v-if="pilot"/><add-package-component v-else/>
     </va-card-content>
   </va-card>
 </template>
 
 <script>
 import AddPackageComponent from '../components/AddPackageComponent.vue';
+import PilotAddPackage from '../components/PilotAddPackage.vue';
 
 export default {
   name: 'add-package-view',
+  data: () => ({pilot: import.meta.env.VITE_PILOT === 'true'}),
   components: {
-    AddPackageComponent,
+    AddPackageComponent, PilotAddPackage,
   },
 };
 </script>

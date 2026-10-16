@@ -33,6 +33,7 @@
                 <th>Indicator</th>
                 <th>Budget</th>
                 <th>Reference</th>
+                <th>Confirmed freshness</th>
               </tr>
             </thead>
             <tbody>
@@ -45,6 +46,7 @@
                   }}
                   {{ f.unit === 'seconds' ? 'days' : f.unit }}
                 </td>
+                <td>{{ f.freshnessSeconds / 86400 }} days</td>
               </tr>
             </tbody>
           </table>
@@ -102,13 +104,21 @@
         </p>
       </section>
       <section>
+        <h2>Local estimates and SourceRank</h2>
+        <p>A provisional estimate is available as soon as there is a usable scoring input. It uses B / C, where C is the combined weight of available inputs, including older observations. Known vulnerability penalties and ceilings still apply, even when that evidence is old; a known malware detection gives a local estimate of zero until a confirmed clean rescan. Missing or old security checks are explicitly flagged.</p>
+        <p>Always read the estimate with its coverage, missing inputs and evidence age. It does not require community agreement or recovery history. With no usable inputs, no estimate is shown. Libraries.io SourceRank remains in the Community and Popularity fact cards as an external reference; it is not included in the score formula.</p>
+      </section>
+      <section>
         <h2>3. Fast deterioration, gradual recovery</h2>
         <p>
-          Accepted negative evidence lowers the assessment immediately. Upward
+          For community-confirmed scores, accepted negative evidence lowers the assessment immediately. Upward
           movement is limited to {{ policy.recoveryPointsPerDay }} point per day
           supported by fresh evidence. Publishing another version does not reset
-          the project’s history. Until {{ policy.historySeconds / 86400 }} days
-          of supported history exist, the score says “insufficient history”.
+          the project’s history. The first score appears as soon as enough fresh
+          evidence and a complete security assessment are available; confirmed
+          scores additionally require community agreement and ledger finality.
+          Each score shows its accumulated evidence-supported history separately.
+          There is no minimum waiting period.
         </p>
         <p>
           Remediation must be evidenced; time alone does not remove a
@@ -121,7 +131,7 @@
       <section>
         <h2>4. Uncertainty stays visible</h2>
         <p>
-          Evidence expires after {{ policy.freshnessSeconds / 3600 }} hours. At
+          For confirmed scores, each indicator has the freshness limit listed above; security checks expire after {{ policy.freshnessSeconds / 3600 }} hours. At
           least {{ policy.minimumCoverage * 100 }}% of the fixed evidence budget
           and a fresh, complete security snapshot with known severities are
           required. Missing positive inputs produce a baseline range, not an

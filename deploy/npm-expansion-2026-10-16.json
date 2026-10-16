@@ -1,0 +1,777 @@
+{
+  "network": "trustseco-8b7bb864",
+  "selection": "100 additional npm packages, curated for ecosystem breadth; one registry package per previously unrepresented GitHub repository. Exact stable versions resolved from npm registry metadata. Not a popularity ranking.",
+  "resolvedAt": "2026-10-16T07:23:37.354212+00:00",
+  "packages": [
+    {
+      "repository": "react/react",
+      "name": "react",
+      "platform": "npm",
+      "version": "19.3.1",
+      "metadataSource": "https://registry.npmjs.org/react/latest"
+    },
+    {
+      "repository": "vuejs/core",
+      "name": "vue",
+      "platform": "npm",
+      "version": "3.5.44",
+      "metadataSource": "https://registry.npmjs.org/vue/latest"
+    },
+    {
+      "repository": "angular/angular",
+      "name": "@angular/core",
+      "platform": "npm",
+      "version": "22.2.3",
+      "metadataSource": "https://registry.npmjs.org/%40angular%2Fcore/latest"
+    },
+    {
+      "repository": "sveltejs/svelte",
+      "name": "svelte",
+      "platform": "npm",
+      "version": "5.57.2",
+      "metadataSource": "https://registry.npmjs.org/svelte/latest"
+    },
+    {
+      "repository": "vercel/next.js",
+      "name": "next",
+      "platform": "npm",
+      "version": "16.4.2",
+      "metadataSource": "https://registry.npmjs.org/next/latest"
+    },
+    {
+      "repository": "nuxt/nuxt",
+      "name": "nuxt",
+      "platform": "npm",
+      "version": "4.6.1",
+      "metadataSource": "https://registry.npmjs.org/nuxt/latest"
+    },
+    {
+      "repository": "expressjs/express",
+      "name": "express",
+      "platform": "npm",
+      "version": "5.3.0",
+      "metadataSource": "https://registry.npmjs.org/express/latest"
+    },
+    {
+      "repository": "fastify/fastify",
+      "name": "fastify",
+      "platform": "npm",
+      "version": "5.12.7",
+      "metadataSource": "https://registry.npmjs.org/fastify/latest"
+    },
+    {
+      "repository": "koajs/koa",
+      "name": "koa",
+      "platform": "npm",
+      "version": "3.2.1",
+      "metadataSource": "https://registry.npmjs.org/koa/latest"
+    },
+    {
+      "repository": "hapijs/hapi",
+      "name": "@hapi/hapi",
+      "platform": "npm",
+      "version": "21.4.10",
+      "metadataSource": "https://registry.npmjs.org/%40hapi%2Fhapi/latest"
+    },
+    {
+      "repository": "nestjs/nest",
+      "name": "@nestjs/core",
+      "platform": "npm",
+      "version": "12.1.3",
+      "metadataSource": "https://registry.npmjs.org/%40nestjs%2Fcore/latest"
+    },
+    {
+      "repository": "preactjs/preact",
+      "name": "preact",
+      "platform": "npm",
+      "version": "11.0.1",
+      "metadataSource": "https://registry.npmjs.org/preact/latest"
+    },
+    {
+      "repository": "axios/axios",
+      "name": "axios",
+      "platform": "npm",
+      "version": "1.20.0",
+      "metadataSource": "https://registry.npmjs.org/axios/latest"
+    },
+    {
+      "repository": "sindresorhus/got",
+      "name": "got",
+      "platform": "npm",
+      "version": "16.1.0",
+      "metadataSource": "https://registry.npmjs.org/got/latest"
+    },
+    {
+      "repository": "sindresorhus/ky",
+      "name": "ky",
+      "platform": "npm",
+      "version": "2.2.0",
+      "metadataSource": "https://registry.npmjs.org/ky/latest"
+    },
+    {
+      "repository": "node-fetch/node-fetch",
+      "name": "node-fetch",
+      "platform": "npm",
+      "version": "3.3.2",
+      "metadataSource": "https://registry.npmjs.org/node-fetch/latest"
+    },
+    {
+      "repository": "nodejs/undici",
+      "name": "undici",
+      "platform": "npm",
+      "version": "8.12.2",
+      "metadataSource": "https://registry.npmjs.org/undici/latest"
+    },
+    {
+      "repository": "ladjs/superagent",
+      "name": "superagent",
+      "platform": "npm",
+      "version": "10.4.1",
+      "metadataSource": "https://registry.npmjs.org/superagent/latest"
+    },
+    {
+      "repository": "redis/node-redis",
+      "name": "redis",
+      "platform": "npm",
+      "version": "6.3.0",
+      "metadataSource": "https://registry.npmjs.org/redis/latest"
+    },
+    {
+      "repository": "redis/ioredis",
+      "name": "ioredis",
+      "platform": "npm",
+      "version": "6.0.0",
+      "metadataSource": "https://registry.npmjs.org/ioredis/latest"
+    },
+    {
+      "repository": "mongodb/node-mongodb-native",
+      "name": "mongodb",
+      "platform": "npm",
+      "version": "7.7.0",
+      "metadataSource": "https://registry.npmjs.org/mongodb/latest"
+    },
+    {
+      "repository": "automattic/mongoose",
+      "name": "mongoose",
+      "platform": "npm",
+      "version": "9.11.2",
+      "metadataSource": "https://registry.npmjs.org/mongoose/latest"
+    },
+    {
+      "repository": "sidorares/node-mysql2",
+      "name": "mysql2",
+      "platform": "npm",
+      "version": "3.24.6",
+      "metadataSource": "https://registry.npmjs.org/mysql2/latest"
+    },
+    {
+      "repository": "brianc/node-postgres",
+      "name": "pg",
+      "platform": "npm",
+      "version": "8.23.1",
+      "metadataSource": "https://registry.npmjs.org/pg/latest"
+    },
+    {
+      "repository": "knex/knex",
+      "name": "knex",
+      "platform": "npm",
+      "version": "3.3.0",
+      "metadataSource": "https://registry.npmjs.org/knex/latest"
+    },
+    {
+      "repository": "sequelize/sequelize",
+      "name": "sequelize",
+      "platform": "npm",
+      "version": "6.37.8",
+      "metadataSource": "https://registry.npmjs.org/sequelize/latest"
+    },
+    {
+      "repository": "typeorm/typeorm",
+      "name": "typeorm",
+      "platform": "npm",
+      "version": "1.1.2",
+      "metadataSource": "https://registry.npmjs.org/typeorm/latest"
+    },
+    {
+      "repository": "drizzle-team/drizzle-orm",
+      "name": "drizzle-orm",
+      "platform": "npm",
+      "version": "0.45.4",
+      "metadataSource": "https://registry.npmjs.org/drizzle-orm/latest"
+    },
+    {
+      "repository": "wiselibs/better-sqlite3",
+      "name": "better-sqlite3",
+      "platform": "npm",
+      "version": "13.0.3",
+      "metadataSource": "https://registry.npmjs.org/better-sqlite3/latest"
+    },
+    {
+      "repository": "reactivex/rxjs",
+      "name": "rxjs",
+      "platform": "npm",
+      "version": "7.8.2",
+      "metadataSource": "https://registry.npmjs.org/rxjs/latest"
+    },
+    {
+      "repository": "mobxjs/mobx",
+      "name": "mobx",
+      "platform": "npm",
+      "version": "7.0.6",
+      "metadataSource": "https://registry.npmjs.org/mobx/latest"
+    },
+    {
+      "repository": "reduxjs/redux",
+      "name": "redux",
+      "platform": "npm",
+      "version": "5.0.1",
+      "metadataSource": "https://registry.npmjs.org/redux/latest"
+    },
+    {
+      "repository": "pmndrs/zustand",
+      "name": "zustand",
+      "platform": "npm",
+      "version": "5.0.15",
+      "metadataSource": "https://registry.npmjs.org/zustand/latest"
+    },
+    {
+      "repository": "pmndrs/jotai",
+      "name": "jotai",
+      "platform": "npm",
+      "version": "3.0.1",
+      "metadataSource": "https://registry.npmjs.org/jotai/latest"
+    },
+    {
+      "repository": "immerjs/immer",
+      "name": "immer",
+      "platform": "npm",
+      "version": "11.1.21",
+      "metadataSource": "https://registry.npmjs.org/immer/latest"
+    },
+    {
+      "repository": "statelyai/xstate",
+      "name": "xstate",
+      "platform": "npm",
+      "version": "5.33.2",
+      "metadataSource": "https://registry.npmjs.org/xstate/latest"
+    },
+    {
+      "repository": "tanstack/query",
+      "name": "@tanstack/react-query",
+      "platform": "npm",
+      "version": "5.104.3",
+      "metadataSource": "https://registry.npmjs.org/%40tanstack%2Freact-query/latest"
+    },
+    {
+      "repository": "colinhacks/zod",
+      "name": "zod",
+      "platform": "npm",
+      "version": "4.6.7",
+      "metadataSource": "https://registry.npmjs.org/zod/latest"
+    },
+    {
+      "repository": "hapijs/joi",
+      "name": "joi",
+      "platform": "npm",
+      "version": "18.2.9",
+      "metadataSource": "https://registry.npmjs.org/joi/latest"
+    },
+    {
+      "repository": "ajv-validator/ajv",
+      "name": "ajv",
+      "platform": "npm",
+      "version": "8.20.0",
+      "metadataSource": "https://registry.npmjs.org/ajv/latest"
+    },
+    {
+      "repository": "auth0/node-jsonwebtoken",
+      "name": "jsonwebtoken",
+      "platform": "npm",
+      "version": "9.0.3",
+      "metadataSource": "https://registry.npmjs.org/jsonwebtoken/latest"
+    },
+    {
+      "repository": "panva/jose",
+      "name": "jose",
+      "platform": "npm",
+      "version": "6.2.12",
+      "metadataSource": "https://registry.npmjs.org/jose/latest"
+    },
+    {
+      "repository": "kelektiv/node.bcrypt.js",
+      "name": "bcrypt",
+      "platform": "npm",
+      "version": "6.0.0",
+      "metadataSource": "https://registry.npmjs.org/bcrypt/latest"
+    },
+    {
+      "repository": "jaredhanson/passport",
+      "name": "passport",
+      "platform": "npm",
+      "version": "0.7.0",
+      "metadataSource": "https://registry.npmjs.org/passport/latest"
+    },
+    {
+      "repository": "helmetjs/helmet",
+      "name": "helmet",
+      "platform": "npm",
+      "version": "8.3.0",
+      "metadataSource": "https://registry.npmjs.org/helmet/latest"
+    },
+    {
+      "repository": "microsoft/typescript",
+      "name": "typescript",
+      "platform": "npm",
+      "version": "7.0.2",
+      "metadataSource": "https://registry.npmjs.org/typescript/latest"
+    },
+    {
+      "repository": "babel/babel",
+      "name": "@babel/core",
+      "platform": "npm",
+      "version": "8.0.7",
+      "metadataSource": "https://registry.npmjs.org/%40babel%2Fcore/latest"
+    },
+    {
+      "repository": "webpack/webpack",
+      "name": "webpack",
+      "platform": "npm",
+      "version": "5.112.0",
+      "metadataSource": "https://registry.npmjs.org/webpack/latest"
+    },
+    {
+      "repository": "vitejs/vite",
+      "name": "vite",
+      "platform": "npm",
+      "version": "8.3.4",
+      "metadataSource": "https://registry.npmjs.org/vite/latest"
+    },
+    {
+      "repository": "rollup/rollup",
+      "name": "rollup",
+      "platform": "npm",
+      "version": "4.64.7",
+      "metadataSource": "https://registry.npmjs.org/rollup/latest"
+    },
+    {
+      "repository": "evanw/esbuild",
+      "name": "esbuild",
+      "platform": "npm",
+      "version": "0.28.2",
+      "metadataSource": "https://registry.npmjs.org/esbuild/latest"
+    },
+    {
+      "repository": "parcel-bundler/parcel",
+      "name": "parcel",
+      "platform": "npm",
+      "version": "2.16.4",
+      "metadataSource": "https://registry.npmjs.org/parcel/latest"
+    },
+    {
+      "repository": "sass/dart-sass",
+      "name": "sass",
+      "platform": "npm",
+      "version": "1.105.2",
+      "metadataSource": "https://registry.npmjs.org/sass/latest"
+    },
+    {
+      "repository": "postcss/postcss",
+      "name": "postcss",
+      "platform": "npm",
+      "version": "8.5.30",
+      "metadataSource": "https://registry.npmjs.org/postcss/latest"
+    },
+    {
+      "repository": "tailwindlabs/tailwindcss",
+      "name": "tailwindcss",
+      "platform": "npm",
+      "version": "4.3.3",
+      "metadataSource": "https://registry.npmjs.org/tailwindcss/latest"
+    },
+    {
+      "repository": "jestjs/jest",
+      "name": "jest",
+      "platform": "npm",
+      "version": "30.5.2",
+      "metadataSource": "https://registry.npmjs.org/jest/latest"
+    },
+    {
+      "repository": "vitest-dev/vitest",
+      "name": "vitest",
+      "platform": "npm",
+      "version": "5.0.5",
+      "metadataSource": "https://registry.npmjs.org/vitest/latest"
+    },
+    {
+      "repository": "mochajs/mocha",
+      "name": "mocha",
+      "platform": "npm",
+      "version": "12.0.3",
+      "metadataSource": "https://registry.npmjs.org/mocha/latest"
+    },
+    {
+      "repository": "chaijs/chai",
+      "name": "chai",
+      "platform": "npm",
+      "version": "6.3.0",
+      "metadataSource": "https://registry.npmjs.org/chai/latest"
+    },
+    {
+      "repository": "microsoft/playwright",
+      "name": "playwright",
+      "platform": "npm",
+      "version": "1.64.1",
+      "metadataSource": "https://registry.npmjs.org/playwright/latest"
+    },
+    {
+      "repository": "puppeteer/puppeteer",
+      "name": "puppeteer",
+      "platform": "npm",
+      "version": "25.14.0",
+      "metadataSource": "https://registry.npmjs.org/puppeteer/latest"
+    },
+    {
+      "repository": "cypress-io/cypress",
+      "name": "cypress",
+      "platform": "npm",
+      "version": "16.2.0",
+      "metadataSource": "https://registry.npmjs.org/cypress/latest"
+    },
+    {
+      "repository": "eslint/eslint",
+      "name": "eslint",
+      "platform": "npm",
+      "version": "10.12.0",
+      "metadataSource": "https://registry.npmjs.org/eslint/latest"
+    },
+    {
+      "repository": "prettier/prettier",
+      "name": "prettier",
+      "platform": "npm",
+      "version": "3.9.10",
+      "metadataSource": "https://registry.npmjs.org/prettier/latest"
+    },
+    {
+      "repository": "typicode/husky",
+      "name": "husky",
+      "platform": "npm",
+      "version": "9.1.7",
+      "metadataSource": "https://registry.npmjs.org/husky/latest"
+    },
+    {
+      "repository": "lint-staged/lint-staged",
+      "name": "lint-staged",
+      "platform": "npm",
+      "version": "17.6.0",
+      "metadataSource": "https://registry.npmjs.org/lint-staged/latest"
+    },
+    {
+      "repository": "typestrong/ts-node",
+      "name": "ts-node",
+      "platform": "npm",
+      "version": "10.9.2",
+      "metadataSource": "https://registry.npmjs.org/ts-node/latest"
+    },
+    {
+      "repository": "privatenumber/tsx",
+      "name": "tsx",
+      "platform": "npm",
+      "version": "4.23.15",
+      "metadataSource": "https://registry.npmjs.org/tsx/latest"
+    },
+    {
+      "repository": "unitech/pm2",
+      "name": "pm2",
+      "platform": "npm",
+      "version": "7.0.4",
+      "metadataSource": "https://registry.npmjs.org/pm2/latest"
+    },
+    {
+      "repository": "chalk/chalk",
+      "name": "chalk",
+      "platform": "npm",
+      "version": "6.0.1",
+      "metadataSource": "https://registry.npmjs.org/chalk/latest"
+    },
+    {
+      "repository": "pinojs/pino",
+      "name": "pino",
+      "platform": "npm",
+      "version": "10.4.0",
+      "metadataSource": "https://registry.npmjs.org/pino/latest"
+    },
+    {
+      "repository": "mrdoob/three.js",
+      "name": "three",
+      "platform": "npm",
+      "version": "0.186.1",
+      "metadataSource": "https://registry.npmjs.org/three/latest"
+    },
+    {
+      "repository": "d3/d3",
+      "name": "d3",
+      "platform": "npm",
+      "version": "7.9.0",
+      "metadataSource": "https://registry.npmjs.org/d3/latest"
+    },
+    {
+      "repository": "chartjs/chart.js",
+      "name": "chart.js",
+      "platform": "npm",
+      "version": "4.5.1",
+      "metadataSource": "https://registry.npmjs.org/chart.js/latest"
+    },
+    {
+      "repository": "leaflet/leaflet",
+      "name": "leaflet",
+      "platform": "npm",
+      "version": "1.9.4",
+      "metadataSource": "https://registry.npmjs.org/leaflet/latest"
+    },
+    {
+      "repository": "mui/material-ui",
+      "name": "@mui/material",
+      "platform": "npm",
+      "version": "9.5.0",
+      "metadataSource": "https://registry.npmjs.org/%40mui%2Fmaterial/latest"
+    },
+    {
+      "repository": "ant-design/ant-design",
+      "name": "antd",
+      "platform": "npm",
+      "version": "6.6.6",
+      "metadataSource": "https://registry.npmjs.org/antd/latest"
+    },
+    {
+      "repository": "lit/lit",
+      "name": "lit",
+      "platform": "npm",
+      "version": "3.3.3",
+      "metadataSource": "https://registry.npmjs.org/lit/latest"
+    },
+    {
+      "repository": "jquery/jquery",
+      "name": "jquery",
+      "platform": "npm",
+      "version": "4.0.0",
+      "metadataSource": "https://registry.npmjs.org/jquery/latest"
+    },
+    {
+      "repository": "cheeriojs/cheerio",
+      "name": "cheerio",
+      "platform": "npm",
+      "version": "1.2.0",
+      "metadataSource": "https://registry.npmjs.org/cheerio/latest"
+    },
+    {
+      "repository": "jsdom/jsdom",
+      "name": "jsdom",
+      "platform": "npm",
+      "version": "30.1.3",
+      "metadataSource": "https://registry.npmjs.org/jsdom/latest"
+    },
+    {
+      "repository": "lodash/lodash",
+      "name": "lodash",
+      "platform": "npm",
+      "version": "4.18.1",
+      "metadataSource": "https://registry.npmjs.org/lodash/latest"
+    },
+    {
+      "repository": "ramda/ramda",
+      "name": "ramda",
+      "platform": "npm",
+      "version": "0.32.0",
+      "metadataSource": "https://registry.npmjs.org/ramda/latest"
+    },
+    {
+      "repository": "date-fns/date-fns",
+      "name": "date-fns",
+      "platform": "npm",
+      "version": "4.4.0",
+      "metadataSource": "https://registry.npmjs.org/date-fns/latest"
+    },
+    {
+      "repository": "iamkun/dayjs",
+      "name": "dayjs",
+      "platform": "npm",
+      "version": "1.11.23",
+      "metadataSource": "https://registry.npmjs.org/dayjs/latest"
+    },
+    {
+      "repository": "moment/luxon",
+      "name": "luxon",
+      "platform": "npm",
+      "version": "3.7.2",
+      "metadataSource": "https://registry.npmjs.org/luxon/latest"
+    },
+    {
+      "repository": "uuidjs/uuid",
+      "name": "uuid",
+      "platform": "npm",
+      "version": "14.0.3",
+      "metadataSource": "https://registry.npmjs.org/uuid/latest"
+    },
+    {
+      "repository": "ai/nanoid",
+      "name": "nanoid",
+      "platform": "npm",
+      "version": "6.0.2",
+      "metadataSource": "https://registry.npmjs.org/nanoid/latest"
+    },
+    {
+      "repository": "jprichardson/node-fs-extra",
+      "name": "fs-extra",
+      "platform": "npm",
+      "version": "11.4.1",
+      "metadataSource": "https://registry.npmjs.org/fs-extra/latest"
+    },
+    {
+      "repository": "isaacs/node-glob",
+      "name": "glob",
+      "platform": "npm",
+      "version": "13.0.6",
+      "metadataSource": "https://registry.npmjs.org/glob/latest"
+    },
+    {
+      "repository": "paulmillr/chokidar",
+      "name": "chokidar",
+      "platform": "npm",
+      "version": "5.0.0",
+      "metadataSource": "https://registry.npmjs.org/chokidar/latest"
+    },
+    {
+      "repository": "graphql/graphql-js",
+      "name": "graphql",
+      "platform": "npm",
+      "version": "17.0.2",
+      "metadataSource": "https://registry.npmjs.org/graphql/latest"
+    },
+    {
+      "repository": "trpc/trpc",
+      "name": "@trpc/server",
+      "platform": "npm",
+      "version": "11.19.0",
+      "metadataSource": "https://registry.npmjs.org/%40trpc%2Fserver/latest"
+    },
+    {
+      "repository": "markedjs/marked",
+      "name": "marked",
+      "platform": "npm",
+      "version": "18.1.1",
+      "metadataSource": "https://registry.npmjs.org/marked/latest"
+    },
+    {
+      "repository": "markdown-it/markdown-it",
+      "name": "markdown-it",
+      "platform": "npm",
+      "version": "15.0.3",
+      "metadataSource": "https://registry.npmjs.org/markdown-it/latest"
+    },
+    {
+      "repository": "lovell/sharp",
+      "name": "sharp",
+      "platform": "npm",
+      "version": "0.35.5",
+      "metadataSource": "https://registry.npmjs.org/sharp/latest"
+    },
+    {
+      "repository": "foliojs/pdfkit",
+      "name": "pdfkit",
+      "platform": "npm",
+      "version": "0.20.2",
+      "metadataSource": "https://registry.npmjs.org/pdfkit/latest"
+    },
+    {
+      "repository": "nodemailer/nodemailer",
+      "name": "nodemailer",
+      "platform": "npm",
+      "version": "10.1.1",
+      "metadataSource": "https://registry.npmjs.org/nodemailer/latest"
+    },
+    {
+      "repository": "eemeli/yaml",
+      "name": "yaml",
+      "platform": "npm",
+      "version": "2.9.1",
+      "metadataSource": "https://registry.npmjs.org/yaml/latest"
+    },
+    {
+      "repository": "jashkenas/underscore",
+      "name": "underscore",
+      "platform": "npm",
+      "version": "1.13.8",
+      "metadataSource": "https://registry.npmjs.org/underscore/latest"
+    }
+  ],
+  "skipped": [
+    {
+      "name": "prisma",
+      "reason": "No stable exact latest version"
+    },
+    {
+      "name": "angular",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "hapi",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "moment",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "babel-core",
+      "reason": "Repository already represented in the catalogue or this batch"
+    },
+    {
+      "name": "rspack",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "ava",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "pkg-dir",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "csurf",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "formidable",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "trpc",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "sendgrid",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "paypal-rest-sdk",
+      "reason": "Registry marks latest release deprecated"
+    },
+    {
+      "name": "anthropic",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "compromise",
+      "reason": "No GitHub repository in registry metadata"
+    },
+    {
+      "name": "q",
+      "reason": "Registry marks latest release deprecated"
+    }
+  ],
+  "limitations": [
+    "npm artifact malware scanning is not supported by the current PyPI-only ClamAV collector.",
+    "No Stack Overflow tags guessed; unsupported targets remain unavailable."
+  ]
+}

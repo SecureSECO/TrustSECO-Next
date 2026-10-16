@@ -65,3 +65,37 @@ test('ClamAV artifact scope and signed report reach package facts',()=>{
  r.observations.forEach(o=>o.malware={infected:0,artifacts:2,engine:'ClamAV test',manifestHash:'a'.repeat(64)});
  const f=measurements({rounds:[r],audit:[]},'owner/pkg',10)[0];assert.equal(f.malware.artifacts,2);assert.match(f.scope,/0\/2/);assert.match(f.scope,/does not prove safety/);
 });
+
+test('registry comes from collection targets, with catalogue fallback, never repository host',()=>{
+ const a=round('python-babel/babel');a.escrow.packagePlatform='Pypi';
+ const b=round('python-babel/babel','2'); // newest GitHub-only measurement
+ const result=packages({rounds:[a,b],catalog:[]});assert.equal(result[0].packagePlatform,'PyPI');
+ assert.equal(packages({rounds:[round()],catalog:[{repository:'owner/pkg',version:'1.0',platform:'NPM'}]})[0].packagePlatform,'npm');
+ assert.equal(packages({rounds:[round()]})[0].packagePlatform,'Unknown');
+});
+
+test('overview shares one ledger snapshot across visitors and isolates search results',async()=>{
+ const Koa=require('koa');const s={network:'test',rounds:[round('owner/pkg','1.0'),round('other/pkg','2.0')],audit:[]};let reads=0;
+ const score={local:{score:42},confirmed:{score:null,lastConfirmed:{score:39,assessedAt:100,policyVersion:'test'}},ledgerAvailable:true};
+ const c={node:{getNodeInfo:async()=>({height:12,finalizedHeight:10})},invoke:async(name,args)=>{
+  assert.equal(name,'pilot_overview');assert.equal(args.finalizedHeight,10);reads++;
+  await new Promise(r=>setTimeout(r,20));return {snapshot:s,height:12,finalizedHeight:10,scorePairs:{'["owner/pkg","1.0"]':score}};
+ }};
+ const app=new Koa();app.use(portalRouter(async work=>work(c)).routes());const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
+ try {
+  const [all,filtered]=await Promise.all(['','?query=owner'].map(q=>fetch(base+'/api/dlt/overview'+q).then(r=>r.json())));
+  assert.equal(all.packages[0].packageName,'owner/pkg');
+  assert.equal(reads,1);assert.equal(all.total,2);assert.equal(filtered.total,1);assert.deepEqual(filtered.packages[0].scores['1.0'],score);
+  assert.deepEqual(filtered.lastConfirmed,[{packageName:'owner/pkg',version:'1.0',...score.confirmed.lastConfirmed}]);
+  assert.equal(filtered.packages[0].facts.filter(f=>f.status==='confirmed').length,3);
+  const first=await(await fetch(base+'/api/dlt/overview?count=1&sort=name')).json();
+  const second=await(await fetch(base+'/api/dlt/overview?count=1&from=1&sort=name')).json();
+  assert.equal(first.total,2);assert.equal(first.packages.length,1);assert.equal(first.packages[0].packageName,'other/pkg');
+  assert.equal(second.packages[0].packageName,'owner/pkg');
+  const history=await(await fetch(base+'/api/dlt/overview?evidence=history')).json();
+  assert.equal(history.total,1);assert.equal(history.packages[0].packageName,'owner/pkg');
+  const past=await(await fetch(base+'/api/dlt/overview?from=100')).json();assert.equal(past.packages.length,0);
+  assert.equal(reads,1);
+  const empty=await(await fetch(base+'/api/dlt/overview?query=absent')).json();assert.equal(empty.total,0);assert.deepEqual(empty.packages,[]);assert.deepEqual(empty.lastConfirmed,[]);
+ }finally{await new Promise(r=>server.close(r))}
+});

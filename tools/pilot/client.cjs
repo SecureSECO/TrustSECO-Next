@@ -3,6 +3,8 @@ const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto");
 const { entropyEvent, canObserve, expiredEnvelope } = require('./assignment.cjs');
+const miningContext = new (require('node:async_hooks').AsyncLocalStorage)();
+const librariesRequests = require('./libraries-request.cjs').createLibrariesRequest({directory:process.env.LIBRARIES_REQUEST_STATE_DIR});
 const credentialContext = new (require('node:async_hooks').AsyncLocalStorage)();
 const credentials = () => credentialContext.getStore() || {github:process.env.GITHUB_TOKEN,libraries:process.env.LIBRARIES_IO_API_KEY};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -34,6 +36,7 @@ function baseURL(value) {
   return u.origin;
 }
 async function json(url, options = {}) {
+  if (new URL(url).hostname === "libraries.io") { const scope=miningContext.getStore(); return librariesRequests(url, scope?.id || scope, scope?.notBefore || 0); }
   const r = await fetch(url, {
     ...options,
     redirect: 'error',
@@ -90,8 +93,26 @@ function privateFile(p, data) {
 async function snapshot(url) {
   return json(baseURL(url) + "/api/pilot/snapshot");
 }
+// Bounded, per-origin/member/request cache. The projection content hash detects
+// changes, including same-height forks; time and finality refresh every poll.
+const workCache = new Map();
+async function work(url, member, round) {
+  const query = new URLSearchParams({member,...(round ? {round} : {})});
+  const endpoint = baseURL(url) + '/api/pilot/work?' + query;
+  const cached = workCache.get(endpoint);
+  const state = await json(endpoint + (cached?.revision ? '&since=' + cached.revision : ''));
+  if (state.unchanged && (!cached || state.revision !== cached.revision)) throw Error('Work revision mismatch; retry with a fresh projection');
+  const result = state.unchanged ? {...cached,...state,unchanged:undefined} : state;
+  if (workCache.size >= 16 && !workCache.has(endpoint)) workCache.delete(workCache.keys().next().value);
+  workCache.set(endpoint,result);
+  return result;
+}
+async function status(url) { return json(baseURL(url) + '/api/pilot/status'); }
+async function receipt(url, id) {
+  return (await json(baseURL(url) + '/api/pilot/event?id=' + encodeURIComponent(id))).event;
+}
 async function submit(url, identity, event) {
-  const s = await snapshot(url);
+  const s = await status(url);
   const payload = JSON.stringify({
     ...event,
     id: event.id || crypto.randomUUID(),
@@ -107,8 +128,7 @@ async function recorded(url, state, id) {
 async function sendEnvelope(url, envelope) {
   const e = JSON.parse(envelope.payload);
   for (let i = 0; i < 90; i++) {
-    const s = await snapshot(url),
-      record = await recorded(url, s, e.id);
+    const record = await receipt(url, e.id);
     if (record) {
       if (
         record.payload !== envelope.payload ||
@@ -132,7 +152,7 @@ async function sendEnvelope(url, envelope) {
   }
   for (let i = 0; i < 90; i++) {
     await sleep(1000);
-    const record = await recorded(url, await snapshot(url), e.id);
+    const record = await receipt(url, e.id);
     if (record) {
       if (
         record.payload !== envelope.payload ||
@@ -196,7 +216,10 @@ async function durableEvent(url, keyfile, body) {
   return id;
 }
 async function collect(repository, metric, target) {
-  if(metric === 'vs_virus_ratio') return require('./clamav.cjs').collectMalware(target,json);
+  if(metric === 'vs_virus_ratio') {
+    const scope=miningContext.getStore(), identityFile=scope?.id || scope;
+    return require('./clamav.cjs').collectMalware(target,json,undefined,undefined,{directory:identityFile ? path.join(path.dirname(identityFile),'scan-diagnostics') : undefined});
+  }
   if(metric === 'security_advisories') return require('./security.cjs').collectSecurity(target,json);
   if(metric === 'so_popularity') return require('./security.cjs').collectStackOverflow(target,json);
   if (require("./libraries.cjs").metrics.includes(metric)) return require("./libraries.cjs").collectProject(repository, metric, target, credentials().libraries, json);
@@ -241,7 +264,7 @@ async function collect(repository, metric, target) {
     throw Error("Invalid measurement");
   return {
     value,
-    observedAt: Math.floor(Date.now() / 1000),
+    observedAt: require("./libraries-request.cjs").observedAt(raw),
     evidence: source.startsWith("https://libraries.io/") ? source : "https://api.github.com" + source,
     evidenceHash: crypto
       .createHash("sha256")
@@ -249,15 +272,16 @@ async function collect(repository, metric, target) {
       .digest("hex"),
   };
 }
-function mineOnce(url, keyfile, saved) { return credentialContext.run(saved || credentials(), () => mineOnceInner(url,keyfile)); }
+function mineOnce(url, keyfile, saved, options = {}) { return credentialContext.run(saved || credentials(), () => miningContext.run(path.resolve(keyfile), () => mineOnceInner(url,keyfile,options))); }
 const collectorRetry = new Map();
-async function mineOnceInner(url, keyfile) {
+async function mineOnceInner(url, keyfile, options) {
   const identity = read(keyfile),
     outbox = keyfile + ".outbox";
   if (fs.existsSync(outbox)) {
-    const pending = read(outbox), event = JSON.parse(pending.payload), current = await snapshot(url);
+    const pending = read(outbox), event = JSON.parse(pending.payload), current = await work(url, identity.id, event.round);
+    if (options.testNetwork && current.testNetwork !== true) throw Error('Local test network required');
     if (event.network !== current.network) throw Error('Pending event belongs to another network');
-    if (!await recorded(url, current, event.id) && expiredEnvelope(event, current)) {
+    if (!await receipt(url, event.id) && expiredEnvelope(event, current)) {
       fs.renameSync(outbox, outbox + '.expired-' + crypto.randomUUID());
     } else {
       await sendEnvelope(url, pending);
@@ -265,9 +289,10 @@ async function mineOnceInner(url, keyfile) {
       return true;
     }
   }
-  const s = await snapshot(url),
+  const s = await work(url, identity.id),
     m = s.members.find((m) => m.id === identity.id);
-  if (!m || m.revoked || m.standing === "suspended")
+  if (options.testNetwork && s.testNetwork !== true) throw Error('Local test network required');
+  if (!m || m.revoked || m.suspended || m.standing === "suspended")
     throw Error("Contributor is not admitted or is suspended/revoked");
   const entropy = await require('./availability.cjs').assignmentEvent(s,identity) || entropyEvent(s, identity, keyfile);
   if (entropy) {
@@ -277,6 +302,8 @@ async function mineOnceInner(url, keyfile) {
     fs.unlinkSync(outbox);
     return true;
   }
+  const activeRounds = new Set(s.rounds.map(r=>r.id));
+  for (const id of collectorRetry.keys()) if (!activeRounds.has(id)) collectorRetry.delete(id);
   const candidates = s.rounds.filter(
     (r) =>
       !r.closed &&
@@ -288,17 +315,21 @@ async function mineOnceInner(url, keyfile) {
   let r, measurement, failure, unavailable;
   for (const candidate of candidates) {
     try {
-      measurement = await collect(
+      const assignment = candidate.assignment;
+      const notBefore = assignment?.version === "availability-beacon-v1"
+        ? Math.max(0, ...assignment.slots.filter(slot => !slot.replaced && slot.member === identity.id).map(slot => slot.from))
+        : assignment?.revealUntil || 0;
+      measurement = await miningContext.run({id:path.resolve(keyfile),notBefore}, () => collect(
         candidate.escrow.repository,
         candidate.metric,
         candidate.escrow
-      );
+      ));
       r = candidate;
       break;
     } catch (error) {
       failure = error.message;
-      if (s.policy.collection && !candidate.escrow.failures?.[identity.id] && !unavailable) {
-        const reason = /API key|credentials/i.test(failure) ? 'credentials-missing' : error.rateLimited || error.status===429 ? 'rate-limited' : [401,403].includes(error.status) ? 'access-denied' : /incomplete|missing|invalid|not in|mismatch|does not match|unavailable/i.test(failure) ? 'source-incomplete' : 'source-unavailable';
+      if (!error.providerDeferred && s.policy.collection && !candidate.escrow.failures?.[identity.id] && !unavailable) {
+        const reason = /API key|credentials/i.test(failure) ? 'credentials-missing' : error.code === 'SCAN_INCONCLUSIVE' ? 'source-incomplete' : error.rateLimited || error.status===429 ? 'rate-limited' : [401,403].includes(error.status) ? 'access-denied' : /incomplete|missing|invalid|not in|mismatch|does not match|unavailable/i.test(failure) ? 'source-incomplete' : 'source-unavailable';
         unavailable = {kind:'unavailable',round:candidate.id,reason};
       }
       collectorRetry.set(candidate.id, Date.now() + (error.retryAfterMs || 60000));
@@ -307,7 +338,7 @@ async function mineOnceInner(url, keyfile) {
           candidate.metric +
           ": " +
           error.message +
-          "; retry after provider backoff"
+          "; next attempt in " + Math.ceil((error.retryAfterMs || 60000)/1000) + " seconds"
       );
     }
   }
@@ -317,7 +348,7 @@ async function mineOnceInner(url, keyfile) {
       privateFile(outbox,{payload,signature:sign(payload,identity.privateKey)});
       await sendEnvelope(url,read(outbox)); fs.unlinkSync(outbox); return true;
     }
-    if (failure) throw Error('Collection needs attention: ' + failure + '; retrying in 60 seconds');
+    if (failure) throw Error('Collection needs attention: ' + failure + '; next attempt follows collector cooldown');
     if (s.rounds.some(candidate => !candidate.closed && (collectorRetry.get(candidate.id) || 0) > Date.now())) throw Error('Waiting to retry a failed collector');
     return false;
   }
@@ -332,7 +363,7 @@ async function mineOnceInner(url, keyfile) {
     ...measurement,
   };
   // Never claim a future observation time relative to the node's current block.
-  for (let i = 0; i < 60 && (await snapshot(url)).at < e.observedAt; i++)
+  for (let i = 0; i < 60 && (await status(url)).at < e.observedAt; i++)
     await sleep(1000);
   const payload = JSON.stringify(e);
   privateFile(outbox, {
@@ -343,13 +374,13 @@ async function mineOnceInner(url, keyfile) {
   fs.unlinkSync(outbox);
   return true;
 }
-async function admission(url, request, governor, operator) {
+async function verifiedAdmission(url, request, operator, automatic = false) {
   const s = await snapshot(url),
     j = JSON.parse(request.payload);
   if (
-    !operator ||
+    (!automatic && !operator) ||
     j.network !== s.network ||
-    j.expiresAt < Math.floor(Date.now() / 1000)
+    !Number.isSafeInteger(j.expiresAt) || j.expiresAt < Math.floor(Date.now() / 1000) || j.expiresAt > Math.floor(Date.now() / 1000) + 86400
   )
     throw Error("Operator attestation and current join request required");
   if (!/^[a-z0-9][a-z0-9-]{0,38}$/.test(j.login)) throw Error("Invalid login");
@@ -374,18 +405,22 @@ async function admission(url, request, governor, operator) {
     throw Error(
       "Publish the contributor public key as a GitHub SSH signing key first"
     );
-  return submit(url, governor, {
+  if (!Number.isSafeInteger(profile.id) || profile.id <= 0) throw Error("Invalid GitHub account ID");
+  return {
     kind: "enrol",
     member: j.login,
     key: j.publicKey,
     githubId: String(profile.id),
-    operator,
+    operator: automatic ? "github:" + profile.id : operator,
     accountCreatedAt: created,
     evidence:
-      "GitHub profile and public SSH signing key verified via REST; operator independence attested by governor",
+      automatic ? "GitHub account age and signing-key ownership verified automatically; one numeric account ID per identity, not proof of distinct humans" : "GitHub profile and public SSH signing key verified via REST; operator independence attested by governor",
     joinPayload: request.payload,
     joinSignature: request.signature,
-  });
+  };
+}
+async function admission(url, request, governor, operator) {
+  return submit(url, governor, await verifiedAdmission(url, request, operator));
 }
 async function main() {
   const [cmd, ...a] = process.argv.slice(2);
@@ -452,6 +487,7 @@ module.exports = {
   sshKey,
   collect: (repository, metric, saved, target) => credentialContext.run(saved || credentials(), () => collect(repository, metric, target)),
   admission,
+  verifiedAdmission,
   sign,
   submit,
   mineOnce,

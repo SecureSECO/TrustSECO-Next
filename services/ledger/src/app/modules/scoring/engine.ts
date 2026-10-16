@@ -161,7 +161,7 @@ export function normalize(x: number, reference: number, lower = false): number {
 	);
 	return lower ? reference / (reference + x) : x / (reference + x);
 }
-export function assess(frame: Frame) {
+export function assess(frame: Frame, provisional = false) {
 	const contributions = policy.features.map(f => {
 		const fact = frame.facts.find(x => x.metric === f.metric);
 		const present =
@@ -169,7 +169,7 @@ export function assess(frame: Frame) {
 			Number.isFinite(fact.value) &&
 			fact.value >= 0 &&
 			fact.at <= frame.at &&
-			frame.at - fact.at <= policy.freshnessSeconds;
+			(provisional || frame.at - fact.at <= f.freshnessSeconds);
 		let value = present ? fact.value / ('scale' in f ? Number(f.scale) : 1) : null;
 		if (value !== null && f.direction.startsWith('age-'))
 			value = value <= frame.at ? frame.at - value : null;
@@ -177,6 +177,8 @@ export function assess(frame: Frame) {
 			value === null ? null : normalize(value, f.reference, f.direction.endsWith('lower'));
 		return {
 			...f,
+			observedAt: present ? fact.at : null,
+			stale: present && frame.at - fact.at > f.freshnessSeconds,
 			value,
 			normalized,
 			contribution: normalized === null ? null : 100 * f.weight * normalized,
@@ -193,7 +195,7 @@ export function assess(frame: Frame) {
 		frame.securityAt !== undefined &&
 		frame.securityAt <= frame.at &&
 		frame.at - frame.securityAt <= policy.freshnessSeconds;
-	const security = freshSecurity ? frame.security : undefined;
+	const security = freshSecurity || (provisional && frame.securityAt !== undefined && frame.securityAt <= frame.at) ? frame.security : undefined;
 	let multiplier = 1;
 	let ceiling = 100;
 	let unknown = false;
@@ -208,33 +210,40 @@ export function assess(frame: Frame) {
 	}
 	const reasons: string[] = [];
 	if (frame.malware && frame.malware.infected > 0) reasons.push('ClamAV detected malware in this release; a complete confirmed rescan is required');
-	if (!security) reasons.push('Security evidence missing or stale');
+	if (!freshSecurity) reasons.push('Security evidence missing or stale');
 	if (unknown) reasons.push('An applicable advisory has unknown severity');
-	if (coverage + 1e-9 < policy.minimumCoverage)
-		reasons.push('Insufficient fresh positive evidence');
+	if (provisional) {
+		if (!coverage) reasons.push('No usable scoring evidence yet');
+		else if (coverage < 1 - 1e-9) reasons.push('Some scoring inputs are missing; the estimate uses available inputs only');
+		if (contributions.some(f => f.stale)) reasons.push('Some observations are older than the confirmed-score freshness limits');
+	} else if (coverage + 1e-9 < policy.minimumCoverage) reasons.push('Insufficient fresh positive evidence');
 	if (frame.blocked) reasons.push('Newer evidence is pending, disputed or unfinalized');
 	// A partial baseline is a lower bound, never renormalized into a complete score.
-	const target = reasons.length ? null : Math.min(baselineLower * multiplier, ceiling);
+	const estimateBaseline = coverage > 0 ? baselineLower / coverage : null;
+	const target = provisional
+		? estimateBaseline === null ? null : frame.malware && frame.malware.infected > 0 ? 0 : Math.min(estimateBaseline * multiplier, ceiling)
+		: reasons.length ? null : Math.min(baselineLower * multiplier, ceiling);
 	return {
 		policyVersion: policy.version,
 		target,
 		baselineLower,
 		baselineUpper,
 		coverage,
+		...(provisional ? {estimateBaseline, staleInputCount:contributions.filter(f=>f.stale).length, missingInputs:contributions.filter(f=>f.normalized===null).map(f=>f.label), oldestObservedAt:contributions.filter(f=>f.observedAt!==null).reduce<number | null>((oldest,f)=>oldest===null?f.observedAt:Math.min(oldest,f.observedAt!),null)} : {}),
 		multiplier,
 		ceiling,
 		contributions,
 		reasons,
 		advisories: security?.advisories ?? [],
 		malware: frame.malware,
-		securityFresh: !!security,
+		securityFresh: !!freshSecurity,
 		factTypeCount: contributions.filter(f => f.normalized !== null).length,
 		totalFactTypes: policy.features.length,
 		measurementCount: frame.facts.length,
 	};
 }
 /** One project history across versions. Only fresh supported intervals earn recovery. */
-export function recover(frames: Frame[]) {
+export function recover(frames: Frame[], onAssessment?: (frame: Frame, score: number) => void) {
 	let score: number | null = null;
 	let previous: Frame | undefined;
 	let previousValid = false;
@@ -250,7 +259,7 @@ export function recover(frames: Frame[]) {
 		if (previousValid && previous?.securityAt !== undefined) {
 			const expiries = previous.facts
 				.filter(f => policy.features.some(p => p.metric === f.metric))
-				.map(f => f.at + policy.freshnessSeconds);
+				.map(f => f.at + policy.features.find(p => p.metric === f.metric)!.freshnessSeconds);
 			expiries.push(previous.securityAt + policy.freshnessSeconds);
 			for (const end of [...new Set(expiries)].sort((left, right) => left - right)) {
 				if (end < previous.at) continue;
@@ -275,6 +284,7 @@ export function recover(frames: Frame[]) {
 			// Keep memory of the worst known ceiling through data loss and release changes.
 			score = Math.min(score, a.ceiling, a.baselineUpper * a.multiplier);
 		}
+		if (a.target !== null && score !== null) onAssessment?.(frame, score);
 		previous = frame;
 		previousValid = a.target !== null;
 	}

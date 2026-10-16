@@ -22,6 +22,12 @@ services:
     init: true
     platform: linux/amd64
     profiles: [mining-test]
+    healthcheck:
+      test: ["CMD-SHELL", "test \"$$(printf 'PING\\n' | nc -w 2 127.0.0.1 3310)\" = PONG"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
     mem_limit: 2g
     cpus: 1.0
     restart: unless-stopped
@@ -59,7 +65,7 @@ services:
       PILOT_REQUEST_DIR: /admission-requests
       PILOT_PACKAGE_QUEUE_FILE: /package-queue/packages.json
     ports: ["127.0.0.1:3005:3000"]
-    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro", "./pilot-runtime/local-identity:/local-identity", "./pilot-runtime/admission-requests:/admission-requests", "./pilot-runtime/package-queue:/package-queue:ro"]
+    volumes: ["./pilot-runtime/relayer/relayer.json:/relayer/relayer.json:ro", "./pilot-runtime/local-identity:/local-identity", "./pilot-runtime/admission-requests:/admission-requests", "./pilot-runtime/package-queue:/package-queue"]
   worker-a:
     image: trustseco-pilot-ledger
     init: true
@@ -69,7 +75,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-a:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-a:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   worker-b:
     image: trustseco-pilot-ledger
     init: true
@@ -79,7 +85,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-b:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-b:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   worker-c:
     image: trustseco-pilot-ledger
     init: true
@@ -89,7 +95,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-c:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-c:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   worker-d:
     image: trustseco-pilot-ledger
     init: true
@@ -99,7 +105,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-d:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-d:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   worker-e:
     image: trustseco-pilot-ledger
     init: true
@@ -109,7 +115,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-e:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-e:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   worker-f:
     image: trustseco-pilot-ledger
     init: true
@@ -119,7 +125,7 @@ services:
     depends_on: [web]
     environment: {CLAMAV_HOST: clamav}
     command: [node, /tools/local-test-miner.cjs, "http://localhost:3000", /identity/identity.json, /credentials/credentials.json]
-    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-f:/identity", "./pilot-runtime/local-identity/credentials.json:/credentials/credentials.json:ro"]
+    volumes: ["../tools/pilot:/tools:ro", "./pilot-runtime/contributors/test-f:/identity", "./pilot-runtime/local-identity:/credentials:ro"]
   package-publisher:
     image: trustseco-pilot-web
     init: true

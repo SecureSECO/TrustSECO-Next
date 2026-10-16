@@ -1,0 +1,64 @@
+name: trustseco-github-voting-test
+services:
+  bootstrap:
+    image: trustseco-pilot-ledger:github-voting
+    platform: linux/amd64
+    mem_limit: 768m
+    environment:
+      TRUSTSECO_PILOT: 'true'
+      PILOT_NETWORK: trustseco-19c5e001
+      PILOT_GOVERNOR_FILE: /pilot/governor.pem
+      TRUSTSECO_SEED_PEERS: web:8000
+      TRUSTSECO_FIXED_PEERS: web:8000
+      NODE_PATH: /usr/src/app/node_modules
+    command: ['./bin/run', start, --config, /pilot/config.json, --overwrite-config]
+    volumes:
+      - ${VOTING_TEST_RUNTIME:?Fresh test directory required}/shared:/pilot:ro
+      - ${VOTING_TEST_RUNTIME}/bootstrap:/validator:ro
+      - ${VOTING_TEST_RUNTIME}/bootstrap-ledger:/root/.klayr
+  web:
+    image: trustseco-pilot-web:github-voting
+    platform: linux/amd64
+    mem_limit: 384m
+    environment:
+      DLT_ENDPOINT: ws://bootstrap:7887/rpc-ws
+      PILOT_RELAYER_FILE: /relayer/relayer.json
+      PILOT_REQUEST_DIR: /requests
+      PILOT_AUTO_ADMISSION: 'true'
+      PILOT_PUBLIC_NETWORK_DIR: /pilot
+      PILOT_PUBLIC_PEERS: bootstrap:8000
+      NODE_OPTIONS: --require=/tests/github-voting-github-fixture.cjs
+    command: [node, dist/pilot.js]
+    volumes:
+      - ${VOTING_TEST_RUNTIME}/shared:/pilot:ro
+      - ${VOTING_TEST_RUNTIME}/relayer:/relayer:ro
+      - ${VOTING_TEST_RUNTIME}/requests:/requests
+      - ${VOTING_TEST_RUNTIME}/fixtures:/fixtures:ro
+      - .:/tests:ro
+  reviewer:
+    image: trustseco-pilot-ledger:github-voting
+    platform: linux/amd64
+    mem_limit: 768m
+    stop_grace_period: 5m
+    network_mode: service:web
+    environment:
+      NODE_PATH: /usr/src/app/node_modules
+    command: [node, /tools/reviewer.cjs, 'http://localhost:3000', reviewer]
+    volumes:
+      - ${VOTING_TEST_RUNTIME}/reviewer:/reviewer
+      - ../tools/pilot:/tools:ro
+  admission:
+    image: trustseco-pilot-ledger:github-voting
+    platform: linux/amd64
+    mem_limit: 256m
+    network_mode: service:web
+    environment:
+      NODE_OPTIONS: --require=/tests/github-voting-github-fixture.cjs
+      NODE_PATH: /usr/src/app/node_modules
+    command: [node, /tools/auto-admission.cjs, 'http://localhost:3000', /requests, /governor/identity.json]
+    volumes:
+      - ${VOTING_TEST_RUNTIME}/requests:/requests
+      - ${VOTING_TEST_RUNTIME}/governor:/governor
+      - ${VOTING_TEST_RUNTIME}/fixtures:/fixtures:ro
+      - .:/tests:ro
+      - ../tools/pilot:/tools:ro

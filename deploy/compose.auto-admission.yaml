@@ -1,0 +1,29 @@
+# Overlay on compose.pilot-operator.yaml, on ONE admission host only.
+# The voting protocol must be upgraded/activated on the common chain first.
+services:
+  web:
+    environment:
+      PILOT_AUTO_ADMISSION: 'true'
+      PILOT_NETWORK: ${PILOT_NETWORK:?Common network ID required}
+      PILOT_PUBLIC_NETWORK_DIR: /pilot
+      PILOT_PUBLIC_PEERS: ${SEED_PEERS:?Public peer addresses required}
+    volumes:
+      - ${PUBLIC_NETWORK_DIR:?Common public network bundle required}:/pilot:ro
+  admission:
+    image: ${REVIEWER_IMAGE:?Reviewed reviewer image with ledger cryptography required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    network_mode: service:web
+    depends_on: [web]
+    entrypoint: [node]
+    command: [/tools/auto-admission.cjs, 'http://localhost:3000', /admission-requests, /admission-identity/identity.json]
+    environment:
+      PILOT_ADMISSION_CREDENTIALS_FILE: /credentials/credentials.json
+    volumes:
+      - admission-requests:/admission-requests
+      - ${ADMISSION_IDENTITY_DIR:?Private governor identity and durable outbox directory}:/admission-identity
+      - ${ADMISSION_CREDENTIALS_DIR:?Private operator credentials directory}:/credentials:ro
+    mem_limit: 256m
+    cpus: 0.5
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}

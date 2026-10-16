@@ -1,0 +1,93 @@
+name: trustseco-uu2
+services:
+  ledger:
+    image: ${LEDGER_IMAGE:?Immutable ledger image ID required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 1m
+    command: ['./bin/run', start, --config, /pilot/config.json, --overwrite-config]
+    environment:
+      TRUSTSECO_PILOT: 'true'
+      PILOT_NETWORK: trustseco-8b7bb864
+      PILOT_GOVERNOR_FILE: /pilot/governor.pem
+      TRUSTSECO_NODE_ADDRESS: trustseco2.science.uu.nl:8000
+      TRUSTSECO_WEB_URL: https://trustseco2.science.uu.nl/
+      TRUSTSECO_SEED_PEERS: trustseco1.science.uu.nl:8000
+      TRUSTSECO_FIXED_PEERS: trustseco1.science.uu.nl:8000
+      NODE_OPTIONS: --max-old-space-size=512
+    ports: ['8000:8000']
+    volumes: ['./ledger:/root/.klayr', './public:/pilot:ro', './validator:/validator:ro']
+    mem_limit: 1024m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  web:
+    image: ${WEB_IMAGE:?Immutable web image ID required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    command: [node, dist/pilot.js]
+    environment:
+      DLT_ENDPOINT: ws://ledger:7887/rpc-ws
+      PILOT_READ_ONLY: 'true'
+      PILOT_TEST_NETWORK: 'true'
+      PILOT_NETWORK: trustseco-8b7bb864
+      PILOT_AUTO_ADMISSION: 'true'
+      PILOT_PUBLIC_NETWORK_DIR: /pilot
+      PILOT_PUBLIC_PEERS: trustseco1.science.uu.nl:8000,trustseco2.science.uu.nl:8000
+      PILOT_PACKAGE_QUEUE_FILE: /queue/packages.json
+      NODE_OPTIONS: --max-old-space-size=256
+    volumes: ['./public:/pilot:ro', './queue:/queue:ro']
+    ports: ['127.0.0.1:3000:3000']
+    mem_limit: 512m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  https:
+    image: caddy@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes: ['./Caddyfile:/etc/caddy/Caddyfile:ro', './caddy-data:/data', './caddy-config:/config']
+    mem_limit: 128m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  worker-d:
+    image: ${WORKER_IMAGE:?Immutable worker image ID required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    command: [node, /tools/server-test-miner.cjs, 'https://trustseco2.science.uu.nl', /identity/identity.json, /credentials/credentials.json]
+    environment: {NODE_OPTIONS: '--max-old-space-size=96', CLAMAV_HOST: clamav, LIBRARIES_REQUEST_STATE_DIR: /provider-state}
+    volumes: ['./contributors/test-d:/identity', './credentials:/credentials:ro', './provider-state:/provider-state']
+    mem_limit: 224m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  worker-e:
+    image: ${WORKER_IMAGE:?Immutable worker image ID required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    command: [node, /tools/server-test-miner.cjs, 'https://trustseco2.science.uu.nl', /identity/identity.json, /credentials/credentials.json]
+    environment: {NODE_OPTIONS: '--max-old-space-size=96', CLAMAV_HOST: clamav, LIBRARIES_REQUEST_STATE_DIR: /provider-state}
+    volumes: ['./contributors/test-e:/identity', './credentials:/credentials:ro', './provider-state:/provider-state']
+    mem_limit: 224m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  worker-f:
+    image: ${WORKER_IMAGE:?Immutable worker image ID required}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    command: [node, /tools/server-test-miner.cjs, 'https://trustseco2.science.uu.nl', /identity/identity.json, /credentials/credentials.json]
+    environment: {NODE_OPTIONS: '--max-old-space-size=96', CLAMAV_HOST: clamav, LIBRARIES_REQUEST_STATE_DIR: /provider-state}
+    volumes: ['./contributors/test-f:/identity', './credentials:/credentials:ro', './provider-state:/provider-state']
+    mem_limit: 224m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+  clamav:
+    image: clamav/clamav@sha256:1fdfd24c6f0a0fb60788481487459a6d4eda8a9b448641594e04db8410d34422
+    restart: unless-stopped
+    init: true
+    mem_limit: 1400m
+    cpus: 0.5
+    volumes: ['./clamav-signatures:/var/lib/clamav', './clamd.conf:/etc/clamav/clamd.conf:ro']
+    healthcheck:
+      test: [CMD-SHELL, 'test "$$(printf "PING\\n" | nc -w 2 127.0.0.1 3310)" = PONG']
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 3m
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}

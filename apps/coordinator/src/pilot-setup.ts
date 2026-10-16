@@ -1,4 +1,5 @@
 import Router from 'koa-router';
+import { addQueuedPackage } from './package-queue';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -55,6 +56,11 @@ export function setupRouter(snapshot: () => Promise<any>) {
         const member = network?.members.find(m => m.id === publicIdentity?.login && m.key === publicIdentity?.publicKey);
         ctx.body = { credentials: credentials.status(), identity: publicIdentity, request: fs.existsSync(identity.file + '.request') ? JSON.parse(fs.readFileSync(identity.file + '.request', 'utf8')) : null, network: network?.network, networkError, admitted: !!member, standing: member?.standing, revoked: member?.revoked, mining: identity.settings().mining, activity: !identity.settings().mining && !active ? 'Mining is off' : activity, lastSuccess };
     });
+    router.post('/packages', async ctx => {
+        if (process.env.PILOT_TEST_NETWORK !== 'true') ctx.throw(403, 'Package queue editing is currently available on the local test network only');
+        const state = await snapshot();
+        ctx.body = addQueuedPackage(state.network, ctx.request.body);
+    });
     router.post('/credentials', ctx => { const body = ctx.request.body as any; ctx.body = credentials.save(body?.source, body?.token); });
     router.post('/credentials/check', async ctx => { ctx.body = await credentials.check((ctx.request.body as any)?.source); });
     router.post('/identity', async ctx => {
@@ -103,5 +109,5 @@ export async function queueAdmission(body: any, network: any) {
     if (fs.readdirSync(directory).filter(f => f.endsWith('.json')).length >= 100 && !fs.existsSync(path.join(directory, profile.githubId + '.json'))) throw Error('Admission inbox is full');
     const file = path.join(directory, profile.githubId + '.json');
     fs.writeFileSync(file + '.tmp', JSON.stringify({ payload: body.payload, signature: body.signature }), { mode: 0o600 }); fs.renameSync(file + '.tmp', file);
-    return { status: 'awaiting-approval', expiresAt: join.expiresAt };
+    return { status: process.env.PILOT_AUTO_ADMISSION === 'true' ? 'queued-automatic' : 'awaiting-approval', expiresAt: join.expiresAt };
 }

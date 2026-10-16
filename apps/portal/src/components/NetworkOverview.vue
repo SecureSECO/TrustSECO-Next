@@ -4,7 +4,7 @@
       <div><h2 id="network-title">Ecosystem nodes</h2><p>Community nodes collect measurements and maintain the shared ledger.</p></div>
       <button type="button" :disabled="loading" @click="refresh">{{ loading ? 'Refreshing…' : 'Refresh' }}</button>
     </div>
-    <p class="scope">This node and its connected ledger peers. This is a view of the network from here, rather than a complete ecosystem directory. A connection does not indicate that a peer is mining or has confirmed a particular fact.</p>
+    <p class="scope">This node and its connected ledger peers. This is a view of the network from here, rather than a complete ecosystem directory. Web links appear only when a node advertises a web interface. A connection does not indicate that a peer is mining or has confirmed a particular fact.</p>
     <p v-if="error" class="network-error" role="status">{{ error }}</p>
     <p v-if="!snapshot && loading" role="status">Discovering connected nodes…</p>
     <template v-if="snapshot">
@@ -13,11 +13,13 @@
           <h3>This node <span class="node-badge">Local</span></h3>
           <p><span class="dot" :class="{uncertain:error || snapshot.local.syncing}" aria-hidden="true"></span>{{ error ? 'Status unavailable' : snapshot.local.syncing ? 'Syncing ledger' : 'Ledger reachable' }}</p>
           <dl><dt>Block height</dt><dd>{{ snapshot.local.height.toLocaleString() }}</dd><dt>Finalized height</dt><dd>{{ snapshot.local.finalizedHeight.toLocaleString() }}</dd></dl>
+          <p v-if="snapshot.local.webURL"><a :href="snapshot.local.webURL" rel="noopener noreferrer">Open web interface →</a></p>
           <router-link to="/jobs#node-details">Node details →</router-link>
         </article>
         <article v-for="peer in snapshot.peers" :key="`${peer.address}:${peer.port}`" class="node-card">
           <h3>{{ peer.address }}:{{ peer.port }}</h3>
           <p><span class="dot" :class="{uncertain:error}" aria-hidden="true"></span>{{ error ? 'Status unavailable' : 'Connected ledger peer' }}</p>
+          <p v-if="peer.webURL"><a :href="peer.webURL" rel="noopener noreferrer">Open web interface →</a></p>
           <p class="peer-note">Miner activity and confirmation progress are not reported by this peer API.</p>
         </article>
       </div>
@@ -32,8 +34,8 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 interface Snapshot {
   observedAt: string;
-  local: { height: number; finalizedHeight: number; syncing: boolean };
-  peers: { address: string; port: number }[];
+  local: { height: number; finalizedHeight: number; syncing: boolean; webURL?: string | null };
+  peers: { address: string; port: number; webURL?: string | null }[];
 }
 const snapshot = ref<Snapshot | null>(null);
 const loading = ref(false);

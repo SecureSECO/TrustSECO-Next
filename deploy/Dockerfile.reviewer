@@ -1,0 +1,5 @@
+ARG LEDGER_IMAGE
+FROM ${LEDGER_IMAGE}
+COPY tools/pilot /tools
+ENV NODE_PATH=/usr/src/app/node_modules
+ENTRYPOINT ["node", "/tools/reviewer.cjs"]

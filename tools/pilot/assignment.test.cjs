@@ -57,7 +57,7 @@ test('miner signs entropy, retains uncertain envelope, and never contacts collec
   global.fetch=async(url,options)=>{
    assert.ok(url.includes('/api/pilot/'),'Unassigned miner must not contact providers');
    if(options?.method==='POST'){posts++;envelope=JSON.parse(options.body);throw Error('uncertain response');}
-   return {ok:true,json:async()=>f.state};
+   return {ok:true,json:async()=>url.includes('/event?')?{event:f.state.audit.find(e=>e.id===new URL(url).searchParams.get('id'))||null}:f.state};
   };
   await assert.rejects(mineOnce('http://localhost',f.file),/Could not reach/);
   const payload=JSON.parse(envelope.payload);assert.equal(payload.kind,'entropy-commit');assert.equal(payload.actor,'a');
@@ -72,7 +72,7 @@ test('expired mining outbox is archived rather than endlessly retried or redrawn
  try {
   const pending={payload:JSON.stringify({id:'old',network:'n',kind:'entropy-commit',round:'r'}),signature:'fixture'};
   fs.writeFileSync(f.file+'.outbox',JSON.stringify(pending));f.state.at=600;
-  global.fetch=async(url,options)=>{assert.ok(!options?.method);return {ok:true,json:async()=>f.state};};
+  global.fetch=async(url,options)=>{assert.ok(!options?.method);return {ok:true,json:async()=>url.includes('/event?')?{event:f.state.audit.find(e=>e.id===new URL(url).searchParams.get('id'))||null}:f.state};};
   assert.ok(expiredEnvelope(JSON.parse(pending.payload),f.state));
   assert.equal(await mineOnce('http://localhost',f.file),false);
   assert.ok(!fs.existsSync(f.file+'.outbox'));assert.equal(fs.readdirSync(f.dir).filter(n=>n.includes('.expired-')).length,1);

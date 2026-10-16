@@ -1,9 +1,10 @@
 /* eslint-disable max-classes-per-file, @typescript-eslint/member-ordering, class-methods-use-this */
+import { createHash } from 'crypto';
 import { Modules, StateMachine, Types } from 'klayr-sdk';
 import { applyPilot, freshPilot, pilotView, settlePilot, verifiedInputs } from './policy';
 import { projectScore } from '../scoring/projection';
 import { policy as scoringPolicy } from '../scoring/engine';
-import { initPilot, loadPilot, savePilot, recordedEvent, auditPage } from './storage';
+import { initPilot, loadPilot, savePilot, recordedEvent, auditPage, miningStatus, miningWork } from './storage';
 
 class PilotStore extends Modules.BaseStore<{ json: string }> {
 	public schema = {
@@ -52,6 +53,26 @@ class RecordCommand extends Modules.BaseCommand {
 }
 class PilotEndpoint extends Modules.BaseEndpoint {
     public scorePolicy() { return scoringPolicy; }
+    public async overview(c: Types.ModuleEndpointContext) {
+        const finalizedHeight = Number(c.params.finalizedHeight);
+        if (!Number.isSafeInteger(finalizedHeight) || finalizedHeight < 0 || finalizedHeight > c.header.height) throw Error('Invalid finalized height');
+        const state = await loadPilot(this.stores.get(PilotStore), c);
+        const snapshot = pilotView(state, c.header.timestamp);
+        const targets = new Map<string, {repository: string; version: string}>();
+        for (const round of snapshot.rounds) {
+            const {repository, version} = round.escrow;
+            targets.set(JSON.stringify([repository, version]), {repository, version});
+        }
+        const scorePairs: Record<string, any> = {};
+        for (const [key, {repository, version}] of targets) {
+            scorePairs[key] = {
+                local: projectScore(state, repository, version, c.header.timestamp, finalizedHeight, false),
+                confirmed: projectScore(state, repository, version, c.header.timestamp, finalizedHeight, true),
+                ledgerAvailable: true,
+            };
+        }
+        return {snapshot, scorePairs, height: c.header.height, finalizedHeight, at: c.header.timestamp};
+    }
     public async score(c: Types.ModuleEndpointContext) {
         const {repository,version,finalizedHeight} = c.params;
         if (typeof repository !== 'string' || typeof version !== 'string' || !Number.isSafeInteger(finalizedHeight) || Number(finalizedHeight)<0 || Number(finalizedHeight)>c.header.height) throw new Error('Invalid score request');
@@ -60,6 +81,19 @@ class PilotEndpoint extends Modules.BaseEndpoint {
     }
 	public async audit(c: Types.ModuleEndpointContext) { return auditPage(this.stores.get(PilotStore), c, c.params.before === undefined ? undefined : Number(c.params.before)); }
 	public async event(c: Types.ModuleEndpointContext) { return {event: await recordedEvent(this.stores.get(PilotStore), c, c.params.id as string)}; }
+    public async status(c: Types.ModuleEndpointContext) {
+        return {...await miningStatus(this.stores.get(PilotStore),c,c.params.member as string | undefined),at:c.header.timestamp,height:c.header.height};
+    }
+    public async work(c: Types.ModuleEndpointContext) {
+        const {member,round,since} = c.params;
+        if (typeof member !== 'string' || !/^[a-z0-9][a-z0-9-]{0,38}$/.test(member) || (round !== undefined && (typeof round !== 'string' || !round.length || round.length>2000)) || (since !== undefined && (typeof since !== 'string' || !/^[a-f0-9]{64}$/.test(since)))) throw new Error('Invalid work request');
+        const {at,...work} = await miningWork(this.stores.get(PilotStore),c,member,c.header.timestamp,round as string | undefined);
+        // Hash the actual projection rather than height: forks at the same height
+        // and contributor/assignment changes must invalidate cached work.
+        const revision = createHash('sha256').update(JSON.stringify(work)).digest('hex');
+        if (since === revision) return {unchanged:true,revision,at,height:c.header.height};
+        return {...work,at,revision,height:c.header.height};
+    }
 	public async snapshot(c: Types.ModuleEndpointContext) {
 		return pilotView(await loadPilot(this.stores.get(PilotStore), c), c.header.timestamp);
 	}
@@ -109,7 +143,7 @@ export class PilotModule extends Modules.BaseModule {
 	}
 	public metadata(): Modules.ModuleMetadata {
 		return {
-			endpoints: [{name:'score'}, {name:'scorePolicy'}, { name: 'audit' }, { name: 'event' }, { name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
+			endpoints: [{name:'work'}, {name:'status'}, {name:'score'}, {name:'scorePolicy'}, { name: 'audit' }, { name: 'event' }, { name: 'snapshot' }, { name: 'payouts' }, { name: 'scoreInputs' }],
 			commands: this.commands.map(c => ({ name: c.name, params: c.schema })),
 			events: [],
 			assets: [],

@@ -8,12 +8,8 @@ if (!/^test-[a-f]$/.test(identity.id)) throw Error('Explicit local fixture ident
 (async () => {
   for (;;) {
     try {
-      const response = await fetch(url + '/api/pilot/snapshot');
-      if (!response.ok) throw Error('Local ledger unavailable');
-      const state = await response.json();
-      if (state.testNetwork !== true) throw Error('Local test network required');
       const credentials = fs.existsSync(credentialsFile) ? JSON.parse(fs.readFileSync(credentialsFile)) : {};
-      if (await mineOnce(url, identityFile, credentials)) console.log(identity.id + ': signed event recorded');
+      if (await mineOnce(url, identityFile, credentials, {testNetwork:true})) console.log(identity.id + ': signed event recorded');
     } catch (error) { console.error(error.message); }
     await new Promise(resolve => setTimeout(resolve, 2000));
   }

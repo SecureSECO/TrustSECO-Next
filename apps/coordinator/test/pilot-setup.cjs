@@ -13,6 +13,14 @@ test('local setup enforces origin, stores only public join requests, and gates m
  try {
   assert.equal((await request('identity',{login:'example'},'https://evil.example')).status,403);
   assert.equal((await request('status')).status,200);
+  assert.equal((await request('packages',{repository:'a/b',name:'b',platform:'PyPI',version:'1'},'https://evil.example')).status,403);
+  delete process.env.PILOT_TEST_NETWORK;
+  assert.equal((await request('packages',{})).status,403);
+  process.env.PILOT_TEST_NETWORK='true';
+  process.env.PILOT_PACKAGE_QUEUE_FILE=path.join(root,'packages.json');
+  fs.writeFileSync(process.env.PILOT_PACKAGE_QUEUE_FILE,JSON.stringify({network:'test',packages:[]}));
+  assert.equal((await request('packages',{repository:'a/b',name:'b',platform:'PyPI',version:'1'})).status,200);
+  assert.equal(JSON.parse(fs.readFileSync(process.env.PILOT_PACKAGE_QUEUE_FILE)).packages.length,1);
   assert.equal((await request('mining',{enabled:true})).status,403);
   assert.equal((await(await request('status')).json()).mining,false);
   assert.equal((await request('credentials',{source:'github',token:'private-test-token'},'https://evil.example')).status,403);
@@ -26,7 +34,8 @@ test('local setup enforces origin, stores only public join requests, and gates m
   const modulePath=fs.existsSync(path.join(__dirname,'../tools/pilot/local-identity.cjs'))?'../tools/pilot/local-identity.cjs':'../../../tools/pilot/local-identity.cjs';
   const {LocalIdentity}=require(modulePath),identity=new LocalIdentity(process.env.PILOT_IDENTITY_DIR),join=identity.join('test');
   assert.equal((await queueAdmission(join,network)).status,'awaiting-approval');const saved=JSON.parse(fs.readFileSync(path.join(root,'requests/123.json')));assert.deepEqual(saved,join);
+  process.env.PILOT_AUTO_ADMISSION='true';assert.equal((await queueAdmission(join,network)).status,'queued-automatic');delete process.env.PILOT_AUTO_ADMISSION;
   await assert.rejects(queueAdmission({...join,signature:'bad'},network),/ownership/);
   const status=await(await request('status')).json();assert.equal(status.admitted,false);assert.equal(status.mining,false);assert.ok(!JSON.stringify(status).includes('PRIVATE KEY'));
- }finally{global.fetch=originalFetch;for(const key of ['PILOT_LOCAL_ORIGIN','PILOT_IDENTITY_DIR','PILOT_REQUEST_DIR']){if(oldEnv[key]===undefined)delete process.env[key];else process.env[key]=oldEnv[key]}await new Promise(r=>server.close(r));fs.rmSync(root,{recursive:true,force:true})}
+ }finally{global.fetch=originalFetch;for(const key of ['PILOT_LOCAL_ORIGIN','PILOT_IDENTITY_DIR','PILOT_REQUEST_DIR','PILOT_TEST_NETWORK','PILOT_PACKAGE_QUEUE_FILE']){if(oldEnv[key]===undefined)delete process.env[key];else process.env[key]=oldEnv[key]}await new Promise(r=>server.close(r));fs.rmSync(root,{recursive:true,force:true})}
 });

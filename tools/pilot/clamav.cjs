@@ -1,6 +1,24 @@
 // Exact PyPI release artifacts are downloaded as data and streamed to a private clamd.
 // Nothing is installed or executed. Each observer performs its own collection.
 const crypto = require('node:crypto');
+const fs = require('node:fs'), path = require('node:path');
+const INCONCLUSIVE_RETRY_MS = 6 * 3600000;
+function inconclusive(file, reply, remaining = INCONCLUSIVE_RETRY_MS) {
+  const error = Error('Inconclusive ClamAV scan of ' + JSON.stringify(file.filename) + ' (SHA-256 ' + file.digests.sha256 + '): ' + reply + '; no clean or malware verdict recorded');
+  error.code = 'SCAN_INCONCLUSIVE'; error.retryAfterMs = Math.max(1000, remaining);
+  return error;
+}
+function diagnosticFile(directory, file, engine) {
+  return directory && path.join(directory, hash(JSON.stringify(['clamav-pypi-v1:limits-encrypted-broken',file.digests.sha256,engine])) + '.json');
+}
+function saveDiagnostic(directory, filename, record) {
+  if (!directory) return;
+  fs.mkdirSync(directory,{recursive:true,mode:0o700});
+  const entries=fs.readdirSync(directory).filter(f=>/^[a-f0-9]{64}\.json$/.test(f)).map(f=>({file:path.join(directory,f),mtime:fs.statSync(path.join(directory,f)).mtimeMs})).sort((a,b)=>a.mtime-b.mtime);
+  while(entries.length>=200)fs.unlinkSync(entries.shift().file);
+  const temporary=filename+'.'+crypto.randomUUID()+'.tmp';
+  fs.writeFileSync(temporary,JSON.stringify(record),{mode:0o600});fs.renameSync(temporary,filename);
+}
 const net = require('node:net');
 const {once} = require('node:events');
 const MAX_ARTIFACT = 64 * 1024 * 1024, MAX_RELEASE = 512 * 1024 * 1024;
@@ -45,7 +63,7 @@ function verdict(reply) {
   if(/^stream: .+ FOUND$/.test(reply) && !/Heuristics\.Limits|Heuristics\.Encrypted|Heuristics\.Broken/i.test(reply))return true;
   throw Error('Incomplete ClamAV scan: '+reply);
 }
-async function collectMalware(target, request, scan = command, fetchBytes = download) {
+async function collectMalware(target, request, scan = command, fetchBytes = download, options = {}) {
   if(String(target.packagePlatform).toLowerCase()!=='pypi'||typeof target.packageName!=='string'||!target.version||target.version==='latest')throw Error('Exact PyPI target required for ClamAV');
   const evidence='https://pypi.org/pypi/'+encodeURIComponent(target.packageName)+'/'+encodeURIComponent(target.version)+'/json';
   const metadata=await request(evidence);
@@ -61,12 +79,29 @@ async function collectMalware(target, request, scan = command, fetchBytes = down
   const engine=await scan('VERSION');
   const fields=engine.split('/'),signatureAt=Math.floor(Date.parse(fields.slice(2).join('/'))/1000),now=Math.floor(Date.now()/1000);
   if(!/^ClamAV [\w.+-]+$/.test(fields[0])||!/^\d+$/.test(fields[1])||!Number.isSafeInteger(signatureAt)||signatureAt>now+300||now-signatureAt>7*86400)throw Error('ClamAV signatures missing or stale');
+  // Check every persisted diagnostic before downloading any artifact in this release.
+  for(const file of files) {
+    const saved=diagnosticFile(options.directory,file,engine);
+    if(saved && fs.existsSync(saved)) {
+      const record=JSON.parse(fs.readFileSync(saved,'utf8'));
+      if(record.sha256===file.digests.sha256 && record.engine===engine && record.retryAt>Date.now())throw inconclusive(file,record.result,record.retryAt-Date.now());
+    }
+  }
   let infected=0;const manifest=[],deadline=Date.now()+240000;
   for(const file of files){
     if(Date.now()>deadline)throw Error('ClamAV release scan deadline exceeded');
+    const saved=diagnosticFile(options.directory,file,engine);
     const bytes=await fetchBytes(file.url,MAX_ARTIFACT);
     if(bytes.length!==file.size||hash(bytes)!==file.digests.sha256)throw Error('Artifact size or SHA-256 mismatch');
-    const reply=await scan('INSTREAM',bytes),detected=verdict(reply);if(detected)infected++;
+    const reply=await scan('INSTREAM',bytes);
+    if(/Heuristics\.(Limits|Encrypted|Broken)/i.test(reply)) {
+      const checkedAt=Date.now();
+      saveDiagnostic(options.directory,saved,{status:'inconclusive',name:target.packageName,version:target.version,filename:file.filename,sha256:file.digests.sha256,engine,result:reply,checkedAt,retryAt:checkedAt+INCONCLUSIVE_RETRY_MS});
+      throw inconclusive(file,reply);
+    }
+    let detected;
+    try { detected=verdict(reply); } catch { const error=Error('ClamAV scan unavailable for '+JSON.stringify(file.filename)+': '+reply);error.retryAfterMs=300000;throw error; }
+    if(detected)infected++;
     manifest.push({filename:file.filename,sha256:file.digests.sha256,size:file.size,result:reply});
   }
   if(await scan('VERSION')!==engine)throw Error('ClamAV signatures changed during scan; retry complete release');

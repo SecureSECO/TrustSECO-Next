@@ -48,7 +48,7 @@ interface ApiMetrics {
 }
 
 // Perform a best-effort sort on the given list of versions by attempting to treat them as SemVers
-const sortVersions = (versions: string[]): string[] => {
+export const sortVersions = (versions: string[]): string[] => {
   const copy = Array.from(versions);
   copy.sort((a, b) => {
     const a2 = semver.coerce(a) ?? a;

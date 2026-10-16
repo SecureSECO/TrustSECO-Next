@@ -42,3 +42,12 @@ and unfinalized states, version separation, and browsing queued packages without
 creating facts. Portal/coordinator builds passed. Browser checks showed one card,
 `1 fact · 3 observations`, expanded contributor details, 41 catalogue entries and
 39 queued/one collecting after the publisher opened the first job for `psf/black`.
+
+## Current cards and earlier rounds
+
+Package pages now default to one card per metric for the selected version, choosing
+its latest observed round. “Show earlier rounds” restores the complete round list;
+ledger history and the API remain unchanged. The displayed summary counts follow
+the chosen view. The confirmed-only filter runs after selecting current rounds,
+so it cannot silently substitute an older confirmed value for a pending update.
+This applies to security refreshes as well as other repeated measurements.

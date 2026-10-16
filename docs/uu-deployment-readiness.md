@@ -1,4 +1,15 @@
-# UU deployment readiness — 9 September 2026
+> Submission consolidation (16 October 2026): this branch preserves the current
+> application and UU deployment tooling; it is not a release certification.
+> Monitoring on 14–15 October found workers d/f blocked by conflicting event IDs,
+> unavailable Libraries.io collectors consuming retry slots, and repeated scan
+> size-limit failures. Those issues remain open. Server2 is deployed with three
+> fixture miners and a replica; the single publisher remains on Server1. Fixture
+> contributors do not establish independent human participation. Historical
+> readiness statements below must be checked against the deployment record.
+
+# UU deployment readiness — updated 14 October 2026
+
+TrustSECO1 is now live with HTTPS, migrated evidence and active equal-weight GitHub voting. See the [deployment record](uu-deployment-2026-10-14.md) for verified state, recovery instructions and remaining limitations. The historical checklist below still identifies broader release gates.
 
 This checklist concerns the signed network on local port 3005. The older port-3004 demonstration and its release notes are historical. Local fixture identities all run on one Mac and do not constitute independent operators.
 
@@ -27,7 +38,7 @@ The [full collection and daily refresh extension](collection-and-refresh.md) add
 | Full reward loop | Let actual verified work pass the real 24-hour delay, check the resulting payout and balances on independent hosts, and exercise disagreement/review handling. |
 | Release artifact | Run checks at the release commit, review/merge changes, tag the tested commit and publish immutable images plus configuration and limitations. |
 
-UU access and real operator assignment were deferred by the owner. Continue local implementation and acceptance testing; do not infer those deployment details or copy fixture secrets to UU.
+The owner subsequently authorized deployment and explicit transfer of signing keys and shared API credentials to TrustSECO1. That migration is complete; real independent operator participation and Server2 deployment remain outstanding.
 
 ## Operational boundaries
 

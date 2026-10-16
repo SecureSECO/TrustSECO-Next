@@ -91,7 +91,7 @@ test('missing, stale, disputed and unknown evidence cannot become a safety score
 	const f = frame(T);
 	delete f.security;
 	assert.equal(assess(f).target, null);
-	assert.equal(assess({ ...frame(T), at: T + D + 1 }).target, null);
+	assert.equal(assess({ ...frame(T), at: T + policy.freshnessSeconds + 1 }).target, null);
 	assert.equal(assess({ ...frame(T), blocked: true }).target, null);
 	assert.equal(assess(frame(T, [advisory('unknown', true)])).target, null);
 	assert.equal(assess(frame(T, [advisory('unknown', true)])).ceiling, 9);
@@ -104,7 +104,10 @@ test('missing, stale, disputed and unknown evidence cannot become a safety score
 	assert.equal(assess(partial).target, null);
 });
 test('history is earned, drops are immediate, recovery is one point per supported day', () => {
-	assert.equal(recover([frame(T)]).status, 'insufficient-history');
+	assert.equal(recover([frame(T)]).status, 'assessed');
+	assert.ok(Math.abs(recover([frame(T)]).score - 80) < 1e-9);
+	assert.equal(recover([frame(T)]).historySeconds, 0);
+	assert.equal(recover([frame(T)]).historyRequiredSeconds, 0);
 	const h = history();
 	assert.ok(Math.abs(recover(h).score - 80) < 1e-9);
 	h.push(frame(T + 7 * D + 1, [advisory('critical')]));
@@ -112,7 +115,7 @@ test('history is earned, drops are immediate, recovery is one point per supporte
 	h.push(frame(T + 8 * D + 1));
 	assert.ok(Math.abs(recover(h).score - 21) < 1e-9);
 	h.push(frame(T + 18 * D + 1));
-	assert.ok(Math.abs(recover(h).score - 22) < 1e-9); // only first supported day of gap
+	assert.ok(Math.abs(recover(h).score - 23) < 1e-9); // only the two supported days of the gap
 	const correction = { ...frame(T + 18 * D + 2), correction: true };
 	assert.ok(Math.abs(recover([...h, correction]).score - 80) < 1e-9);
 	assert.ok(
@@ -125,7 +128,7 @@ test('irrelevant stale facts do not prevent history and unsupported time is neve
 		facts: [...f.facts, { metric: 'excluded', at: 0, value: 1 }],
 	}));
 	assert.equal(recover(h).status, 'assessed');
-	assert.equal(recover([frame(T), frame(T + 20 * D)]).historySeconds, D);
+	assert.equal(recover([frame(T), frame(T + 20 * D)]).historySeconds, policy.freshnessSeconds);
 	const gap = [...history(), { ...frame(T + 8 * D), security: undefined }, frame(T + 30 * D)];
 	assert.equal(recover(gap).historySeconds, 7 * D);
 });
@@ -225,4 +228,123 @@ test('pending and failed malware refreshes cannot erase confirmed detections',()
  assert.equal(projectScore(s,'owner/pkg','1',at+3,1,true).malware.infected,1);
  scan('clean',at+4,0);assert.equal(projectScore(s,'owner/pkg','1',at+4,1,true).malware.infected,0);
  assert.notEqual(projectScore(s,'owner/pkg','1',at+4,1,true).target,null);
+});
+
+test('immediate initialization keeps security, coverage and finality gates', () => {
+ assert.equal(recover([]).score, null);
+ assert.equal(recover([{ ...frame(T), security: undefined }]).score, null);
+ assert.equal(recover([{ ...frame(T), facts: [] }]).score, null);
+ assert.equal(recover([{ ...frame(T), at: T + policy.freshnessSeconds + 1 }]).score, null);
+ assert.equal(recover([frame(T, [advisory('unknown')])]).score, null);
+ const s = ledger(); addFrame(s, frame(T));
+ assert.equal(projectScore(s, 'owner/pkg', '1', T, 0, true).score, null);
+ const confirmed = projectScore(s, 'owner/pkg', '1', T, 1, true);
+ assert.ok(Math.abs(confirmed.score - 80) < 1e-9);
+ assert.equal(confirmed.historySeconds, 0);
+});
+test('an immediately initialized score still drops immediately and recovers gradually', () => {
+ const h = [frame(T), frame(T + 1, [advisory('critical')])];
+ assert.ok(Math.abs(recover(h).score - 20) < 1e-9);
+ h.push(frame(T + 2));
+ assert.ok(recover(h).score < 20.001);
+ h.push(frame(T + D + 2));
+ assert.ok(recover(h).score < 21.001);
+});
+test('provisional estimates normalize partial older evidence and disclose age/coverage; confirmed gates remain',()=>{
+ const f=frame(T);f.facts=f.facts.filter(x=>['lib_latest_release_date','lib_first_release_date','lib_dependent_count','so_popularity'].includes(x.metric));
+ const at=T+35*D,old={...f,at,securityAt:at};
+ const local=assess(old,true),confirmed=assess(old);
+ assert(Math.abs(local.coverage-.45)<1e-9);assert.equal(local.factTypeCount,4);assert.equal(local.staleInputCount,3);
+ assert.equal(local.oldestObservedAt,T);assert.equal(local.missingInputs.length,2);
+ assert.equal(local.target,local.baselineLower/local.coverage);assert.equal(confirmed.target,null);
+ assert.equal(assess({...old,facts:[]},true).target,null);
+ assert.equal(assess({...old,facts:[{metric:'gh_yearly_commit_count',value:0,at:T}]},true).target,0);
+});
+test('provisional estimates keep old vulnerability penalties and expose missing security without inventing clearance',()=>{
+ const f=frame(T,[advisory('critical',true)]);f.at+=35*D;
+ const a=assess(f,true);assert(a.target<=9);assert.equal(a.securityFresh,false);assert.match(a.reasons.join(' '),/Security evidence missing or stale/);
+ assert.equal(assess({...f,malware:{infected:1}},true).target,0);
+ assert.notEqual(assess({...f,security:undefined,securityAt:undefined},true).target,null);
+});
+test('per-indicator expiry keeps release origin useful longer but security still expires at its policy boundary',()=>{
+ const f=frame(T);f.at+=policy.freshnessSeconds+1;f.securityAt=f.at;
+ const a=assess(f);assert.equal(a.contributions.find(x=>x.metric==='lib_latest_release_date').value,null);
+ assert.notEqual(a.contributions.find(x=>x.metric==='lib_first_release_date').value,null);
+ assert.notEqual(a.contributions.find(x=>x.metric==='gh_yearly_commit_count').value,null);
+ const securityExpired=assess({...frame(T),at:T+policy.freshnessSeconds+1});assert.equal(securityExpired.securityFresh,false);assert.equal(securityExpired.target,null);
+});
+test('pending refresh does not erase a usable local estimate or source rank; confirmed score stays gated',()=>{
+ const s=ledger(),f=frame(T);addFrame(s,f,'1',false);
+ const local=projectScore(s,'owner/pkg','1',T,0,false);assert.notEqual(local.score,null);assert.equal(local.status,'provisional');
+ assert.equal(projectScore(s,'owner/pkg','1',T,0,true).score,null);
+ const id='pending';s.escrows[id]={repository:'owner/pkg',version:'1',closedAt:null,closedHeight:null};s.community.rounds.push({id,metric:'gh_yearly_commit_count',openedAt:T+1,closesAt:T+100,closed:false,observations:[]});
+ assert.equal(projectScore(s,'owner/pkg','1',T+1,0,false).factTypeCount,6);
+ const r={...s.community.rounds[0],id:'rank',metric:'lib_sourcerank',closed:true,observations:s.community.rounds[0].observations.map(o=>({...o,id:'rank-'+o.member,value:32}))};
+ s.community.rounds.push(r);s.escrows.rank={repository:'owner/pkg',version:'1',closedAt:T,closedHeight:1};
+ const ranked=projectScore(s,'owner/pkg','1',T,1,false);assert.equal(ranked.sourceRank.value,32);assert(ranked.sourceRank.confirmed);assert.equal(ranked.score,local.score);
+});
+test('provisional clean reports cannot erase known malware or vulnerability findings before confirmation',()=>{
+ const s=ledger();addFrame(s,frame(T,[advisory('critical')]),'1',true);
+ addFrame(s,frame(T+1,[]),'1',false);
+ assert(projectScore(s,'owner/pkg','1',T+1,1,false).score<=24);
+ const scan=(id,at,infected,closed)=>{s.escrows[id]={repository:'owner/pkg',version:'1',closedAt:closed?at:null,closedHeight:closed?1:null};s.community.rounds.push({id,metric:'vs_virus_ratio',openedAt:at-1,closesAt:at,closed,observations:['a','b','c'].map(member=>({id:id+member,member,value:infected*1000000,eligible:true,observedAt:at,receivedAt:at,malware:{infected,manifestHash:id}}))});};
+ scan('bad',T+2,1,true);scan('pending-clean',T+3,0,false);
+ assert.equal(projectScore(s,'owner/pkg','1',T+3,1,false).score,0);
+ scan('confirmed-clean',T+4,0,true);assert(projectScore(s,'owner/pkg','1',T+4,1,false).score>0);
+});
+test('a minority local malware report remains visible until a clean scan is actually confirmed',()=>{
+ const s=ledger();addFrame(s,frame(T),'1',true);
+ const id='conflicting-scan';s.escrows[id]={repository:'owner/pkg',version:'1',closedAt:null,closedHeight:null};s.community.rounds.push({id,metric:'vs_virus_ratio',openedAt:T,closesAt:T+100,closed:false,observations:[{id:'bad',member:'a',eligible:true,value:1000000,observedAt:T+1,receivedAt:T+1,malware:{infected:1}},{id:'clean',member:'b',eligible:true,value:0,observedAt:T+2,receivedAt:T+2,malware:{infected:0}}]});
+ assert.equal(projectScore(s,'owner/pkg','1',T+2,1,false).score,0);
+});
+
+test('last confirmed survives expiry without making the current score available', () => {
+ const s = ledger(); addFrame(s, frame(T));
+ const initial = projectScore(s, 'owner/pkg', '1', T, 100, true);
+ assert.notEqual(initial.score, null);
+ const expired = projectScore(s, 'owner/pkg', '1', T + policy.freshnessSeconds + 1, 100, true);
+ assert.equal(expired.score, null);
+ assert.deepEqual(expired.lastConfirmed, {score: initial.score, assessedAt:T, policyVersion:policy.version});
+ assert.ok(expired.reasons.includes('Security evidence missing or stale'));
+ assert.equal(projectScore(s, 'owner/pkg', '2', T + policy.freshnessSeconds + 1, 100, true).lastConfirmed, null);
+ assert.equal(projectScore(s, 'owner/pkg', '1', T, 0, true).lastConfirmed, null);
+ assert.equal(projectScore(ledger(), 'owner/pkg', '1', T, 100, true).lastConfirmed, null);
+});
+test('pending refresh retains historical confirmation and a newer confirmed assessment replaces it', () => {
+ const s = ledger(); addFrame(s, frame(T));
+ const old = projectScore(s, 'owner/pkg', '1', T, 100, true).lastConfirmed;
+ addFrame(s, frame(T + 60), '1', false);
+ const pending = projectScore(s, 'owner/pkg', '1', T + 60, 100, true);
+ assert.equal(pending.score, null); assert.deepEqual(pending.lastConfirmed, old);
+ addFrame(s, frame(T + 120, [advisory('critical')]));
+ const updated = projectScore(s, 'owner/pkg', '1', T + 120, 100, true);
+ assert.equal(updated.lastConfirmed.assessedAt, T + 120);
+ assert.ok(updated.lastConfirmed.score <= 20);
+ assert.notEqual(updated.lastConfirmed.score, old.score);
+});
+test('historical score preserves recovery limits and is never borrowed from another release', () => {
+ const s = ledger(); addFrame(s, frame(T, [advisory('critical')]));
+ addFrame(s, frame(T + 60));
+ const recovered = projectScore(s, 'owner/pkg', '1', T + 60, 100, true);
+ assert.ok(recovered.lastConfirmed.score < recovered.target);
+ assert.equal(recovered.lastConfirmed.score, recovered.score);
+ addFrame(s, frame(T + 120), '2');
+ const expired = projectScore(s, 'owner/pkg', '1', T + 120 + policy.freshnessSeconds + 1, 100, true);
+ assert.deepEqual(expired.lastConfirmed, recovered.lastConfirmed);
+ assert.equal(expired.score, null);
+});
+
+test('v2.1.1 doubles evidence validity and retains exact expiry boundaries', () => {
+ assert.equal(policy.version,'trust-v2.1.1');
+ assert.equal(policy.freshnessSeconds,2*D);
+ for (const feature of policy.features) {
+  const days=feature.metric==='lib_first_release_date'?730:feature.metric==='lib_latest_release_date'?2:14;
+  assert.equal(feature.freshnessSeconds,days*D);
+  const f=frame(T); f.at=T+feature.freshnessSeconds;f.securityAt=f.at;
+  assert.notEqual(assess(f).contributions.find(x=>x.metric===feature.metric).value,null);
+  f.at++;f.securityAt=f.at;
+  assert.equal(assess(f).contributions.find(x=>x.metric===feature.metric).value,null);
+ }
+ assert.notEqual(assess({...frame(T),at:T+2*D}).target,null);
+ assert.equal(assess({...frame(T),at:T+2*D+1}).target,null);
 });
